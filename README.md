@@ -13,3 +13,9 @@ PromptHub is a tool for managing prompts that helps you better organize your pro
 - [ ] Export Prompt
 - [ ] Import Prompt
 - [ ] AI Prompt Optimization
+
+## Screenshots
+
+![PromptHub](./screens/home_page.png)
+
+![PromptHub](./screens/add_prompt_dialog.png)
