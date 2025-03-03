@@ -33,6 +33,7 @@
 		0E6FDD652D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Views/AboutView.swift,
 				Views/Components/PromptDetail.swift,
 				Views/PromptMenuView.swift,
 			);
@@ -41,6 +42,7 @@
 		0E6FDD662D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Views/AboutView.swift,
 				Views/Components/PromptDetail.swift,
 				Views/PromptMenuView.swift,
 			);

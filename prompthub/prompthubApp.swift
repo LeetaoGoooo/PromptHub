@@ -40,5 +40,9 @@ struct prompthubApp: App {
                 .frame(width: 16, height: 16)
         }
         .modelContainer(sharedModelContainer)
+        
+        Settings {
+            AboutView()
+        }
     }
 }

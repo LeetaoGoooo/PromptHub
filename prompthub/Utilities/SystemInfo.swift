@@ -3,7 +3,7 @@
 //  OnlySwitch
 //
 //  Created by Jacklandrin on 2021/12/5.
-//
+//  Source: https://github.com/jacklandrin/OnlySwitch/blob/e75cba28374176c281bdc2213421e6467e68f86b/OnlySwitch/Utilities/SystemInfo.swift
 
 import Foundation
 struct SystemInfo{
