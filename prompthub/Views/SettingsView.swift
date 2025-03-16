@@ -9,7 +9,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var selectedSetting: SettingItem? = .general
-    @Binding var isPresented: Bool
+    @Binding var isPresented: Bool;
+    var isComeFromSettingPage = true;
 
     enum SettingItem: String, CaseIterable, Identifiable {
         case general = "General"
@@ -35,11 +36,14 @@ struct SettingsView: View {
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }.toolbar {
+            if (!isComeFromSettingPage) {
                 ToolbarItem(placement:.cancellationAction){
                     Button("Close") {
                         isPresented = false
                     }
                 }
+            }
+
         }
     }
 

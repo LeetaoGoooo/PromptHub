@@ -60,6 +60,7 @@ struct PromptSideBar: View {
                     }
 
                 }.buttonStyle(.plain)
+                  
                 
                 Spacer()
                 
@@ -68,8 +69,11 @@ struct PromptSideBar: View {
                 } label: {
                     Image(systemName: "gear")
                 }.buttonStyle(.plain)
+                    .frame(width: 16, height: 16)
                     
-            }.padding()
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
         }
         .searchable(text: $searchText, prompt: "Seach Prompt...")
         .sheet(isPresented: $isEditingPromptSheetPresented) {
@@ -78,7 +82,7 @@ struct PromptSideBar: View {
             }
         }
         .sheet(isPresented: $showingSettings) {
-            SettingsView(isPresented: $showingSettings)
+            SettingsView(isPresented: $showingSettings, isComeFromSettingPage: false)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .confirmationDialog( // Confirmation for delete
