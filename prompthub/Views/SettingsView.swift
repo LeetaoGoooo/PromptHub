@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var selectedSetting: SettingItem? = .general // State to track selected sidebar item
+    @State private var selectedSetting: SettingItem? = .general
+    @Binding var isPresented: Bool
 
     enum SettingItem: String, CaseIterable, Identifiable {
         case general = "General"
@@ -28,11 +29,17 @@ struct SettingsView: View {
                     Text(setting.rawValue)
                 }
             }
-            .frame(minWidth: 150, maxWidth: 220)
             .listStyle(SidebarListStyle())
 
             settingView(for: selectedSetting ?? .general)
+                .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }.toolbar {
+                ToolbarItem(placement:.cancellationAction){
+                    Button("Close") {
+                        isPresented = false
+                    }
+                }
         }
     }
 
@@ -49,5 +56,7 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView()
+    @State var isPresented = true
+    return SettingsView(isPresented: $isPresented)
+        .environmentObject(AppSettings())
 }

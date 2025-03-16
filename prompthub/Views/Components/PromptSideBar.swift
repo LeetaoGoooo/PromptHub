@@ -1,4 +1,3 @@
-
 //
 //  PromptSideBar.swift
 //  prompthub
@@ -22,6 +21,8 @@ struct PromptSideBar: View {
     @State private var searchText: String = ""
     @Binding var promptSelection: UUID?
     @Binding var isPresentingNewPromptDialog: Bool
+    
+    @State private var showingSettings = false
 
     var body: some View {
         VStack {
@@ -47,26 +48,38 @@ struct PromptSideBar: View {
                 .onDelete(perform: deletePrompts)
             }
 
-            Button {
-                isPresentingNewPromptDialog.toggle()
+            HStack {
+                Button {
+                    isPresentingNewPromptDialog.toggle()
+                } label: {
+                    HStack(spacing: 16) {
+                        Image(systemName: "plus.circle.fill")
+                            .resizable()
+                            .frame(width: 16, height: 16)
+                        Text("New Prompt")
+                    }
 
-            } label: {
-                HStack(spacing: 16) {
-                    Image(systemName: "plus.circle.fill")
-                        .resizable()
-                        .frame(width: 16, height: 16)
-                    Text("New Prompt")
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-
-            }.buttonStyle(.plain)
+                }.buttonStyle(.plain)
+                
+                Spacer()
+                
+                Button {
+                    showingSettings.toggle()
+                } label: {
+                    Image(systemName: "gear")
+                }.buttonStyle(.plain)
+                    
+            }.padding()
         }
         .searchable(text: $searchText, prompt: "Seach Prompt...")
         .sheet(isPresented: $isEditingPromptSheetPresented) {
             if let prompt = promptToEditInSheet {
                 EditPromptSheet(prompt: prompt, isPresented: $isEditingPromptSheetPresented)
             }
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(isPresented: $showingSettings)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .confirmationDialog( // Confirmation for delete
             "Are you sure you want to delete this prompt?",

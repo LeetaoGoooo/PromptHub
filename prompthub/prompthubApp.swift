@@ -45,7 +45,7 @@ struct prompthubApp: App {
         .modelContainer(sharedModelContainer)
         
         Settings {
-            SettingsView()
+            SettingsView(isPresented: .constant(false))
                 .environmentObject(appSettings)
         }
     }
