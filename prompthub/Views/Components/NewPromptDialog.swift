@@ -84,8 +84,6 @@ struct NewPromptDialog: View {
     
     @MainActor
     func savePrompt() {
-        // SwiftData operations within the same modelContext are treated as a transaction.
-        // If any part fails, the entire operation is rolled back.
         do {
             let newPrompt = Prompt(name: promptName)
             modelContext.insert(newPrompt)
@@ -98,10 +96,7 @@ struct NewPromptDialog: View {
 
 
         } catch {
-            // If any error occurs during insert or save, the transaction is implicitly rolled back
-            // by SwiftData. No need for manual rollback.
             print("Failed to save prompt and PromptHistory transactionally: \(error)")
-            // Handle the error appropriately, e.g., show an alert to the user.
         }
     }
 }

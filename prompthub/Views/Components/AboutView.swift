@@ -1,18 +1,19 @@
 //
-//  AboutView.swift
-//  prompthub
+//  SettingsView.swift
+//  prompthub
 //
-//  Created by leetao on 2025/3/3.
+//  Created by leetao on 2025/3/3.
 //
+
 import SwiftUI
 
-struct AboutView: View {
+struct AboutContentView: View {
     var body: some View {
         VStack {
             Image("whale")
                 .resizable()
                 .frame(width: 32, height: 32)
-            
+
             HStack(alignment: .bottom) {
                 Text("PromptHub")
                     .fontWeight(.bold)
@@ -24,26 +25,26 @@ struct AboutView: View {
             Text("(Build \(SystemInfo.minorVersion as! String))")
                 .font(.footnote)
                 .foregroundColor(.gray)
-            
+
             Text("Copyright @ 2025 leetao ")
                 .font(.system(size: 15))
             Link(destination: URL(string: "https://leetao.me")!, label: {
                 Text("Leetao")
                     .font(.system(size: 15))
             })
-            
+
             Link(destination: URL(string: "https://github.com/LeetaoGoooo/PromptHub")!, label: {
                 Text("GitHub")
             })
-            
+
             Link(destination:
-                    URL(string: "https://ifdian.net/a/leetao")!,
-                 label: {
-                Text("Donation")
-            })
-            .buttonStyle(.bordered)
-            .padding(3)
-            
+                URL(string: "https://ifdian.net/a/leetao")!,
+                label: {
+                    Text("Donation")
+                })
+                .buttonStyle(.bordered)
+                .padding(3)
+
             HStack {
                 Text("Join:")
                     .font(.system(size: 15))
@@ -60,11 +61,12 @@ struct AboutView: View {
                         .frame(width: 30.0, height: 30.0)
                 })
             }
-        }.frame(width: 256, height: 256)
-            .padding()
+        }.padding()
     }
 }
 
-#Preview {
-    AboutView()
+struct ContentView_Previews: PreviewProvider { // Added Preview for SettingsView
+    static var previews: some View {
+        SettingsView()
+    }
 }

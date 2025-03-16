@@ -14,10 +14,10 @@ struct PromptSideBar: View {
     @Query(sort: \Prompt.name) var prompts: [Prompt]
 
     @State private var isEditingMode: Bool = false
-    @State private var isEditingPromptSheetPresented: Bool = false // For sheet edit (you might keep this)
-    @State private var promptToEditInSheet: Prompt? // For sheet edit
-    @State private var promptToDelete: Prompt? // For delete confirmation
-    @State private var editingPromptIds: Set<UUID> = [] // Track prompts being edited in-place
+    @State private var isEditingPromptSheetPresented: Bool = false
+    @State private var promptToEditInSheet: Prompt?
+    @State private var promptToDelete: Prompt?
+    @State private var editingPromptIds: Set<UUID> = []
 
     @State private var searchText: String = ""
     @Binding var promptSelection: UUID?
@@ -63,48 +63,48 @@ struct PromptSideBar: View {
             }.buttonStyle(.plain)
         }
         .searchable(text: $searchText, prompt: "Seach Prompt...")
-        .sheet(isPresented: $isEditingPromptSheetPresented) { // Keep sheet edit if desired
+        .sheet(isPresented: $isEditingPromptSheetPresented) {
             if let prompt = promptToEditInSheet {
                 EditPromptSheet(prompt: prompt, isPresented: $isEditingPromptSheetPresented)
             }
         }
         .confirmationDialog( // Confirmation for delete
             "Are you sure you want to delete this prompt?",
-            isPresented: isDeleteConfirmationPresented, // Present when promptToDelete is not nil
+            isPresented: isDeleteConfirmationPresented,
             titleVisibility: .visible
         ) {
             Button("Delete", role: .destructive) {
                 if let prompt = promptToDelete {
-                    deletePrompt(prompt) // Single prompt delete function
+                    deletePrompt(prompt)
                 }
             }
             Button("Cancel", role: .cancel) {
-                promptToDelete = nil // Clear promptToDelete on cancel
+                promptToDelete = nil
             }
         } message: {
             if let promptName = promptToDelete?.name {
                 Text("Are you sure you want to delete '\(promptName)'?")
             } else {
-                Text("Are you sure you want to delete this prompt?") // Fallback message
+                Text("Are you sure you want to delete this prompt?")
             }
         }
     }
 
     private var isDeleteConfirmationPresented: Binding<Bool> {
         Binding<Bool>(
-            get: { promptToDelete != nil }, // Getter: Bool based on promptToDelete
-            set: { newValue in // Setter: Control promptToDelete from Bool changes
-                if !newValue { // If set to false (dialog dismissed)
-                    promptToDelete = nil // Reset promptToDelete
+            get: { promptToDelete != nil },
+            set: { newValue in
+                if !newValue {
+                    promptToDelete = nil
                 }
             }
         )
     }
 
-    private func deletePrompts(at offsets: IndexSet) { // For swipe-to-delete, might not be needed on macOS
+    private func deletePrompts(at offsets: IndexSet) {
         for index in offsets {
             let promptToDelete = filteredPrompts[index]
-            deletePrompt(promptToDelete) // Use single delete function
+            deletePrompt(promptToDelete)
         }
     }
 
@@ -113,7 +113,7 @@ struct PromptSideBar: View {
             editingPromptIds.remove(prompt.id)
         })
         .font(.body)
-        .onSubmit { // For macOS to handle Enter key commit
+        .onSubmit {
             editingPromptIds.remove(prompt.id)
         }
     }
@@ -132,25 +132,18 @@ struct PromptSideBar: View {
         )
     }
 
-    private func deletePrompt(_ prompt: Prompt) { // Single function to delete a prompt
+    private func deletePrompt(_ prompt: Prompt) {
         let promptId  = prompt.id;
-        // 1. Fetch related PromptHistory records
         let relatedPromptHistoriesDescriptor = FetchDescriptor<PromptHistory>(predicate: #Predicate { history in
             history.promptId == promptId
         })
 
         do {
-            let promptHistories = try modelContext.fetch(relatedPromptHistoriesDescriptor) // Execute fetch request
-
-            // 2. Delete related PromptHistory records
+            let promptHistories = try modelContext.fetch(relatedPromptHistoriesDescriptor)
             for history in promptHistories {
                 modelContext.delete(history)
             }
-
-            // 3. Delete the Prompt itself
             modelContext.delete(prompt)
-
-            // 4. Save changes to persist deletions (both Prompt and PromptHistory)
             try modelContext.save()
 
         } catch {

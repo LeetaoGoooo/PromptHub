@@ -23,10 +23,13 @@ struct prompthubApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+    @StateObject private var appSettings = AppSettings()
+    
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(appSettings)
         }
         .modelContainer(sharedModelContainer)
 
@@ -42,7 +45,8 @@ struct prompthubApp: App {
         .modelContainer(sharedModelContainer)
         
         Settings {
-            AboutView()
+            SettingsView()
+                .environmentObject(appSettings)
         }
     }
 }

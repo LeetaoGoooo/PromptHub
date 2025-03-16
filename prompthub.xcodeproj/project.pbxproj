@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 0E554B372D7EEE30008DC907 /* LaunchAtLogin */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0E6CAD482D72E6D0001FD9B3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -33,18 +37,22 @@
 		0E6FDD652D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Views/AboutView.swift,
+				Views/Components/AboutView.swift,
+				Views/Components/GeneralView.swift,
 				Views/Components/PromptDetail.swift,
 				Views/PromptMenuView.swift,
+				Views/SettingsView.swift,
 			);
 			target = 0E6CAD462D72E6D0001FD9B3 /* prompthubTests */;
 		};
 		0E6FDD662D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Views/AboutView.swift,
+				Views/Components/AboutView.swift,
+				Views/Components/GeneralView.swift,
 				Views/Components/PromptDetail.swift,
 				Views/PromptMenuView.swift,
+				Views/SettingsView.swift,
 			);
 			target = 0E6CAD502D72E6D0001FD9B3 /* prompthubUITests */;
 		};
@@ -77,6 +85,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +146,7 @@
 			);
 			name = prompthub;
 			packageProductDependencies = (
+				0E554B372D7EEE30008DC907 /* LaunchAtLogin */,
 			);
 			productName = prompthub;
 			productReference = 0E6CAD342D72E6CE001FD9B3 /* prompthub.app */;
@@ -220,6 +230,9 @@
 			);
 			mainGroup = 0E6CAD2B2D72E6CE001FD9B3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0E554B362D7EEE14008DC907 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0E6CAD352D72E6CE001FD9B3 /* Products */;
 			projectDirPath = "";
@@ -582,6 +595,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0E554B362D7EEE14008DC907 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0E554B372D7EEE30008DC907 /* LaunchAtLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0E554B362D7EEE14008DC907 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
+			productName = LaunchAtLogin;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0E6CAD2C2D72E6CE001FD9B3 /* Project object */;
 }

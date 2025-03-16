@@ -9,7 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct EditPromptSheet: View {
-    @State var prompt: Prompt // Use ObservedObject to observe changes from sheet
+    @State var prompt: Prompt
     @Binding var isPresented: Bool
     @State private var editedName: String
 
