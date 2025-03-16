@@ -33,7 +33,6 @@ struct PromptDetail: View {
         _history = Query(filter: #Predicate<PromptHistory> { history in
             history.promptId == currentPromptId
         }, sort: [SortDescriptor(\.version, order: .reverse)])
-
     }
 
     private func copyPromptToClipboard(_ prompt: String) {
@@ -43,7 +42,6 @@ struct PromptDetail: View {
             isCopySuccess = true
         }
 
-        // Auto-dismiss the success indicator
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             withAnimation {
                 isCopySuccess = false
@@ -55,15 +53,32 @@ struct PromptDetail: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 if let latestHistory = history.first {
-                    // Latest version card
-                    latestVersionCard(latestHistory)
+                    LatestVersionView(
+                        latestHistory: latestHistory,
+                        editablePrompt: $editablePrompt,
+                        isCopySuccess: $isCopySuccess,
+                        isGenerating: $isGenerating,
+                        isPreviewingOldVersion: $isPreviewingOldVersion,
+                        copyPromptToClipboard: copyPromptToClipboard,
+                        modifyPromptWithOpenAIStream: modifyPromptWithOpenAIStream
+                    )
 
                     Spacer()
-                    // History section
+
                     if history.count > 1 {
-                        historySection
+                        HistorySectionView(
+                            history: history,
+                            showOlderVersions: $showOlderVersions,
+                            selectedHistoryVersion: $selectedHistoryVersion,
+                            isPreviewingOldVersion: $isPreviewingOldVersion,
+                            editablePrompt: $editablePrompt,
+                            copyPromptToClipboard: copyPromptToClipboard,
+                            deleteHistoryItem: { historyItemToDelete in
+                                modelContext.delete(historyItemToDelete) // Delete the object from the ModelContext
+                            }
+                        )
                     } else {
-                        noHistoryView
+                        NoHistoryView()
                     }
                 }
             }
@@ -82,232 +97,6 @@ struct PromptDetail: View {
         }
         .sheet(item: $selectedHistoryVersion) { version in
             versionDetailSheet(version)
-        }
-    }
-
-    private func latestVersionCard(_ latestHistory: PromptHistory) -> some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Header
-            HStack {
-                Text("Latest Version")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                Button {
-                    copyPromptToClipboard(latestHistory.prompt)
-                } label: {
-                    HStack {
-                        Image(systemName: "doc.on.doc")
-                        Text("Copy")
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.accentColor.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-
-            // Editor with the new button
-            ZStack(alignment: .bottomTrailing) {
-                NoScrollBarTextEditor(text: $editablePrompt, font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular), autoScroll: isGenerating)
-                    .frame(minHeight: 300)
-                    .padding(10)
-                    .background(Color(NSColor.textBackgroundColor))
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(borderColor, lineWidth: 1)
-                    )
-                    .onChange(of: editablePrompt) { newValue in
-                        if !isPreviewingOldVersion {
-                            latestHistory.prompt = newValue
-                            latestHistory.updatedAt = Date()
-                            try? modelContext.save()
-                        }
-                    }
-
-                if isCopySuccess {
-                    copiedSuccessMessage
-                }
-
-                if isGenerating {
-                    ProgressView()
-                        .scaleEffect(0.7)
-                        .padding(8)
-                        .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
-                        .cornerRadius(8)
-                        .padding([.bottom, .trailing], 40)
-                }
-
-                Button {
-                    Task { await modifyPromptWithOpenAIStream() }
-                } label: {
-                    Image(systemName: "wand.and.stars")
-                }
-                .padding(8)
-                .disabled(!settings.isTestPassed)
-            }
-            .background(Color(NSColor.textBackgroundColor))
-            .cornerRadius(12)
-            .padding(16)
-            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1) // Keep the shadow
-
-            // Metadata
-            metadataView(for: latestHistory)
-                .padding(.top, 8)
-        }.frame(maxWidth: .infinity)
-    }
-
-    private var historySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("History Versions")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                Button {
-                    withAnimation {
-                        showOlderVersions.toggle()
-                    }
-                } label: {
-                    HStack {
-                        Text(showOlderVersions ? "Hide" : "Show")
-                        Image(systemName: showOlderVersions ? "chevron.up" : "chevron.down")
-                    }
-                    .font(.subheadline)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-
-            if showOlderVersions {
-                LazyVStack(spacing: 10) {
-                    ForEach(history.dropFirst()) { oldHistory in
-                        historyItemView(for: oldHistory)
-                    }
-                }
-                .transition(.opacity)
-            }
-        }
-        .padding(16)
-        .background(cardBackground)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-        .frame(maxWidth: .infinity)
-    }
-
-    private var noHistoryView: some View {
-        Text("No history available for this prompt except the latest version.")
-            .font(.callout)
-            .foregroundColor(.secondary)
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .background(cardBackground)
-            .cornerRadius(12)
-    }
-
-    private func historyItemView(for history: PromptHistory) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Version \(history.version)")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-
-                Text(history.updatedAt, formatter: dateFormatter)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                Text(history.prompt)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-
-            Spacer()
-
-            HStack(spacing: 12) {
-                Button {
-                    isPreviewingOldVersion = true
-                    editablePrompt = history.prompt
-                } label: {
-                    Image(systemName: "eye")
-                        .foregroundColor(.accentColor)
-                }
-                .buttonStyle(PlainButtonStyle())
-
-                Button {
-                    selectedHistoryVersion = history
-                } label: {
-                    Image(systemName: "info.circle")
-                        .foregroundColor(.accentColor)
-                }
-                .buttonStyle(PlainButtonStyle())
-
-                Button {
-                    copyPromptToClipboard(history.prompt)
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                        .foregroundColor(.accentColor)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(12)
-        .background(Color(NSColor.alternatingContentBackgroundColors[history.version % 2]))
-        .cornerRadius(8)
-    }
-
-    private func metadataView(for itemHistory: PromptHistory) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 16) {
-                metadataItem(label: "Created", value: itemHistory.createdAt, formatter: dateFormatter)
-                metadataItem(label: "Updated", value: itemHistory.updatedAt, formatter: dateFormatter)
-                metadataItem(label: "Version", value: "\(itemHistory.version)")
-            }
-
-            if isPreviewingOldVersion {
-                HStack {
-                    Text("Previewing older version")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-
-                    Button("Return to latest") {
-                        isPreviewingOldVersion = false
-                        if let latest = history.first {
-                            editablePrompt = latest.prompt
-                        }
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .font(.caption)
-                }
-                .padding(.top, 4)
-            }
-        }
-    }
-
-    private func metadataItem(label: String, value: Date, formatter: DateFormatter) -> some View {
-        HStack(spacing: 4) {
-            Text("\(label):")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Text(value, formatter: formatter)
-                .font(.caption)
-                .foregroundColor(.primary)
-        }
-    }
-
-    private func metadataItem(label: String, value: String) -> some View {
-        HStack(spacing: 4) {
-            Text("\(label):")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Text(value)
-                .font(.caption)
-                .foregroundColor(.primary)
         }
     }
 
@@ -423,15 +212,17 @@ struct PromptDetail: View {
                 print("Error: Received status code \(statusCode)")
                 return
             }
-            
+
             let newHistory = PromptHistory(promptId: promptId, prompt: "")
+            let version = (history.first?.version ?? 0) + 1
+            
             newHistory.createdAt = Date()
             newHistory.updatedAt = Date()
-            newHistory.version = (history.last?.version ?? 0) + 1
-
+            newHistory.version = version
+            try? modelContext.insert(newHistory);
 
             var accumulatedResponse = ""
-            editablePrompt = ""
+            
             for try await line in asyncBytes.lines {
                 if line.hasPrefix("data: ") {
                     let jsonDataString = line.dropFirst(6).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -458,7 +249,6 @@ struct PromptDetail: View {
 
             if !accumulatedResponse.isEmpty {
                 newHistory.prompt = accumulatedResponse
-                try? modelContext.insert(newHistory)
                 try? modelContext.save()
             }
 
@@ -471,13 +261,6 @@ struct PromptDetail: View {
         }
     }
 }
-
-private let dateFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .short
-    return formatter
-}()
 
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
