@@ -1,12 +1,5 @@
-//
-//  HistorySectionView.swift
-//  prompthub
-//
-//  Created by leetao on 2025/3/16.
-//
-
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct HistorySectionView: View {
     let history: [PromptHistory]
@@ -17,6 +10,8 @@ struct HistorySectionView: View {
     let copyPromptToClipboard: (_ prompt: String) -> Void
     let deleteHistoryItem: (_ historyItem: PromptHistory) -> Void
     private let cardBackground = Color(NSColor.controlBackgroundColor)
+    @State private var showDeleteConfirmation: Bool = false
+    @State private var itemToDelete: PromptHistory?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -55,6 +50,21 @@ struct HistorySectionView: View {
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
         .frame(maxWidth: .infinity)
+        .alert(isPresented: $showDeleteConfirmation) {
+            Alert(
+                title: Text("Confirm Delete"),
+                message: itemToDelete.map { Text("Are you sure you want to delete version \($0.version)?") },
+                primaryButton: .destructive(Text("Delete")) {
+                    if let itemToDelete = itemToDelete {
+                        deleteHistoryItem(itemToDelete)
+                    }
+                    self.itemToDelete = nil
+                },
+                secondaryButton: .cancel {
+                    self.itemToDelete = nil
+                }
+            )
+        }
     }
 
     private func historyItemView(for history: PromptHistory) -> some View {
@@ -101,9 +111,10 @@ struct HistorySectionView: View {
                         .foregroundColor(.accentColor)
                 }
                 .buttonStyle(PlainButtonStyle())
-                
+
                 Button {
-                    deleteHistoryItem(history)
+                    itemToDelete = history
+                    showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
                         .foregroundColor(.red)
@@ -112,7 +123,7 @@ struct HistorySectionView: View {
             }
         }
         .padding(12)
-        .background(Color(NSColor.systemGray.withAlphaComponent(0.1))) 
+        .background(Color(NSColor.systemGray.withAlphaComponent(0.1)))
         .cornerRadius(8)
     }
 }
