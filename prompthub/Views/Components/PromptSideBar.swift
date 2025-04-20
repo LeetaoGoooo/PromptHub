@@ -22,8 +22,8 @@ struct PromptSideBar: View {
     @Binding var promptSelection: UUID?
     @Binding var isPresentingNewPromptDialog: Bool
     
-    @State private var showingSettings = false
-
+    @Environment(\.openWindow) var openWindow
+    
     var body: some View {
         VStack {
             List(selection: $promptSelection) {
@@ -65,7 +65,7 @@ struct PromptSideBar: View {
                 Spacer()
                 
                 Button {
-                    showingSettings.toggle()
+                    openWindow(id: "settings-window")
                 } label: {
                     Image(systemName: "gear")
                 }.buttonStyle(.plain)
@@ -80,10 +80,6 @@ struct PromptSideBar: View {
             if let prompt = promptToEditInSheet {
                 EditPromptSheet(prompt: prompt, isPresented: $isEditingPromptSheetPresented)
             }
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView(isPresented: $showingSettings, isComeFromSettingPage: false)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .confirmationDialog( // Confirmation for delete
             "Are you sure you want to delete this prompt?",

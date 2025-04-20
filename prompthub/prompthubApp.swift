@@ -24,7 +24,7 @@ struct prompthubApp: App {
         }
     }()
     @StateObject private var appSettings = AppSettings()
-    
+    @State private var showingSettings = false
 
     var body: some Scene {
         WindowGroup {
@@ -44,9 +44,16 @@ struct prompthubApp: App {
         }
         .modelContainer(sharedModelContainer)
         
-        Settings {
-            SettingsView(isPresented: .constant(false))
+        Window("Settings", id: "settings-window") {
+            SettingsView()
                 .environmentObject(appSettings)
+                .frame(minWidth: 550, minHeight: 450)
+        }
+        #if os(macOS)
+        .defaultSize(width: 600, height: 450)
+        #endif
+        .commands {
+            CommandGroup(replacing: .newItem) { }
         }
     }
 }
