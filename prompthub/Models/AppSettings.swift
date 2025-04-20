@@ -38,4 +38,7 @@ class AppSettings: ObservableObject {
     
     @AppStorage("isTestPassed")
     public var isTestPassed: Bool = false;
+    
+    @AppStorage("model")
+    public var model: String = OpenAIModels.first!;
 }

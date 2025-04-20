@@ -18,7 +18,7 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationSplitView {
             List(SettingItem.allCases) { setting in // Sidebar List
                 NavigationLink(
                     destination: settingView(for: setting), // Content view based on selected setting
@@ -28,7 +28,7 @@ struct SettingsView: View {
                     Text(setting.rawValue)
                 }
             }
-            .listStyle(SidebarListStyle())
+        } detail: {
             settingView(for: selectedSetting ?? .general)
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -196,7 +196,7 @@ struct PromptDetail: View {
         request.setValue("Bearer \(settings.openaiApiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try? JSONSerialization.data(withJSONObject: [
-            "model": "gpt-3.5-turbo", // Or another suitable model
+            "model": settings.model, 
             "messages": [
                 ["role": "system", "content": systemPrompt],
                 ["role": "user", "content": userPrompt]

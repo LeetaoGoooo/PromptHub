@@ -37,13 +37,6 @@ struct AboutContentView: View {
                 Text("GitHub")
             })
 
-            Link(destination:
-                URL(string: "https://ifdian.net/a/leetao")!,
-                label: {
-                    Text("Donation")
-                })
-                .buttonStyle(.bordered)
-                .padding(3)
 
             HStack {
                 Text("Join:")

@@ -46,7 +46,7 @@ struct GeneralView: View {
                             updateTestButtonStatus()
                         }
 
-                    Text("Base URL (OpenAI API)") //  更明确的 Base URL 描述
+                    Text("Base URL (OpenAI API)")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                     TextField("Enter your Base URL", text: settings.$baseURL)
@@ -56,7 +56,19 @@ struct GeneralView: View {
                             updateTestButtonStatus()
                         }
 
-
+                    Text("Model")
+                       .font(.subheadline)
+                        .foregroundColor(.gray)
+                     
+                    Picker("", selection: settings.$model) {
+                        ForEach(OpenAIModels, id: \.self) { model in
+                            Text(model).tag(model)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 5)
+                        
                     Text("Template")
                         .font(.subheadline)
                         .foregroundColor(.gray)

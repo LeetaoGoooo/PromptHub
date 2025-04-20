@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "鲸鱼 2.png",
+      "filename" : "icon-32@2x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "鲸鱼.png",
+      "filename" : "icon-256@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "鲸鱼 1.png",
+      "filename" : "icon-512@2x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
