@@ -40,7 +40,7 @@ struct prompthubApp: App {
             Image(nsImage: NSImage(named: "whale")!)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 16, height: 16)
+                .frame(width: 8, height: 8)
         }
         .modelContainer(sharedModelContainer)
         
@@ -55,5 +55,18 @@ struct prompthubApp: App {
         .commands {
             CommandGroup(replacing: .newItem) { }
         }
+        
+        #if os(macOS)
+        WindowGroup("Image Viewer", for: Data.self) { $data in
+            if let imageData = data {
+                ImageViewerView(imageData: imageData)
+                    .frame(minWidth: 200, minHeight: 200)
+            } else {
+                Text("No image data provided to window.")
+                    .frame(width: 300, height: 200)
+            }
+        }
+        .windowResizability(.contentSize)
+        #endif
     }
 }

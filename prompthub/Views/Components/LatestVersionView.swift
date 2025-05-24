@@ -6,15 +6,21 @@
 //
 
 import SwiftUI
+import AlertToast
 
 struct LatestVersionView: View {
     let latestHistory: PromptHistory
+    let prompt: Prompt
     @Binding var editablePrompt: String
     @Binding var isCopySuccess: Bool
     @Binding var isGenerating: Bool
     @Binding var isPreviewingOldVersion: Bool
     @EnvironmentObject var settings: AppSettings
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) var openURL
+    @State private var showToast = false
+    @State private var toastTitle = ""
+    
     let copyPromptToClipboard: (_ prompt: String) -> Void
     let modifyPromptWithOpenAIStream: () async -> Void
     private let borderColor = Color(NSColor.separatorColor)
@@ -28,19 +34,51 @@ struct LatestVersionView: View {
 
                 Spacer()
 
-                Button {
-                    copyPromptToClipboard(latestHistory.prompt)
-                } label: {
-                    HStack {
-                        Image(systemName: "doc.on.doc")
-                        Text("Copy")
+
+                HStack(alignment:.bottom) {
+                    Spacer()
+                    
+                    if let imageData = prompt.externalSource?.first {
+                        HoverImageButton(imageData: imageData)
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.accentColor.opacity(0.1))
-                    .cornerRadius(8)
+                    
+                    if let urlValue = prompt.link {
+                      
+                        Button {
+                            if let url = URL(string: urlValue) {
+                                openURL(url) { accepted in
+                                    if !accepted {
+                                        showToastMsg(msg:"can't open: \(urlValue)")
+                                    }
+                                }
+                            } else {
+                                showToastMsg(msg:"Invalid Url: \(urlValue)")
+                            
+                            }
+                        } label: {
+                            Image(systemName: "link")
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.accentColor.opacity(0.1))
+                            .cornerRadius(8)
+                        }
+                        .help(Text(urlValue))
+                        .buttonStyle(PlainButtonStyle())
+                  
+                    }
+
+                    Button {
+                        copyPromptToClipboard(latestHistory.prompt)
+                    } label: {
+                         Image(systemName: "doc.on.doc")
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.accentColor.opacity(0.1))
+                        .cornerRadius(8)
+                        .help("Copy")
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
             }
 
             ZStack(alignment: .bottomTrailing) {
@@ -90,6 +128,9 @@ struct LatestVersionView: View {
             metadataView(for: latestHistory)
                 .padding(.top, 8)
         }.frame(maxWidth: .infinity)
+        .toast(isPresenting: $showToast) {
+            AlertToast(type: .error(Color.red), title: toastTitle)
+        }
     }
 
     private var copiedSuccessMessage: some View {
@@ -149,5 +190,11 @@ struct LatestVersionView: View {
                 .font(.caption)
                 .foregroundColor(.primary)
         }
+    }
+    
+    private func showToastMsg(msg: String) {
+        print(msg)
+        showToast.toggle()
+        toastTitle = msg
     }
 }

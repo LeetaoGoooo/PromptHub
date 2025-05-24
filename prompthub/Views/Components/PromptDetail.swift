@@ -11,7 +11,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct PromptDetail: View {
-    @Binding var promptId: UUID
+    @Bindable var prompt:Prompt
     @Environment(\.modelContext) private var modelContext
     @Query var history: [PromptHistory]
     @State private var editablePrompt: String = ""
@@ -26,9 +26,10 @@ struct PromptDetail: View {
     private let cardBackground = Color(NSColor.controlBackgroundColor)
     private let borderColor = Color(NSColor.separatorColor)
 
-    init(promptId: Binding<UUID>) {
-        _promptId = promptId
-        let currentPromptId = promptId.wrappedValue
+    init(prompt: Prompt) {
+        self.prompt = prompt
+    
+        let currentPromptId = prompt.id
 
         _history = Query(filter: #Predicate<PromptHistory> { history in
             history.promptId == currentPromptId
@@ -55,6 +56,7 @@ struct PromptDetail: View {
                 if let latestHistory = history.first {
                     LatestVersionView(
                         latestHistory: latestHistory,
+                        prompt:prompt,
                         editablePrompt: $editablePrompt,
                         isCopySuccess: $isCopySuccess,
                         isGenerating: $isGenerating,
@@ -213,7 +215,7 @@ struct PromptDetail: View {
                 return
             }
 
-            let newHistory = PromptHistory(promptId: promptId, prompt: "")
+            let newHistory = PromptHistory(promptId: prompt.id, prompt: "")
             let version = (history.first?.version ?? 0) + 1
             
             newHistory.createdAt = Date()
@@ -262,34 +264,34 @@ struct PromptDetail: View {
     }
 }
 
-#Preview {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: PromptHistory.self, configurations: config)
-
-    // Create a sample prompt ID
-    let promptId = UUID()
-
-    // Create sample history entries
-    let sampleHistory1 = PromptHistory(
-        promptId: promptId,
-        prompt: "This is the latest version of the prompt with some edits and improvements.",
-        version: 1
-    )
-
-    let sampleHistory2 = PromptHistory(
-        promptId: promptId,
-        prompt: "This is the original version of the prompt.",
-        createdAt: Date().addingTimeInterval(-86400), // 1 day ago
-        updatedAt: Date().addingTimeInterval(-86400),
-        version: 1
-    )
-
-    // Add the sample data to the container
-    let context = ModelContext(container)
-    context.insert(sampleHistory1)
-    context.insert(sampleHistory2)
-
-    // Return the view with the sample data
-    return PromptDetail(promptId: .constant(promptId))
-        .environment(\.modelContext, context)
-}
+//#Preview {
+//    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+//    let container = try! ModelContainer(for: PromptHistory.self, configurations: config)
+//
+//    // Create a sample prompt ID
+//    let promptId = UUID()
+//
+//    // Create sample history entries
+//    let sampleHistory1 = PromptHistory(
+//        promptId: promptId,
+//        prompt: "This is the latest version of the prompt with some edits and improvements.",
+//        version: 1
+//    )
+//
+//    let sampleHistory2 = PromptHistory(
+//        promptId: promptId,
+//        prompt: "This is the original version of the prompt.",
+//        createdAt: Date().addingTimeInterval(-86400), // 1 day ago
+//        updatedAt: Date().addingTimeInterval(-86400),
+//        version: 1
+//    )
+//
+//    // Add the sample data to the container
+//    let context = ModelContext(container)
+//    context.insert(sampleHistory1)
+//    context.insert(sampleHistory2)
+//
+//    // Return the view with the sample data
+//    return PromptDetail(prompt: .constant(Prompt(id:UUID(), name: "测绘")))
+//        .environment(\.modelContext, context)
+//}

@@ -12,38 +12,31 @@ struct PromptSideBar: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Prompt.name) var prompts: [Prompt]
 
-    @State private var isEditingMode: Bool = false
-    @State private var isEditingPromptSheetPresented: Bool = false
-    @State private var promptToEditInSheet: Prompt?
+    @Binding var isEditingPromptSheetPresented: Bool
     @State private var promptToDelete: Prompt?
-    @State private var editingPromptIds: Set<UUID> = []
 
     @State private var searchText: String = ""
-    @Binding var promptSelection: UUID?
+    @Binding var promptSelection: Prompt?
     @Binding var isPresentingNewPromptDialog: Bool
     
     @Environment(\.openWindow) var openWindow
+    
     
     var body: some View {
         VStack {
             List(selection: $promptSelection) {
                 ForEach(filteredPrompts) { prompt in
-                    if editingPromptIds.contains(prompt.id) {
-                        promptNameTextField(for: prompt)
-                    } else {
-                        Text(prompt.name)
-                            .tag(prompt.persistentModelID)
-                            .contextMenu {
-                                Button("Edit") {
-                                    editingPromptIds.insert(prompt.id)
-                                }
-                                .frame(width: 100)
-
-                                Button("Delete") {
-                                    promptToDelete = prompt
-                                }.frame(width: 100)
+                    Text(prompt.name)
+                        .contextMenu {
+                            Button("Edit") {
+                                  self.isEditingPromptSheetPresented = true
                             }
-                    }
+                            .frame(width: 100)
+
+                            Button("Delete") {
+                                promptToDelete = prompt
+                            }.frame(width: 100)
+                        }.tag(prompt)
                 }
                 .onDelete(perform: deletePrompts)
             }
@@ -76,11 +69,6 @@ struct PromptSideBar: View {
             .padding()
         }
         .searchable(text: $searchText, prompt: "Seach Prompt...")
-        .sheet(isPresented: $isEditingPromptSheetPresented) {
-            if let prompt = promptToEditInSheet {
-                EditPromptSheet(prompt: prompt, isPresented: $isEditingPromptSheetPresented)
-            }
-        }
         .confirmationDialog( // Confirmation for delete
             "Are you sure you want to delete this prompt?",
             isPresented: isDeleteConfirmationPresented,
@@ -121,29 +109,6 @@ struct PromptSideBar: View {
         }
     }
 
-    private func promptNameTextField(for prompt: Prompt) -> some View {
-        TextField("Prompt Name", text: promptNameBinding(for: prompt), onCommit: {
-            editingPromptIds.remove(prompt.id)
-        })
-        .font(.body)
-        .onSubmit {
-            editingPromptIds.remove(prompt.id)
-        }
-    }
-
-    private func promptNameBinding(for prompt: Prompt) -> Binding<String> {
-        Binding<String>(
-            get: { prompt.name },
-            set: { newName in
-                prompt.name = newName
-                do {
-                    try modelContext.save()
-                } catch {
-                    print("Error saving edited prompt: \(error)")
-                }
-            }
-        )
-    }
 
     private func deletePrompt(_ prompt: Prompt) {
         let promptId  = prompt.id;
@@ -173,15 +138,5 @@ struct PromptSideBar: View {
                 prompt.name.localizedCaseInsensitiveContains(searchText)
             }
         }
-    }
-}
-
-struct PromptSideBar_Previews: PreviewProvider {
-    static var previews: some View {
-        @State var promptSelection: UUID? = nil
-        @State var isPresentingNewPromptDialog = false
-
-        return PromptSideBar(promptSelection: $promptSelection, isPresentingNewPromptDialog: $isPresentingNewPromptDialog)
-            .modelContainer(for: [Prompt.self, PromptHistory.self], inMemory: true)
     }
 }
