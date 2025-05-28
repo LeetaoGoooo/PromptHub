@@ -22,6 +22,7 @@ struct LatestVersionView: View {
     @State private var toastTitle = ""
     
     let copyPromptToClipboard: (_ prompt: String) -> Void
+    let copySharedLinkToClipboard: (_ url: URL) -> Void
     let modifyPromptWithOpenAIStream: () async -> Void
     private let borderColor = Color(NSColor.separatorColor)
 
@@ -56,16 +57,27 @@ struct LatestVersionView: View {
                             
                             }
                         } label: {
-                            Image(systemName: "link")
+                            Image(systemName: "globe")
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(Color.accentColor.opacity(0.1))
                             .cornerRadius(8)
                         }
-                        .help(Text(urlValue))
+                        .help("Origin:\(urlValue)")
                         .buttonStyle(PlainButtonStyle())
                   
                     }
+                    
+                    Button {
+                        shareCreation()
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.accentColor.opacity(0.1))
+                        .cornerRadius(8)
+                    }   .help("Share")
+                        .buttonStyle(PlainButtonStyle())
 
                     Button {
                         copyPromptToClipboard(latestHistory.prompt)
@@ -78,6 +90,7 @@ struct LatestVersionView: View {
                         .help("Copy")
                     }
                     .buttonStyle(PlainButtonStyle())
+                    
                 }
             }
 
@@ -196,5 +209,25 @@ struct LatestVersionView: View {
         print(msg)
         showToast.toggle()
         toastTitle = msg
+    }
+    
+    private func shareCreation() {
+        let sharedItem = SharedCreation(name: prompt.name,  prompt: latestHistory.prompt, externalSource: prompt.externalSource)
+        modelContext.insert(sharedItem)
+        
+        do {
+            try modelContext.save()
+        } catch {
+            showToastMsg(msg:"Error saving shared item: \(error)")
+        }
+        
+        let urlScheme = "sharedprompt" // Must match what's in Info.plist
+        guard let shareURL = URL(string: "\(urlScheme)://creation/\(sharedItem.id.uuidString)") else {
+            showToastMsg(msg:"Could not create share URL")
+            return
+        }
+        
+        copySharedLinkToClipboard(shareURL)
+        
     }
 }

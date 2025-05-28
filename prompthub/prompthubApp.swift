@@ -11,14 +11,27 @@ import SwiftUI
 @main
 struct prompthubApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
+        
+        let publicConfig = ModelConfiguration(
+            "PublicStore",
+            schema: Schema([SharedCreation.self]),
+            cloudKitDatabase: .automatic,
+        )
+
+        let privateConfig = ModelConfiguration(
+            "PrivateStore",
+            schema: Schema([ Prompt.self, PromptHistory.self]),
+            cloudKitDatabase: .none,
+        )
+        
+        let schemas = Schema([
             Prompt.self,
             PromptHistory.self,
+            SharedCreation.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schemas, configurations: [publicConfig, privateConfig])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

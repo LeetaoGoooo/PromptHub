@@ -49,6 +49,20 @@ struct PromptDetail: View {
             }
         }
     }
+    
+    private func copySharedLinkToClipboard(_ url: URL) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(url.absoluteString, forType: .string)
+        withAnimation {
+            isCopySuccess = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation {
+                isCopySuccess = false
+            }
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -62,7 +76,7 @@ struct PromptDetail: View {
                         isGenerating: $isGenerating,
                         isPreviewingOldVersion: $isPreviewingOldVersion,
                         copyPromptToClipboard: copyPromptToClipboard,
-                        modifyPromptWithOpenAIStream: modifyPromptWithOpenAIStream
+                        copySharedLinkToClipboard: copySharedLinkToClipboard, modifyPromptWithOpenAIStream: modifyPromptWithOpenAIStream
                     )
 
                     Spacer()

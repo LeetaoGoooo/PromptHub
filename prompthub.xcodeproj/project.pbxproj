@@ -57,12 +57,20 @@
 			);
 			target = 0E6CAD502D72E6D0001FD9B3 /* prompthubUITests */;
 		};
+		0EAE1D802DE74DEB00641DC9 /* Exceptions for "prompthub" folder in "prompthub" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0E6CAD332D72E6CE001FD9B3 /* prompthub */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0E6CAD362D72E6CE001FD9B3 /* prompthub */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				0EAE1D802DE74DEB00641DC9 /* Exceptions for "prompthub" folder in "prompthub" target */,
 				0E6FDD652D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubTests" target */,
 				0E6FDD662D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubUITests" target */,
 			);
@@ -446,8 +454,10 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = prompthub/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PromptHub;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -479,8 +489,10 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = prompthub/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PromptHub;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
