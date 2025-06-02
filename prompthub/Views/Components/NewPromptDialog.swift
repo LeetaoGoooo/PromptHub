@@ -20,6 +20,7 @@ struct NewPromptDialog: View {
     @State private var selectedImage: NSImage?
     @State private var showToast = false
     @State private var toastTitle = ""
+    @State private var desc:String = ""
 
     @Binding var isPresented: Bool // Binding to control the dialog's presentation
 
@@ -45,6 +46,16 @@ struct NewPromptDialog: View {
 
                     TextField("Name", text: $promptName)
                         .padding(8) // Light gray background
+                        .cornerRadius(6)
+                }
+                .padding(.horizontal)
+                
+                VStack(alignment: .leading) {
+                    Text("Description")
+                        .font(.subheadline)
+
+                    TextField("Description", text: $desc)
+                        .padding(8)
                         .cornerRadius(6)
                 }
                 .padding(.horizontal)
@@ -141,9 +152,24 @@ struct NewPromptDialog: View {
             
             let selectImageData: Data? = selectedImage?.png
             let externalSource: [Data] = selectImageData.map { [$0] } ?? []
-            let newPrompt = Prompt(name: promptName, link: link, externalSource: externalSource)
+            let promptName = promptName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let promptDesc = desc.trimmingCharacters(in: .whitespacesAndNewlines)
+            let link = link.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if promptName.isEmpty {
+                showToastMsg(msg: "Name can't be empty")
+                return
+            }
+            
+            let newPrompt = Prompt(name: promptName, desc: promptDesc.isEmpty ? nil : promptDesc , link: link.isEmpty ? nil: link, externalSource: externalSource)
             modelContext.insert(newPrompt)
 
+            let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if prompt.isEmpty {
+                showToastMsg(msg: "Prompt can't be empty")
+                return
+            }
             
             let newPromptHistory = PromptHistory(promptId: newPrompt.id, prompt: prompt)
             modelContext.insert(newPromptHistory)

@@ -19,7 +19,6 @@ struct prompthubApp: App {
         )
 
         let privateConfig = ModelConfiguration(
-            "PrivateStore",
             schema: Schema([ Prompt.self, PromptHistory.self]),
             cloudKitDatabase: .none,
         )
@@ -37,12 +36,26 @@ struct prompthubApp: App {
         }
     }()
     @StateObject private var appSettings = AppSettings()
-    @State private var showingSettings = false
+    @StateObject private var deepLinkManager = DeepLinkManager()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(appSettings)
+                .environmentObject(deepLinkManager)
+                .onOpenURL { url in
+                    Task {
+                        deepLinkManager.handleURL(url, modelContainer: sharedModelContainer)
+                    }
+                }
+                .alert("Import Status", isPresented: .init(
+                    get: { deepLinkManager.importStatusMessage != nil },
+                    set: { _ in deepLinkManager.importStatusMessage = nil }
+                ), actions: {
+                    Button("OK") { }
+                }, message: {
+                    Text(deepLinkManager.importStatusMessage ?? "Unknown status.")
+                })
         }
         .modelContainer(sharedModelContainer)
 

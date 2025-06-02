@@ -41,4 +41,7 @@ class AppSettings: ObservableObject {
     
     @AppStorage("model")
     public var model: String = OpenAIModels.first!;
+    
+    @AppStorage("lastShownWhatsNewVersion")
+    public var lastShownWhatsNewVersion: String = "" 
 }

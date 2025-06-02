@@ -58,6 +58,13 @@ struct PromptSideBar: View {
                 Spacer()
                 
                 Button {
+                    promptSelection = nil
+                } label: {
+                    Image(systemName: "lightbulb.max")
+                }.buttonStyle(.plain)
+                    .frame(width: 16, height: 16)
+                
+                Button {
                     openWindow(id: "settings-window")
                 } label: {
                     Image(systemName: "gear")

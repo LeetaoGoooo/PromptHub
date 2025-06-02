@@ -12,14 +12,16 @@ import SwiftData
 class Prompt {
     var id: UUID;
     var name: String;
+    var desc: String?;
     var link:String?;
     @Attribute(.externalStorage)
     var externalSource: [Data]?
     
-    init(id: UUID = UUID(), name: String, link: String? = nil, externalSource: [Data]? = nil) {
+    init(id: UUID = UUID(), name: String,desc:String? = nil, link: String? = nil, externalSource: [Data]? = nil) {
         self.id = id;
         self.name = name;
         self.link = link;
+        self.desc = desc;
         self.externalSource = externalSource;
     }
     

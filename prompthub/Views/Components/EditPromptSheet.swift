@@ -15,6 +15,7 @@ struct EditPromptSheet: View {
     @Binding var isPresented: Bool
     @State private var editedName: String
     @State private var editedLink: String
+    @State private var editedDesc: String
     @State private var selectedImage: NSImage?
     @State private var showingFileImporter = false
     @State private var showToast = false
@@ -27,6 +28,7 @@ struct EditPromptSheet: View {
         _isPresented = isPresented
         _editedName = State(initialValue: prompt.name)
         _editedLink = State(initialValue: prompt.link ?? "")
+        _editedDesc = State(initialValue: prompt.desc ?? "")
         
         if let imageData = prompt.externalSource?.first {
             _selectedImage = State(initialValue: NSImage(data: imageData))
@@ -42,7 +44,14 @@ struct EditPromptSheet: View {
                     .font(.subheadline)
                 TextField("Prompt Name", text: $editedName)
             }.padding(.horizontal)
-                
+            
+            VStack(alignment: .leading) {
+                Text("Description")
+                    .font(.subheadline)
+                TextField("Description", text: $editedDesc)
+            }.padding(.horizontal)
+            
+            
             VStack(alignment: .leading) {
                 Text("Source")
                     .font(.subheadline)
@@ -85,7 +94,7 @@ struct EditPromptSheet: View {
                 }
             }
         }
-        .padding() // 给整个表单内容添加一些内边距
+        .padding()
         .frame(minWidth: 400, idealWidth: 500, maxWidth: .infinity,
                minHeight: 300, idealHeight: 450, maxHeight: .infinity)
         .navigationTitle("Edit Prompt")
@@ -113,6 +122,7 @@ struct EditPromptSheet: View {
             // Update prompt properties
             prompt.name = editedName
             prompt.link = editedLink
+            prompt.desc = editedDesc.isEmpty ? nil : editedDesc.trimmingCharacters(in: .whitespacesAndNewlines)
             
             // Update image data
             if let imageData = selectedImage?.png {

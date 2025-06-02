@@ -15,7 +15,6 @@ struct PromptDetail: View {
     @Environment(\.modelContext) private var modelContext
     @Query var history: [PromptHistory]
     @State private var editablePrompt: String = ""
-    @State private var isCopySuccess: Bool = false
     @State private var showOlderVersions: Bool = false
     @State private var selectedHistoryVersion: PromptHistory?
     @State private var isPreviewingOldVersion: Bool = false
@@ -36,32 +35,15 @@ struct PromptDetail: View {
         }, sort: [SortDescriptor(\.version, order: .reverse)])
     }
 
-    private func copyPromptToClipboard(_ prompt: String) {
+    private func copyPromptToClipboard(_ prompt: String) -> Bool {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(prompt, forType: .string)
-        withAnimation {
-            isCopySuccess = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation {
-                isCopySuccess = false
-            }
-        }
+        return NSPasteboard.general.setString(prompt, forType: .string)
     }
     
-    private func copySharedLinkToClipboard(_ url: URL) {
+    private func copySharedLinkToClipboard(_ url: URL) -> Bool {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(url.absoluteString, forType: .string)
-        withAnimation {
-            isCopySuccess = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation {
-                isCopySuccess = false
-            }
-        }
+        return NSPasteboard.general.setString(url.absoluteString, forType: .string)
+       
     }
 
     var body: some View {
@@ -72,7 +54,6 @@ struct PromptDetail: View {
                         latestHistory: latestHistory,
                         prompt:prompt,
                         editablePrompt: $editablePrompt,
-                        isCopySuccess: $isCopySuccess,
                         isGenerating: $isGenerating,
                         isPreviewingOldVersion: $isPreviewingOldVersion,
                         copyPromptToClipboard: copyPromptToClipboard,

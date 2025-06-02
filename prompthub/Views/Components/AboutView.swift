@@ -41,7 +41,7 @@ struct AboutContentView: View {
             HStack {
                 Text("Join:")
                     .font(.system(size: 15))
-                Link(destination: URL(string: "https://t.me/leetao_space")!, label: {
+                Link(destination: URL(string: "https://t.me/prompt_box")!, label: {
                     Image("telegram")
                         .resizable()
                         .scaledToFit()

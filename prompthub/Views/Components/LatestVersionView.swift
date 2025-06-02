@@ -12,7 +12,6 @@ struct LatestVersionView: View {
     let latestHistory: PromptHistory
     let prompt: Prompt
     @Binding var editablePrompt: String
-    @Binding var isCopySuccess: Bool
     @Binding var isGenerating: Bool
     @Binding var isPreviewingOldVersion: Bool
     @EnvironmentObject var settings: AppSettings
@@ -20,19 +19,28 @@ struct LatestVersionView: View {
     @Environment(\.openURL) var openURL
     @State private var showToast = false
     @State private var toastTitle = ""
+    @State private var toastType:  AlertToast.AlertType  = .regular
     
-    let copyPromptToClipboard: (_ prompt: String) -> Void
-    let copySharedLinkToClipboard: (_ url: URL) -> Void
+    let copyPromptToClipboard: (_ prompt: String) -> Bool
+    let copySharedLinkToClipboard: (_ url: URL) -> Bool
     let modifyPromptWithOpenAIStream: () async -> Void
     private let borderColor = Color(NSColor.separatorColor)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
-                Text("Latest Version")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-
+                VStack(alignment: .leading){
+                    Text(prompt.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    if prompt.desc != nil {
+                        
+                        Text(prompt.desc!)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .help(prompt.desc!)
+                    }
+                }
                 Spacer()
 
 
@@ -63,7 +71,7 @@ struct LatestVersionView: View {
                             .background(Color.accentColor.opacity(0.1))
                             .cornerRadius(8)
                         }
-                        .help("Origin:\(urlValue)")
+                        .help("Origin")
                         .buttonStyle(PlainButtonStyle())
                   
                     }
@@ -80,7 +88,12 @@ struct LatestVersionView: View {
                         .buttonStyle(PlainButtonStyle())
 
                     Button {
-                        copyPromptToClipboard(latestHistory.prompt)
+                        let success = copyPromptToClipboard(latestHistory.prompt)
+                        if (success) {
+                            showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
+                        } else {
+                            showToastMsg(msg: "Copy Prompt Failed", alertType: .error(Color.red))
+                        }
                     } label: {
                          Image(systemName: "doc.on.doc")
                         .padding(.horizontal, 10)
@@ -112,10 +125,6 @@ struct LatestVersionView: View {
                         }
                     }
 
-                if isCopySuccess {
-                    copiedSuccessMessage
-                }
-
                 if isGenerating {
                     ProgressView()
                         .scaleEffect(0.7)
@@ -142,20 +151,10 @@ struct LatestVersionView: View {
                 .padding(.top, 8)
         }.frame(maxWidth: .infinity)
         .toast(isPresenting: $showToast) {
-            AlertToast(type: .error(Color.red), title: toastTitle)
+            AlertToast(type:  toastType, title: toastTitle)
         }
     }
 
-    private var copiedSuccessMessage: some View {
-        Label("Copied!", systemImage: "checkmark.circle.fill")
-            .padding(8)
-            .background(Color.accentColor)
-            .foregroundColor(.white)
-            .cornerRadius(8)
-            .shadow(radius: 2)
-            .padding(8)
-            .transition(.scale.combined(with: .opacity))
-    }
 
     private func metadataView(for itemHistory: PromptHistory) -> some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -205,14 +204,16 @@ struct LatestVersionView: View {
         }
     }
     
-    private func showToastMsg(msg: String) {
+    private func showToastMsg(msg: String, alertType:AlertToast.AlertType = .error(Color.red)) {
         print(msg)
         showToast.toggle()
         toastTitle = msg
+        toastType = alertType
     }
     
     private func shareCreation() {
-        let sharedItem = SharedCreation(name: prompt.name,  prompt: latestHistory.prompt, externalSource: prompt.externalSource)
+        // TODO
+        let sharedItem = SharedCreation(name: prompt.name,  prompt: latestHistory.prompt, desc: prompt.desc, externalSource: prompt.externalSource)
         modelContext.insert(sharedItem)
         
         do {
@@ -221,13 +222,18 @@ struct LatestVersionView: View {
             showToastMsg(msg:"Error saving shared item: \(error)")
         }
         
-        let urlScheme = "sharedprompt" // Must match what's in Info.plist
+        let urlScheme = "sharedprompt"
         guard let shareURL = URL(string: "\(urlScheme)://creation/\(sharedItem.id.uuidString)") else {
             showToastMsg(msg:"Could not create share URL")
             return
         }
         
-        copySharedLinkToClipboard(shareURL)
+       let success = copySharedLinkToClipboard(shareURL)
+        if (success) {
+            showToastMsg(msg: "Share Link With Your Friends Now", alertType: .complete(Color.green))
+        } else {
+            showToastMsg(msg: "Create Share Link Failed", alertType: .error(Color.red))
+        }
         
     }
 }

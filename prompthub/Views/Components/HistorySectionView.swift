@@ -1,4 +1,5 @@
 import AppKit
+import AlertToast
 import SwiftUI
 
 struct HistorySectionView: View {
@@ -7,11 +8,14 @@ struct HistorySectionView: View {
     @Binding var selectedHistoryVersion: PromptHistory?
     @Binding var isPreviewingOldVersion: Bool
     @Binding var editablePrompt: String
-    let copyPromptToClipboard: (_ prompt: String) -> Void
+    let copyPromptToClipboard: (_ prompt: String) -> Bool
     let deleteHistoryItem: (_ historyItem: PromptHistory) -> Void
     private let cardBackground = Color(NSColor.controlBackgroundColor)
     @State private var showDeleteConfirmation: Bool = false
     @State private var itemToDelete: PromptHistory?
+    @State private var showToast = false
+    @State private var toastTitle = ""
+    @State private var toastType:  AlertToast.AlertType  = .regular
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -105,7 +109,12 @@ struct HistorySectionView: View {
                 .buttonStyle(PlainButtonStyle())
 
                 Button {
-                    copyPromptToClipboard(history.prompt)
+                    let success = copyPromptToClipboard(history.prompt)
+                    if (success) {
+                        showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
+                    } else {
+                        showToastMsg(msg: "Copy Prompt Failed", alertType: .error(Color.red))
+                    }
                 } label: {
                     Image(systemName: "doc.on.doc")
                         .foregroundColor(.accentColor)
@@ -125,5 +134,15 @@ struct HistorySectionView: View {
         .padding(12)
         .background(Color(NSColor.systemGray.withAlphaComponent(0.1)))
         .cornerRadius(8)
+        .toast(isPresenting: $showToast) {
+            AlertToast(type:  toastType, title: toastTitle)
+        }
+    }
+    
+    private func showToastMsg(msg: String, alertType:AlertToast.AlertType = .error(Color.red)) {
+        print(msg)
+        showToast.toggle()
+        toastTitle = msg
+        toastType = alertType
     }
 }
