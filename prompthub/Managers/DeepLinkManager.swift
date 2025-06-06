@@ -31,7 +31,7 @@ class DeepLinkManager: ObservableObject {
     let urlScheme = "sharedprompt"
 
     @MainActor
-    func handleURL(_ url: URL, modelContainer: ModelContainer) {
+    func handleURL(_ url: URL, modelContainer: ModelContainer) async {
         logger.info("Handling URL: \(url.absoluteString)")
 
         guard url.scheme == urlScheme else {
@@ -82,28 +82,8 @@ class DeepLinkManager: ObservableObject {
 
         do {
   
-            let predicate = #Predicate<SharedCreation> { $0.id == sharedItemID }
-            let descriptor = FetchDescriptor(predicate: predicate)
-            
-            logger.debug("Fetching SharedCreation with ID: \(sharedItemID.uuidString)")
-            guard let sharedItem = try context.fetch(descriptor).first else {
-                logger.warning("SharedCreation with ID \(sharedItemID.uuidString) not found in public store.")
-                self.activeTarget = .showError(message: "Shared item not found.")
-                self.importStatusMessage = "Shared item not found."
-                return
-            }
-            logger.info("Found SharedCreation: \(sharedItem.name)")
-
-            let (newPrompt, newPromptHistory) = sharedItem.makeLocalCopy()
- 
-
-            logger.debug("Created local Prompt: \(newPrompt.name) (ID: \(newPrompt.id)), History for prompt: \(newPromptHistory.prompt)")
-
-            context.insert(newPrompt)
-            context.insert(newPromptHistory)
-            try context.save()
-            logger.info("Successfully imported and saved '\(newPrompt.name)' locally. Prompt ID: \(newPrompt.id)")
-
+            let pubCloudKitManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox",  modelContext: context)
+            let (newPrompt, _) = try await pubCloudKitManager.fetchAndCreateLocalCopy(bySharedCreationID: sharedItemID)
             self.importStatusMessage = "'\(newPrompt.name)' imported successfully!"
             self.activeTarget = .showImportedPrompt(promptID: newPrompt.id) // For navigation
 

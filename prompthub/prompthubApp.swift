@@ -45,7 +45,7 @@ struct prompthubApp: App {
                 .environmentObject(deepLinkManager)
                 .onOpenURL { url in
                     Task {
-                        deepLinkManager.handleURL(url, modelContainer: sharedModelContainer)
+                        await deepLinkManager.handleURL(url, modelContainer: sharedModelContainer)
                     }
                 }
                 .alert("Import Status", isPresented: .init(

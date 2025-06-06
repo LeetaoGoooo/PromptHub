@@ -5,8 +5,8 @@
 //  Created by leetao on 2025/3/16.
 //
 
-import SwiftUI
 import AlertToast
+import SwiftUI
 
 struct LatestVersionView: View {
     let latestHistory: PromptHistory
@@ -19,8 +19,8 @@ struct LatestVersionView: View {
     @Environment(\.openURL) var openURL
     @State private var showToast = false
     @State private var toastTitle = ""
-    @State private var toastType:  AlertToast.AlertType  = .regular
-    
+    @State private var toastType: AlertToast.AlertType = .regular
+
     let copyPromptToClipboard: (_ prompt: String) -> Bool
     let copySharedLinkToClipboard: (_ url: URL) -> Bool
     let modifyPromptWithOpenAIStream: () async -> Void
@@ -29,12 +29,11 @@ struct LatestVersionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
-                VStack(alignment: .leading){
+                VStack(alignment: .leading) {
                     Text(prompt.name)
                         .font(.headline)
                         .foregroundColor(.primary)
                     if prompt.desc != nil {
-                        
                         Text(prompt.desc!)
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -43,67 +42,68 @@ struct LatestVersionView: View {
                 }
                 Spacer()
 
-
-                HStack(alignment:.bottom) {
+                HStack(alignment: .bottom) {
                     Spacer()
-                    
+
                     if let imageData = prompt.externalSource?.first {
                         HoverImageButton(imageData: imageData)
                     }
-                    
+
                     if let urlValue = prompt.link {
-                      
                         Button {
                             if let url = URL(string: urlValue) {
                                 openURL(url) { accepted in
                                     if !accepted {
-                                        showToastMsg(msg:"can't open: \(urlValue)")
+                                        Task { @MainActor in
+                                            showToastMsg(msg: "can't open: \(urlValue)")
+                                        }
                                     }
                                 }
                             } else {
-                                showToastMsg(msg:"Invalid Url: \(urlValue)")
-                            
+                                Task { @MainActor in
+                                    showToastMsg(msg: "Invalid Url: \(urlValue)")
+                                }
                             }
                         } label: {
                             Image(systemName: "globe")
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.accentColor.opacity(0.1))
+                                .cornerRadius(8)
+                        }
+                        .help("Origin")
+                        .buttonStyle(PlainButtonStyle())
+                    }
+
+                    Button {
+                        Task {
+                            await shareCreation()
+                        }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(Color.accentColor.opacity(0.1))
                             .cornerRadius(8)
-                        }
-                        .help("Origin")
-                        .buttonStyle(PlainButtonStyle())
-                  
-                    }
-                    
-                    Button {
-                        shareCreation()
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.accentColor.opacity(0.1))
-                        .cornerRadius(8)
-                    }   .help("Share")
+                    }.help("Share")
                         .buttonStyle(PlainButtonStyle())
 
                     Button {
                         let success = copyPromptToClipboard(latestHistory.prompt)
-                        if (success) {
+                        if success {
                             showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
                         } else {
                             showToastMsg(msg: "Copy Prompt Failed", alertType: .error(Color.red))
                         }
                     } label: {
-                         Image(systemName: "doc.on.doc")
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.accentColor.opacity(0.1))
-                        .cornerRadius(8)
-                        .help("Copy")
+                        Image(systemName: "doc.on.doc")
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.accentColor.opacity(0.1))
+                            .cornerRadius(8)
+                            .help("Copy")
                     }
                     .buttonStyle(PlainButtonStyle())
-                    
                 }
             }
 
@@ -150,11 +150,10 @@ struct LatestVersionView: View {
             metadataView(for: latestHistory)
                 .padding(.top, 8)
         }.frame(maxWidth: .infinity)
-        .toast(isPresenting: $showToast) {
-            AlertToast(type:  toastType, title: toastTitle)
-        }
+            .toast(isPresenting: $showToast) {
+                AlertToast(type: toastType, title: toastTitle)
+            }
     }
-
 
     private func metadataView(for itemHistory: PromptHistory) -> some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -203,37 +202,39 @@ struct LatestVersionView: View {
                 .foregroundColor(.primary)
         }
     }
-    
-    private func showToastMsg(msg: String, alertType:AlertToast.AlertType = .error(Color.red)) {
+
+    @MainActor
+    private func showToastMsg(msg: String, alertType: AlertToast.AlertType = .error(Color.red)) {
         print(msg)
         showToast.toggle()
         toastTitle = msg
         toastType = alertType
     }
-    
-    private func shareCreation() {
-        // TODO
-        let sharedItem = SharedCreation(name: prompt.name,  prompt: latestHistory.prompt, desc: prompt.desc, externalSource: prompt.externalSource)
+
+    @MainActor
+    private func shareCreation() async {
+        let sharedItem = SharedCreation(name: prompt.name, prompt: latestHistory.prompt, desc: prompt.desc, externalSource: prompt.externalSource)
         modelContext.insert(sharedItem)
-        
+
         do {
             try modelContext.save()
+            let publicCloudKitSyncManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox", modelContext: modelContext)
+            try await publicCloudKitSyncManager.pushItemToPublicCloud(sharedItem)
         } catch {
-            showToastMsg(msg:"Error saving shared item: \(error)")
+            showToastMsg(msg: "Error saving shared item: \(error)")
         }
-        
+
         let urlScheme = "sharedprompt"
         guard let shareURL = URL(string: "\(urlScheme)://creation/\(sharedItem.id.uuidString)") else {
-            showToastMsg(msg:"Could not create share URL")
+            showToastMsg(msg: "Could not create share URL")
             return
         }
-        
-       let success = copySharedLinkToClipboard(shareURL)
-        if (success) {
+
+        let success = copySharedLinkToClipboard(shareURL)
+        if success {
             showToastMsg(msg: "Share Link With Your Friends Now", alertType: .complete(Color.green))
         } else {
             showToastMsg(msg: "Create Share Link Failed", alertType: .error(Color.red))
         }
-        
     }
 }
