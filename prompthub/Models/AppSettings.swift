@@ -26,5 +26,5 @@ class AppSettings: ObservableObject {
     public var model: String = OpenAIModels.first!;
     
     @AppStorage("lastShownWhatsNewVersion")
-    public var lastShownWhatsNewVersion: String = "" 
+    public var lastShownWhatsNewVersion: String = "2.2.1" 
 }

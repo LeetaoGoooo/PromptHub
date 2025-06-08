@@ -70,33 +70,10 @@ struct GalleryPromptView: View {
 
     private func loadPrompts() {
         isLoading = true
-
-        guard let url = Bundle.main.url(forResource: "agents", withExtension: "json") else {
-            print("Could not find agents.json in the app bundle")
-            showToastMessage("Could not find prompts file", .error(.red))
-            isLoading = false
-            return
-        }
-
-        do {
-            let data = try Data(contentsOf: url)
-            let decoder = JSONDecoder()
-            let jsonArray = try decoder.decode([AgentDescription].self, from: data)
-
-            galleryPrompts = jsonArray.enumerated().map { _, agent in
-
-                GalleryPrompt(
-                    id: agent.id,
-                    name: agent.name,
-                    description: agent.description.trimmingCharacters(in: .whitespacesAndNewlines),
-                    prompt: agent.prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-                )
-            }
-            isLoading = false
-        } catch {
-            print("Error loading or parsing agents.json: \(error)")
-            showToastMessage("Failed to load prompts: \(error.localizedDescription)", .error(.red))
-            isLoading = false
+        
+        DispatchQueue.main.async {
+            self.galleryPrompts = BuiltInAgents.agents.map { $0.toGalleryPrompt() }
+            self.isLoading = false
         }
     }
 
@@ -112,13 +89,6 @@ struct GalleryPromptView: View {
         pasteboard.setString(text, forType: .string)
         showToastMessage("Copied to clipboard", .complete(.green))
     }
-}
-
-struct AgentDescription: Codable, Identifiable {
-    let id: String
-    let name: String
-    let description: String
-    let prompt: String
 }
 
 #Preview {

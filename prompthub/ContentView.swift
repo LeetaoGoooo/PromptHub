@@ -30,7 +30,7 @@ struct ContentView: View {
             PromptSideBar(
                 isEditingPromptSheetPresented: $isEditingPromptSheetPresented,
                 promptSelection: $promptSelection, isPresentingNewPromptDialog: $isPresentingNewPromptDialog
-            )
+            ).frame(minWidth: 200)
         } detail: {
             if let selectedPrompt = promptSelection {
                 PromptDetail(prompt: selectedPrompt)
