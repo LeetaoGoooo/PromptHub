@@ -1,6 +1,37 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        }
+      }
+    },
+    "(Build %@)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "（构建 %@）"
+          }
+        }
+      }
+    },
+    "%@:" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@："
+          }
+        }
+      }
+    },
     "About" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12,13 +43,23 @@
         }
       }
     },
-    "Are you sure you want to delete this prompt?" : {
+    "Add context, notes, and personal insights directly to your prompts for better organization." : {
       "extractionState" : "manual",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "确定要删除这个提示词吗？"
+            "value" : "直接向提示词添加上下文、笔记和个人见解，以便更好地组织。"
+          }
+        }
+      }
+    },
+    "API Key" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API 密钥"
           }
         }
       }
@@ -34,6 +75,58 @@
         }
       }
     },
+    "Are you sure you want to delete this prompt?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除这个提示词吗？"
+          }
+        }
+      }
+    },
+    "Are you sure you want to delete version %lld?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除版本 %lld 吗？"
+          }
+        }
+      }
+    },
+    "Are you sure you want to quit?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要退出吗？"
+          }
+        }
+      }
+    },
+    "Attach example outputs to your prompts to instantly visualize their results." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为您的提示词附上示例输出，以便即时可视化其结果。"
+          }
+        }
+      }
+    },
+    "Attachment" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附件"
+          }
+        }
+      }
+    },
     "Attachments" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -45,6 +138,27 @@
         }
       }
     },
+    "Base URL (OpenAI API)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基础 URL (OpenAI API)"
+          }
+        }
+      }
+    },
+    "Bookmark data is stale. Consider re-selecting the file." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "书签数据已过期。请考虑重新选择文件。"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -52,6 +166,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取消"
+          }
+        }
+      }
+    },
+    "Confirm Delete" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确认删除"
           }
         }
       }
@@ -78,6 +202,59 @@
         }
       }
     },
+    "Copy" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制"
+          }
+        }
+      }
+    },
+    "Copy Content" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制内容"
+          }
+        }
+      }
+    },
+    "Copy Prompt" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制提示词"
+          }
+        }
+      }
+    },
+    "Copyright @ 2025 leetao " : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版权所有 @ 2025 leetao "
+          }
+        }
+      }
+    },
+    "Could not determine content type for dropped file." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法确定拖放文件的内容类型。"
+          }
+        }
+      }
+    },
     "Could not find prompts file" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -96,6 +273,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "创建时间: %@"
+          }
+        }
+      }
+    },
+    "Curated Prompt Gallery" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精选提示词画廊"
+          }
+        }
+      }
+    },
+    "Deletable Image Demo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可删除图片演示"
           }
         }
       }
@@ -133,6 +331,16 @@
         }
       }
     },
+    "Done" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        }
+      }
+    },
     "Dropped file is not an image type. Detected type: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -140,6 +348,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拖放的文件不是图片类型。检测到的类型: %@"
+          }
+        }
+      }
+    },
+    "Easily remember and reference where your valuable prompts came from." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻松记住并引用您宝贵提示词的来源。"
           }
         }
       }
@@ -155,6 +374,27 @@
         }
       }
     },
+    "Edit Prompt" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑提示词"
+          }
+        }
+      }
+    },
+    "Effortless Prompt Sharing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻松分享提示词"
+          }
+        }
+      }
+    },
     "Enhanced Prompt Details" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -166,24 +406,33 @@
         }
       }
     },
-    "Error loading or parsing agents.json: %@" : {
-      "extractionState" : "manual",
+    "Enter your Base URL" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加载或解析 agents.json 出错: %@"
+            "value" : "输入您的基础 URL"
           }
         }
       }
     },
-    "Error: Could not create NSImage from URL: %@" : {
+    "Enter your OpenAI API Key" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入您的 OpenAI API 密钥"
+          }
+        }
+      }
+    },
+    "Error getting resource values for dropped file: %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "错误: 无法从 URL 创建 NSImage: %@"
+            "value" : "获取拖放文件的资源值出错: %@"
           }
         }
       }
@@ -210,13 +459,13 @@
         }
       }
     },
-    "Error getting resource values for dropped file: %@" : {
+    "Error loading or parsing agents.json: %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "获取拖放文件的资源值出错: %@"
+            "value" : "加载或解析 agents.json 出错: %@"
           }
         }
       }
@@ -243,13 +492,34 @@
         }
       }
     },
-    "Effortless Prompt Sharing" : {
+    "Error: Could not create NSImage from URL: %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "轻松分享提示词"
+            "value" : "错误: 无法从 URL 创建 NSImage: %@"
+          }
+        }
+      }
+    },
+    "Error: Could not load image from data." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误：无法从数据加载图片。"
+          }
+        }
+      }
+    },
+    "Explore a growing collection of pre-built prompts to kickstart your creativity and ideas (thanks cherry studio)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "探索不断增长的预建提示词集合，激发您的创造力和想法（感谢 cherry studio）。"
           }
         }
       }
@@ -287,6 +557,16 @@
         }
       }
     },
+    "General Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通用设置"
+          }
+        }
+      }
+    },
     "GitHub" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -305,6 +585,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "明白了！"
+          }
+        }
+      }
+    },
+    "Hide" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏"
+          }
+        }
+      }
+    },
+    "History Versions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "历史版本"
+          }
+        }
+      }
+    },
+    "Image Viewer" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图片查看器"
+          }
+        }
+      }
+    },
+    "Import Status" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入状态"
           }
         }
       }
@@ -342,6 +662,16 @@
         }
       }
     },
+    "Launch:" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启动："
+          }
+        }
+      }
+    },
     "Leetao" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -360,6 +690,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "加载提示词中..."
+          }
+        }
+      }
+    },
+    "Model" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型"
           }
         }
       }
@@ -430,6 +770,16 @@
         }
       }
     },
+    "No image data provided to window." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有提供图片数据给窗口。"
+          }
+        }
+      }
+    },
     "No prompts available" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -474,6 +824,57 @@
         }
       }
     },
+    "OpenAI Configuration" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI 配置"
+          }
+        }
+      }
+    },
+    "Origin" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来源"
+          }
+        }
+      }
+    },
+    "Preview in Editor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在编辑器中预览"
+          }
+        }
+      }
+    },
+    "Preview Prompt" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览提示词"
+          }
+        }
+      }
+    },
+    "Previewing older version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览旧版本"
+          }
+        }
+      }
+    },
     "Prompt" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -507,6 +908,33 @@
         }
       }
     },
+    "Prompt Name" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提示词名称"
+          }
+        }
+      }
+    },
+    "prompt_template" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Please follow the steps below to optimize the user's prompt to make it clearer, more specific, and more effective:**\n\n1. **Understand the Objective:**\n\n   * Clearly identify what the user hopes to achieve with the prompt.\n   * What type of information or output are they expecting?\n\n2. **Analyze the Existing Prompt:**\n\n   * Identify vague, ambiguous, or unclear wording in the prompt.\n   * Check whether the prompt includes sufficient contextual information.\n\n3. **Refine the Prompt:**\n\n   * Use clear, concise, and specific language.\n   * Provide necessary background information and context.\n   * Clearly specify the desired format, length, and style.\n   * Use keywords and phrases to guide the model.\n   * If needed, include examples for clarification.\n\n4. **Optimize the Prompt Structure:**\n\n   * Break down complex prompts into smaller, more manageable steps.\n   * Use lists, numbering, or indentation to improve readability.\n   * Ensure the logical flow of the prompt is clear and easy to follow.\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "请按照以下步骤优化用户提供的提示词，使其更清晰、具体、有效:\n1.  **理解目标：**\n     * 明确用户希望通过提示词达到什么目的？\n     * 他们希望获得什么类型的信息或输出？\n2.  **分析现有提示词：**\n     * 识别提示词中模糊、含糊或不明确的措辞。\n     * 检查提示词中是否包含足够的上下文信息。\n3.  **完善提示词：**\n     * 使用清晰、简洁、具体的语言。\n     * 提供必要的背景信息和上下文。\n     * 明确指定所需的格式、长度和风格。\n     * 使用关键词和短语来引导模型。\n     * 如果需要，可添加一些例子来说明。\n4.  **优化提示词结构：**\n     * 将复杂的提示词分解为更小的、更易于管理的步骤。\n     * 使用列表、编号或缩进等格式来提高可读性。\n     * 确保提示词的逻辑流程清晰易懂。"
+          }
+        }
+      }
+    },
     "PromptHub" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -529,6 +957,16 @@
         }
       }
     },
+    "Quit Application?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出应用程序？"
+          }
+        }
+      }
+    },
     "Received image data directly. Implement loading from Data." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -536,6 +974,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "直接接收到图片数据。实现从数据加载。"
+          }
+        }
+      }
+    },
+    "Reset Images" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置图片"
+          }
+        }
+      }
+    },
+    "Return to latest" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回到最新版本"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
           }
         }
       }
@@ -551,6 +1019,47 @@
         }
       }
     },
+    "Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
+        }
+      }
+    },
+    "Share" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享"
+          }
+        }
+      }
+    },
+    "Share your favorite prompts with colleagues or friends in just one tap." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只需一键即可与同事或朋友分享您喜爱的提示词。"
+          }
+        }
+      }
+    },
+    "Show" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        }
+      }
+    },
     "Source" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -558,6 +1067,56 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "来源"
+          }
+        }
+      }
+    },
+    "Template" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模板"
+          }
+        }
+      }
+    },
+    "Test" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试"
+          }
+        }
+      }
+    },
+    "Test Failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试失败"
+          }
+        }
+      }
+    },
+    "Test Result:" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试结果："
+          }
+        }
+      }
+    },
+    "Test Successful" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试成功"
           }
         }
       }
@@ -584,6 +1143,17 @@
         }
       }
     },
+    "v%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "v%@"
+          }
+        }
+      }
+    },
     "Version %@ Details" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -591,6 +1161,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "版本 %@ 详情"
+          }
+        }
+      }
+    },
+    "Version %lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %lld"
+          }
+        }
+      }
+    },
+    "Version %lld Details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %lld 详情"
           }
         }
       }
@@ -612,161 +1202,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "欢迎使用提示词盒子版本 %@！"
-          }
-        }
-      }
-    },
-    "(Build %@)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "（构建 %@）"
-          }
-        }
-      }
-    },
-    "Add context, notes, and personal insights directly to your prompts for better organization." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接向提示词添加上下文、笔记和个人见解，以便更好地组织。"
-          }
-        }
-      }
-    },
-    "Attach example outputs to your prompts to instantly visualize their results." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "为您的提示词附上示例输出，以便即时可视化其结果。"
-          }
-        }
-      }
-    },
-    "Bookmark data is stale. Consider re-selecting the file." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "书签数据已过期。请考虑重新选择文件。"
-          }
-        }
-      }
-    },
-    "Could not determine content type for dropped file." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法确定拖放文件的内容类型。"
-          }
-        }
-      }
-    },
-    "Copy Content" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "复制内容"
-          }
-        }
-      }
-    },
-    "Copyright @ 2025 leetao " : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版权所有 @ 2025 leetao "
-          }
-        }
-      }
-    },
-    "Curated Prompt Gallery" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "精选提示词画廊"
-          }
-        }
-      }
-    },
-    "Easily remember and reference where your valuable prompts came from." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轻松记住并引用您宝贵提示词的来源。"
-          }
-        }
-      }
-    },
-    "Explore a growing collection of pre-built prompts to kickstart your creativity and ideas (thanks cherry studio)." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "探索不断增长的预建提示词集合，激发您的创造力和想法（感谢 cherry studio）。"
-          }
-        }
-      }
-    },
-    "Preview in Editor" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在编辑器中预览"
-          }
-        }
-      }
-    },
-    "Share your favorite prompts with colleagues or friends in just one tap." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "只需一键即可与同事或朋友分享您喜爱的提示词。"
-          }
-        }
-      }
-    },
-    "v%@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "v%@"
-          }
-        }
-      }
-    },
-    "prompt_template" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请按照以下步骤优化用户提供的提示词，使其更清晰、具体、有效:\n1.  **理解目标：**\n     * 明确用户希望通过提示词达到什么目的？\n     * 他们希望获得什么类型的信息或输出？\n2.  **分析现有提示词：**\n     * 识别提示词中模糊、含糊或不明确的措辞。\n     * 检查提示词中是否包含足够的上下文信息。\n3.  **完善提示词：**\n     * 使用清晰、简洁、具体的语言。\n     * 提供必要的背景信息和上下文。\n     * 明确指定所需的格式、长度和风格。\n     * 使用关键词和短语来引导模型。\n     * 如果需要，可添加一些例子来说明。\n4.  **优化提示词结构：**\n     * 将复杂的提示词分解为更小的、更易于管理的步骤。\n     * 使用列表、编号或缩进等格式来提高可读性。\n     * 确保提示词的逻辑流程清晰易懂。"
+            "value" : "欢迎使用PromptBox版本 %@！"
           }
         }
       }
