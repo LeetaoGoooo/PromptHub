@@ -110,7 +110,7 @@ struct NewPromptDialog: View {
                     switch result {
                     case .success(let urls):
                         guard let url = urls.first else {
-                            showToastMsg(msg: "No URL selected or multiple URLs (should not happen with allowsMultipleSelection=false)")
+                            showToastMsg(msg: "No URL selected or multiple URLs")
                             return
                         }
                         loadImage(from: url)

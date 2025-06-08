@@ -75,7 +75,7 @@ struct PromptSideBar: View {
             .frame(maxWidth: .infinity)
             .padding()
         }
-        .searchable(text: $searchText, prompt: "Seach Prompt...")
+        .searchable(text: $searchText, prompt: "Search Prompt...")
         .confirmationDialog( // Confirmation for delete
             "Are you sure you want to delete this prompt?",
             isPresented: isDeleteConfirmationPresented,
