@@ -3,7 +3,7 @@
 
 # PromptHub
 
-<img alt="AppIcon" src="https://github.com/LeetaoGoooo/PromptHub/blob/main/prompthub/Assets.xcassets/AppIcon.appiconset/%E9%B2%B8%E9%B1%BC%20(3).png?raw=true" width="128px" align="left"/>
+<img alt="AppIcon" src="./prompthub/Assets.xcassets/AppIcon.appiconset/icon-256.png" width="128px" align="left"/>
 
 <div>
 <h3>PromptHub</h3>
