@@ -23,10 +23,13 @@ PromptHub is a tool for managing prompts that helps you better organize your pro
 - [x] View Prompt
 - [x] Search Prompt
 - [x] Status Bar
-- [ ] Export Prompt
-- [ ] Import Prompt
+- [x] Export Prompt
+- [x] Import Prompt
 - [x] AI Prompt Optimization
-- [x] History 
+- [x] History
+- [x] Share Prompt
+- [x] i18n （Chinese && English）
+- [x] Prompt Gallery 
 
 ## Screenshots
 
