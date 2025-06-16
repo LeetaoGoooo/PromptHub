@@ -14,8 +14,9 @@ struct PromptSideBar: View {
 
     @Binding var isEditingPromptSheetPresented: Bool
     @State private var promptToDelete: Prompt?
-
+    
     @State private var searchText: String = ""
+    
     @Binding var promptSelection: Prompt?
     @Binding var isPresentingNewPromptDialog: Bool
     
@@ -23,17 +24,22 @@ struct PromptSideBar: View {
     
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
+            SearchBarView(searchText: $searchText)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+
             List(selection: $promptSelection) {
                 ForEach(filteredPrompts) { prompt in
                     Text(prompt.name)
                         .contextMenu {
                             Button("Edit") {
+                                  self.promptSelection = prompt
                                   self.isEditingPromptSheetPresented = true
                             }
                             .frame(width: 100)
 
-                            Button("Delete") {
+                            Button("Delete", role: .destructive) {
                                 promptToDelete = prompt
                             }.frame(width: 100)
                         }.tag(prompt)
@@ -41,19 +47,20 @@ struct PromptSideBar: View {
                 .onDelete(perform: deletePrompts)
             }
 
+
             HStack {
                 Button {
                     isPresentingNewPromptDialog.toggle()
                 } label: {
-                    HStack(spacing: 16) {
+                    HStack(spacing: 12) { // Adjusted spacing for better balance
                         Image(systemName: "plus.circle.fill")
                             .resizable()
                             .frame(width: 16, height: 16)
                         Text("New Prompt")
                     }
-
-                }.buttonStyle(.plain)
-                  
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 8) // Give the button some breathing room
                 
                 Spacer()
                 
@@ -61,23 +68,25 @@ struct PromptSideBar: View {
                     promptSelection = nil
                 } label: {
                     Image(systemName: "lightbulb.max")
-                }.buttonStyle(.plain)
-                    .frame(width: 16, height: 16)
+                }
+                .buttonStyle(.plain)
+                .frame(width: 16, height: 16)
                 
                 Button {
                     openWindow(id: "settings-window")
                 } label: {
                     Image(systemName: "gear")
-                }.buttonStyle(.plain)
-                    .frame(width: 16, height: 16)
-                    
+                }
+                .buttonStyle(.plain)
+                .frame(width: 16, height: 16)
+                .padding(.trailing, 8)
             }
             .frame(maxWidth: .infinity)
             .padding()
+            .background(.bar)
         }
-        .searchable(text: $searchText, prompt: "Search Prompt...")
-        .confirmationDialog( // Confirmation for delete
-            "Are you sure you want to delete this prompt?",
+        .confirmationDialog(
+            "Delete Prompt", // Title is more direct
             isPresented: isDeleteConfirmationPresented,
             titleVisibility: .visible
         ) {
@@ -91,9 +100,7 @@ struct PromptSideBar: View {
             }
         } message: {
             if let promptName = promptToDelete?.name {
-                Text("Are you sure you want to delete '\(promptName)'?")
-            } else {
-                Text("Are you sure you want to delete this prompt?")
+                Text("Are you sure you want to delete '\(promptName)'? This action cannot be undone.")
             }
         }
     }
@@ -110,18 +117,17 @@ struct PromptSideBar: View {
     }
 
     private func deletePrompts(at offsets: IndexSet) {
-        for index in offsets {
-            let promptToDelete = filteredPrompts[index]
-            deletePrompt(promptToDelete)
+        let promptsToDelete = offsets.map { filteredPrompts[$0] }
+        for prompt in promptsToDelete {
+             promptToDelete = prompt
         }
     }
 
 
     private func deletePrompt(_ prompt: Prompt) {
-        let promptId  = prompt.id;
-        let relatedPromptHistoriesDescriptor = FetchDescriptor<PromptHistory>(predicate: #Predicate { history in
-            history.promptId == promptId
-        })
+        let promptId = prompt.id
+        let historyPredicate = #Predicate<PromptHistory> { $0.promptId == promptId }
+        let relatedPromptHistoriesDescriptor = FetchDescriptor<PromptHistory>(predicate: historyPredicate)
 
         do {
             let promptHistories = try modelContext.fetch(relatedPromptHistoriesDescriptor)
@@ -130,13 +136,17 @@ struct PromptSideBar: View {
             }
             modelContext.delete(prompt)
             try modelContext.save()
+            
+            if promptSelection == prompt {
+                promptSelection = nil
+            }
 
         } catch {
-            print("Failed to delete prompt or related history: \(error)")
+            print("Failed to delete prompt or related history: \(error.localizedDescription)")
         }
-        promptToDelete = nil // Clear promptToDelete after deletion or cancel
+        promptToDelete = nil
     }
-
+    
     private var filteredPrompts: [Prompt] {
         if searchText.isEmpty {
             return prompts

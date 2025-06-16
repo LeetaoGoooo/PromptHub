@@ -75,6 +75,9 @@
         }
       }
     },
+    "Are you sure you want to delete '%@'? This action cannot be undone." : {
+
+    },
     "Are you sure you want to delete this prompt?" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -308,6 +311,9 @@
           }
         }
       }
+    },
+    "Delete Prompt" : {
+
     },
     "Description" : {
       "extractionState" : "manual",
