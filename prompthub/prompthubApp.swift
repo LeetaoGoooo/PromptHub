@@ -61,6 +61,15 @@ struct prompthubApp: App {
 
         MenuBarExtra {
             PromptMenuView()
+
+            Divider()
+            
+            Button("Quit PromptBox") {
+                NSApplication.shared.terminate(nil)
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("q", modifiers: .command)
+            .padding(.bottom, 6)
         }
         label: {
             Image(nsImage: NSImage(named: "whale")!)
@@ -69,6 +78,7 @@ struct prompthubApp: App {
                 .frame(width: 8, height: 8)
         }
         .modelContainer(sharedModelContainer)
+        .menuBarExtraStyle(.window)
         
         Window("Settings", id: "settings-window") {
             SettingsView()

@@ -10,13 +10,12 @@ import SwiftUI
 struct PromptPreviewView: View {
     let promptName: String
     let promptContent: String
-    let copyPromptToClipboard: (_ prompt: String) -> Void // 接收复制回调
+    let copyPromptToClipboard: (_ prompt: String) -> Void
 
-    @Environment(\.dismiss) var dismiss // 用于关闭 sheet
+    @Environment(\.dismiss) var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
-            // 标题和关闭按钮
             HStack {
                 Text(promptName)
                     .font(.title2)
@@ -29,11 +28,11 @@ struct PromptPreviewView: View {
                         .foregroundColor(.gray)
                         .imageScale(.large)
                 }
-                .buttonStyle(PlainButtonStyle()) // macOS 上通常不需要额外样式，除非想自定义
-                .keyboardShortcut(.escape, modifiers: []) // 按 Esc 关闭
+                .buttonStyle(PlainButtonStyle())
+                .keyboardShortcut(.escape, modifiers: [])
             }
 
-            // Prompt 内容区域
+
             ScrollView {
                 Text(promptContent)
                     .font(.body)

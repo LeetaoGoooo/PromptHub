@@ -929,7 +929,7 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "请按照以下步骤优化用户提供的提示词，使其更清晰、具体、有效:\n1.  **理解目标：**\n     * 明确用户希望通过提示词达到什么目的？\n     * 他们希望获得什么类型的信息或输出？\n2.  **分析现有提示词：**\n     * 识别提示词中模糊、含糊或不明确的措辞。\n     * 检查提示词中是否包含足够的上下文信息。\n3.  **完善提示词：**\n     * 使用清晰、简洁、具体的语言。\n     * 提供必要的背景信息和上下文。\n     * 明确指定所需的格式、长度和风格。\n     * 使用关键词和短语来引导模型。\n     * 如果需要，可添加一些例子来说明。\n4.  **优化提示词结构：**\n     * 将复杂的提示词分解为更小的、更易于管理的步骤。\n     * 使用列表、编号或缩进等格式来提高可读性。\n     * 确保提示词的逻辑流程清晰易懂。"
           }
         }
@@ -947,15 +947,7 @@
       }
     },
     "Quit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出"
-          }
-        }
-      }
+
     },
     "Quit Application?" : {
       "localizations" : {
@@ -963,6 +955,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "退出应用程序？"
+          }
+        }
+      }
+    },
+    "Quit PromptBox" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出 PromptBox"
           }
         }
       }
@@ -1007,6 +1010,9 @@
           }
         }
       }
+    },
+    "Search prompt..." : {
+
     },
     "Search Prompt..." : {
       "extractionState" : "manual",
