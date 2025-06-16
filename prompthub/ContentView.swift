@@ -54,51 +54,27 @@ struct ContentView: View {
             if lastShownVersion != currentAppVersion {
                 self.whatsNew = WhatsNew(
                     version: WhatsNew.Version(stringLiteral: currentAppVersion),
-                    title: WhatsNew.Title(stringLiteral: "Welcome to PromptBox Version \(currentAppVersion)!"),
+                    title: WhatsNew.Title(stringLiteral: "What's New in PromptBox \(currentAppVersion)!"),
                     features: [
                         .init(
                             image: .init(
-                                systemName: "doc.plaintext.fill",
-                                foregroundColor: .teal
-                            ),
-                            title: WhatsNew.Text("Enhanced Prompt Details"),
-                            subtitle: WhatsNew.Text("Add context, notes, and personal insights directly to your prompts for better organization.")
-                        ),
-                        .init(
-                            image: .init(
-                                systemName: "link.circle.fill",
-                                foregroundColor: .indigo
-                            ),
-                            title: WhatsNew.Text("Track Prompt Origins"),
-                            subtitle: WhatsNew.Text("Easily remember and reference where your valuable prompts came from.")
-                        ),
-                        .init(
-                            image: .init(
-                                systemName: "play.rectangle.fill",
-                                foregroundColor: .green
-                            ),
-                            title: WhatsNew.Text("Visual Prompt Previews"),
-                            subtitle: WhatsNew.Text("Attach example outputs to your prompts to instantly visualize their results.")
-                        ),
-                        .init(
-                            image: .init(
-                                systemName: "square.and.arrow.up.fill",
+                                systemName: "magnifyingglass.circle.fill", // 代表“搜索”和“优化”
                                 foregroundColor: .blue
                             ),
-                            title: WhatsNew.Text("Effortless Prompt Sharing"),
-                            subtitle: WhatsNew.Text("Share your favorite prompts with colleagues or friends in just one tap.")
+                            title: WhatsNew.Text("Status Bar Enhancements"),
+                            subtitle: WhatsNew.Text("A new search bar has been added to the status bar, with its display optimized for when you have many prompts.")
                         ),
                         .init(
                             image: .init(
-                                systemName: "square.grid.2x2.fill",
-                                foregroundColor: .purple
+                                systemName: "sidebar.squares.leading", // 代表“侧边栏”和“布局”
+                                foregroundColor: .green
                             ),
-                            title: WhatsNew.Text("Curated Prompt Gallery"),
-                            subtitle: WhatsNew.Text("Explore a growing collection of pre-built prompts to kickstart your creativity and ideas (thanks cherry studio).")
+                            title: WhatsNew.Text("Intuitive Layout Adjustment"),
+                            subtitle: WhatsNew.Text("The sidebar's search bar has been repositioned to a more intuitive location for a smoother experience.")
                         )
                     ],
                     primaryAction: .init(
-                        title: WhatsNew.Text("Got It!"),
+                        title: WhatsNew.Text("Got It"),
                         onDismiss: {
                             appSettings.lastShownWhatsNewVersion = self.currentAppVersion
                         }
