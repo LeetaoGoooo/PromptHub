@@ -54,3 +54,8 @@ struct HoverImageButton: View {
         }
     }
 }
+
+#Preview {
+    HoverImageButton(imageData: Data())
+        .padding()
+}

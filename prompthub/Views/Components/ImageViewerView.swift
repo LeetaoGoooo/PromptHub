@@ -23,3 +23,8 @@ struct ImageViewerView: View {
         }
     }
 }
+
+#Preview {
+    ImageViewerView(imageData: Data())
+        .frame(width: 400, height: 300)
+}

@@ -10,7 +10,6 @@ import SwiftUI
 import SwiftData
 import OSLog
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "DeepLinkManager")
 
 enum DeepLinkTarget: Identifiable {
     case showImportedPrompt(promptID: UUID)
@@ -28,6 +27,8 @@ class DeepLinkManager: ObservableObject {
     @Published var activeTarget: DeepLinkTarget? = nil
     @Published var importStatusMessage: String? = nil
 
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "DeepLinkManager")
+    
     let urlScheme = "sharedprompt"
 
     @MainActor

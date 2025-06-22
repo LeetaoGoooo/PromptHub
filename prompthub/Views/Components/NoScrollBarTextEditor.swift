@@ -103,3 +103,17 @@ struct NoScrollBarTextEditor: NSViewRepresentable {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var sampleText = "Sample text for NoScrollBarTextEditor\nThis is a multi-line text\nWith some content to demonstrate\nthe text editor functionality."
+    
+    VStack {
+        Text("NoScrollBarTextEditor Preview")
+            .font(.headline)
+        
+        NoScrollBarTextEditor(text: $sampleText)
+            .frame(height: 200)
+            .border(Color.gray, width: 1)
+    }
+    .padding()
+}

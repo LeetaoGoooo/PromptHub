@@ -100,7 +100,7 @@ struct GalleryPromptItemView: View {
             let newPrompt = Prompt(name: galleryPromptItem.name, desc: galleryPromptItem.description, link: galleryPromptItem.link)
             modelContext.insert(newPrompt)
 
-            let newPromptHistory = PromptHistory(promptId: newPrompt.id, prompt: galleryPromptItem.prompt)
+            let newPromptHistory = newPrompt.createHistory(prompt: galleryPromptItem.prompt, version: 0)
             modelContext.insert(newPromptHistory)
 
             try modelContext.save()

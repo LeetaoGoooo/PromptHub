@@ -125,22 +125,20 @@ struct PromptSideBar: View {
 
 
     private func deletePrompt(_ prompt: Prompt) {
-        let promptId = prompt.id
-        let historyPredicate = #Predicate<PromptHistory> { $0.promptId == promptId }
-        let relatedPromptHistoriesDescriptor = FetchDescriptor<PromptHistory>(predicate: historyPredicate)
-
+        // Delete all related history items first
+        for history in prompt.history {
+            modelContext.delete(history)
+        }
+        
+        // Then delete the prompt itself
+        modelContext.delete(prompt)
+        
         do {
-            let promptHistories = try modelContext.fetch(relatedPromptHistoriesDescriptor)
-            for history in promptHistories {
-                modelContext.delete(history)
-            }
-            modelContext.delete(prompt)
             try modelContext.save()
             
             if promptSelection == prompt {
                 promptSelection = nil
             }
-
         } catch {
             print("Failed to delete prompt or related history: \(error.localizedDescription)")
         }
@@ -156,4 +154,17 @@ struct PromptSideBar: View {
             }
         }
     }
+}
+
+#Preview {
+    @Previewable @State var promptSelection: Prompt? = nil
+    @Previewable @State var isEditingPromptSheetPresented = false
+    @Previewable @State var isPresentingNewPromptDialog = false
+    
+    PromptSideBar(
+        isEditingPromptSheetPresented: $isEditingPromptSheetPresented,
+        promptSelection: $promptSelection,
+        isPresentingNewPromptDialog: $isPresentingNewPromptDialog
+    )
+    .modelContainer(PreviewData.previewContainer)
 }

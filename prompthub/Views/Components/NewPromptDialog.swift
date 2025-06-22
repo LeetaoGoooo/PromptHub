@@ -171,7 +171,7 @@ struct NewPromptDialog: View {
                 return
             }
             
-            let newPromptHistory = PromptHistory(promptId: newPrompt.id, prompt: prompt)
+            let newPromptHistory = newPrompt.createHistory(prompt: prompt, version: 0)
             modelContext.insert(newPromptHistory)
 
             // Save the context, committing the transaction.
@@ -308,12 +308,9 @@ struct NewPromptDialog: View {
     }
 }
 
-// Preview Provider (for Xcode Canvas)
-struct NewPromptDialog_Previews: PreviewProvider {
-    static var previews: some View {
-        @State var isDialogPresented = true // State for preview purposes
-        return NewPromptDialog(isPresented: $isDialogPresented)
-            .previewLayout(.sizeThatFits)
-            .padding()
-    }
+#Preview {
+    @Previewable @State var isDialogPresented = true
+    return NewPromptDialog(isPresented: $isDialogPresented)
+        .modelContainer(PreviewData.previewContainer)
+        .padding()
 }

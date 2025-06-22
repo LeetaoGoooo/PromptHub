@@ -138,7 +138,6 @@ class PublicCloudKitSyncManager {
             name: fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud",
             prompt: fetchedRecord[SharedCreationField.prompt] as? String ?? "",
             desc: fetchedRecord[SharedCreationField.desc] as? String,
-            externalSource: fetchedRecord[SharedCreationField.externalSource] as? [Data]
         )
 
         // Use the makeLocalCopy() method to get the Prompt and PromptHistory
@@ -201,7 +200,6 @@ class PublicCloudKitSyncManager {
             name: fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud",
             prompt: fetchedRecord[SharedCreationField.prompt] as? String ?? "",
             desc: fetchedRecord[SharedCreationField.desc] as? String,
-            externalSource: fetchedRecord[SharedCreationField.externalSource] as? [Data]
         )
 
         let (newPrompt, newPromptHistory) = tempSharedCreation.makeLocalCopy()

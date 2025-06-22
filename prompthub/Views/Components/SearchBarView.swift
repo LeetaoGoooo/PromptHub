@@ -44,3 +44,9 @@ struct SearchBarView: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var searchText = ""
+    SearchBarView(searchText: $searchText)
+        .padding()
+}

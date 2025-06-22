@@ -15,22 +15,20 @@ struct prompthubApp: App {
         let publicConfig = ModelConfiguration(
             "PublicStore",
             schema: Schema([SharedCreation.self]),
-            cloudKitDatabase: .automatic,
+            cloudKitDatabase: .automatic
         )
 
         let privateConfig = ModelConfiguration(
-            schema: Schema([ Prompt.self, PromptHistory.self]),
-            cloudKitDatabase: .none,
+            schema: Schema([ Prompt.self, PromptHistory.self, ExternalSource.self ]),
+            cloudKitDatabase: .automatic
         )
         
-        let schemas = Schema([
-            Prompt.self,
-            PromptHistory.self,
-            SharedCreation.self,
-        ])
-
         do {
-            return try ModelContainer(for: schemas, configurations: [publicConfig, privateConfig])
+            return try ModelContainer(
+                for: Schema(versionedSchema: SchemaV3.self),
+                migrationPlan: PromptHubMigrationPlan.self,
+                configurations: [publicConfig, privateConfig]
+            )
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

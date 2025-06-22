@@ -223,4 +223,5 @@ struct GeneralView: View {
 
 #Preview {
     GeneralView()
+        .environmentObject(AppSettings())
 }

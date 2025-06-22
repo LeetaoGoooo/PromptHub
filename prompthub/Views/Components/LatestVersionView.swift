@@ -89,7 +89,7 @@ struct LatestVersionView: View {
                         .buttonStyle(PlainButtonStyle())
 
                     Button {
-                        let success = copyPromptToClipboard(latestHistory.prompt)
+                        let success = copyPromptToClipboard(latestHistory.content)
                         if success {
                             showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
                         } else {
@@ -119,7 +119,7 @@ struct LatestVersionView: View {
                     )
                     .onChange(of: editablePrompt) { newValue in
                         if !isPreviewingOldVersion {
-                            latestHistory.prompt = newValue
+                            latestHistory.content = newValue
                             latestHistory.updatedAt = Date()
                             try? modelContext.save()
                         }
@@ -171,7 +171,7 @@ struct LatestVersionView: View {
 
                     Button("Return to latest") {
                         isPreviewingOldVersion = false
-                        editablePrompt = latestHistory.prompt
+                        editablePrompt = latestHistory.content
                     }
                     .buttonStyle(PlainButtonStyle())
                     .font(.caption)
@@ -213,7 +213,7 @@ struct LatestVersionView: View {
 
     @MainActor
     private func shareCreation() async {
-        let sharedItem = SharedCreation(name: prompt.name, prompt: latestHistory.prompt, desc: prompt.desc, externalSource: prompt.externalSource)
+        let sharedItem = SharedCreation(name: prompt.name, prompt: latestHistory.content, desc: prompt.desc)
         modelContext.insert(sharedItem)
 
         do {
@@ -237,4 +237,32 @@ struct LatestVersionView: View {
             showToastMsg(msg: "Create Share Link Failed", alertType: .error(Color.red))
         }
     }
+}
+
+#Preview {
+    @Previewable @State var editablePrompt = "Sample editable prompt content"
+    @Previewable @State var isGenerating = false
+    @Previewable @State var isPreviewingOldVersion = false
+    
+    LatestVersionView(
+        latestHistory: PreviewData.samplePromptHistory.first!,
+        prompt: PreviewData.samplePrompt,
+        editablePrompt: $editablePrompt,
+        isGenerating: $isGenerating,
+        isPreviewingOldVersion: $isPreviewingOldVersion,
+        copyPromptToClipboard: { prompt in
+            print("Copied: \(prompt)")
+            return true
+        },
+        copySharedLinkToClipboard: { url in
+            print("Copied link: \(url)")
+            return true
+        },
+        modifyPromptWithOpenAIStream: {
+            print("OpenAI modify requested")
+        }
+    )
+    .modelContainer(PreviewData.previewContainer)
+    .environmentObject(AppSettings())
+    .padding()
 }

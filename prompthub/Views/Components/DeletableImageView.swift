@@ -116,9 +116,7 @@ struct ContentView_DeletableImagePreview: View {
     }
 }
 
-struct DeletableImageView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView_DeletableImagePreview()
-            .frame(width: 500, height: 800) // 给预览一个合适的尺寸
-    }
+#Preview {
+    ContentView_DeletableImagePreview()
+        .frame(width: 500, height: 800)
 }
