@@ -12,8 +12,8 @@ import SwiftData
 @Model
 final class ExternalSource {
     @Attribute(.externalStorage)
-    var data: Data
-    var createdAt: Date
+    var data: Data = Data()
+    var createdAt: Date = Date()
     
     var prompt: Prompt?
 

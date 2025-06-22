@@ -126,8 +126,10 @@ struct PromptSideBar: View {
 
     private func deletePrompt(_ prompt: Prompt) {
         // Delete all related history items first
-        for history in prompt.history {
-            modelContext.delete(history)
+        if let histories = prompt.history {
+            for history in histories {
+                modelContext.delete(history)
+            }
         }
         
         // Then delete the prompt itself

@@ -11,28 +11,34 @@ import SwiftUI
 @main
 struct prompthubApp: App {
     var sharedModelContainer: ModelContainer = {
-        
-        let publicConfig = ModelConfiguration(
-            "PublicStore",
-            schema: Schema([SharedCreation.self]),
-            cloudKitDatabase: .automatic
-        )
-
-        let privateConfig = ModelConfiguration(
-            schema: Schema([ Prompt.self, PromptHistory.self, ExternalSource.self ]),
-            cloudKitDatabase: .automatic
-        )
-        
-        do {
-            return try ModelContainer(
-                for: Schema(versionedSchema: SchemaV3.self),
-                migrationPlan: PromptHubMigrationPlan.self,
-                configurations: [publicConfig, privateConfig]
+            
+            let publicConfig = ModelConfiguration(
+                "PublicStore",
+                schema: Schema([SharedCreation.self]),
+                cloudKitDatabase: .automatic
             )
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+
+            let privateConfig = ModelConfiguration(
+                schema: Schema([ Prompt.self, PromptHistory.self, ExternalSource.self ]),
+                cloudKitDatabase: .automatic
+            )
+
+            let allVersionedSchemas: [any VersionedSchema.Type] = [
+                SchemaV1.self,
+                DefaultStoreSchemaV1.self,
+                SchemaV6.self
+            ]
+            
+            do {
+                return try ModelContainer(
+                    for: Schema(versionedSchema: SchemaV6.self),
+                    configurations: [publicConfig, privateConfig]
+                )
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
+        }()
+    
     @StateObject private var appSettings = AppSettings()
     @StateObject private var deepLinkManager = DeepLinkManager()
 
@@ -77,7 +83,7 @@ struct prompthubApp: App {
         }
         .modelContainer(sharedModelContainer)
         .menuBarExtraStyle(.window)
-        
+
         Window("Settings", id: "settings-window") {
             SettingsView()
                 .environmentObject(appSettings)
@@ -87,9 +93,9 @@ struct prompthubApp: App {
         .defaultSize(width: 600, height: 450)
         #endif
         .commands {
-            CommandGroup(replacing: .newItem) { }
+            CommandGroup(replacing: .newItem) {}
         }
-        
+
         #if os(macOS)
         WindowGroup("Image Viewer", for: Data.self) { $data in
             if let imageData = data {

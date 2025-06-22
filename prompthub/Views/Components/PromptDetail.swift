@@ -25,7 +25,7 @@ struct PromptDetail: View {
     private let borderColor = Color(NSColor.separatorColor)
 
     private var history: [PromptHistory] {
-        prompt.history.sorted { $0.version > $1.version }
+        prompt.history?.sorted { $0.version > $1.version } ?? []
     }
 
     private func copyPromptToClipboard(_ prompt: String) -> Bool {

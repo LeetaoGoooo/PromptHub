@@ -69,10 +69,9 @@ struct PromptMenuView: View {
     }
 
     private func copyToClipboard(_ prompt: Prompt) {
-        // Get the latest history from the prompt's relationship
-        let sortedHistory = prompt.history.sorted { $0.version > $1.version }
+        let sortedHistory = prompt.history?.sorted { $0.version > $1.version }
         
-        if let latestPromptText = sortedHistory.first?.content {
+        if let latestPromptText = sortedHistory?.first?.content {
             let pasteboard = NSPasteboard.general
             pasteboard.clearContents()
             pasteboard.setString(latestPromptText, forType: .string)

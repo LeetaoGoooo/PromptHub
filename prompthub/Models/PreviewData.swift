@@ -88,7 +88,7 @@ class PreviewData {
                 history.prompt = prompt
                 context.insert(history)
                 
-                prompt.history.append(history)
+                prompt.history?.append(history)
             }
             
             return container
