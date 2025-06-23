@@ -14,7 +14,7 @@ struct prompthubApp: App {
             
             let publicConfig = ModelConfiguration(
                 "PublicStore",
-                schema: Schema([SharedCreation.self]),
+                schema: Schema([SharedCreation.self, DataSource.self]),
                 cloudKitDatabase: .automatic
             )
 
@@ -22,16 +22,11 @@ struct prompthubApp: App {
                 schema: Schema([ Prompt.self, PromptHistory.self, ExternalSource.self ]),
                 cloudKitDatabase: .automatic
             )
-
-            let allVersionedSchemas: [any VersionedSchema.Type] = [
-                SchemaV1.self,
-                DefaultStoreSchemaV1.self,
-                SchemaV6.self
-            ]
             
             do {
                 return try ModelContainer(
-                    for: Schema(versionedSchema: SchemaV6.self),
+                    for: Schema([SharedCreation.self, DataSource.self, Prompt.self, PromptHistory.self, ExternalSource.self]),
+                    migrationPlan: PromptHubMigrationPlan.self,
                     configurations: [publicConfig, privateConfig]
                 )
             } catch {

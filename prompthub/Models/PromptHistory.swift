@@ -16,8 +16,6 @@ final class PromptHistory {
     var updatedAt: Date = Date()
     var version: Int = 0
     
-    var legacyPromptId: UUID?
-    
     @Relationship var prompt: Prompt?
     
     init(id: UUID = UUID(), promptText: String, createdAt: Date = Date(), updatedAt: Date = Date(), version: Int = 0) {
@@ -26,12 +24,5 @@ final class PromptHistory {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.version = version
-    }
-}
-
-extension PromptHistory {
-    var content: String {
-        get { promptText }
-        set { promptText = newValue }
     }
 }

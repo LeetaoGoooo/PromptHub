@@ -82,7 +82,7 @@ struct HistorySectionView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
 
-                Text(history.content)
+                Text(history.promptText)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -93,7 +93,7 @@ struct HistorySectionView: View {
             HStack(spacing: 12) {
                 Button {
                     isPreviewingOldVersion = true
-                    editablePrompt = history.content
+                    editablePrompt = history.promptText
                 } label: {
                     Image(systemName: "eye")
                         .foregroundColor(.accentColor)
@@ -109,7 +109,7 @@ struct HistorySectionView: View {
                 .buttonStyle(PlainButtonStyle())
 
                 Button {
-                    let success = copyPromptToClipboard(history.content)
+                    let success = copyPromptToClipboard(history.promptText)
                     if (success) {
                         showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
                     } else {
@@ -164,7 +164,7 @@ struct HistorySectionView: View {
             return true
         },
         deleteHistoryItem: { historyItem in
-            print("Deleted: \(historyItem.content)")
+            print("Deleted: \(historyItem.promptText)")
         }
     )
     .modelContainer(PreviewData.previewContainer)

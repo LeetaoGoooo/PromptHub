@@ -14,9 +14,7 @@ final class Prompt {
     var name: String = ""
     var desc: String?
     var link: String?
-    
-    var legacyExternalSource: [Data]?
-    
+        
     @Relationship(deleteRule: .cascade, inverse: \ExternalSource.prompt)
     var externalSources: [ExternalSource]? = []
     
@@ -45,10 +43,9 @@ extension Prompt {
             return data?.isEmpty ?? true ? nil : data
         }
         set { 
-            // Clear existing external sources
+
             externalSources?.removeAll()
             
-            // Add new external sources if provided
             if let newData = newValue {
                 for data in newData {
                     let externalSource = ExternalSource(data: data)

@@ -11,6 +11,7 @@ import SwiftData
 
 @Model
 final class ExternalSource {
+    var id: UUID = UUID()
     @Attribute(.externalStorage)
     var data: Data = Data()
     var createdAt: Date = Date()

@@ -84,7 +84,17 @@ class DeepLinkManager: ObservableObject {
         do {
   
             let pubCloudKitManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox",  modelContext: context)
-            let (newPrompt, _) = try await pubCloudKitManager.fetchAndCreateLocalCopy(bySharedCreationID: sharedItemID)
+            let sharedCreation = try await pubCloudKitManager.fetchSharedCreation(bySharedCreationID: sharedItemID)
+            
+            let sourceData = sharedCreation.dataSources?.map { $0.data }
+            let newPrompt = Prompt(name: sharedCreation.name, desc: sharedCreation.desc, externalSource: sourceData)
+            let newHistory = newPrompt.createHistory(prompt: sharedCreation.prompt, version: 0)
+            
+            context.insert(newPrompt)
+            context.insert(newHistory)
+            
+            try context.save()
+            
             self.importStatusMessage = "'\(newPrompt.name)' imported successfully!"
             self.activeTarget = .showImportedPrompt(promptID: newPrompt.id) // For navigation
 

@@ -10,10 +10,12 @@ enum SharedCreationField {
     static let name = "name"
     static let prompt = "prompt"
     static let desc = "desc"
-    static let externalSource = "externalSource"
+    static let externalSource = "externalSource" // Legacy: BYTES_LIST
+    static let externalSourceAssets = "externalSourceAssets" // New: ASSET_LIST
     static let sharedCreationID = "sharedCreationID"
 }
 
+@MainActor
 class PublicCloudKitSyncManager {
     private let container: CKContainer
     let publicDB: CKDatabase
@@ -40,9 +42,7 @@ class PublicCloudKitSyncManager {
             } catch let error as CKError where error.code == .unknownItem {
                 logger.info("Record \(recordName) not found for item \(item.name). Assuming it was deleted or name changed. Creating new record.")
                 record = CKRecord(recordType: CloudKitRecordType.sharedCreation) // Create new
-                // Clear local CloudKit metadata as we're effectively creating a new link
                 item.publicRecordName = nil
-                item.lastModifiedInCloudTimestamp = nil
             } catch {
                 logger.error("Error fetching record \(recordName) for item \(item.name): \(error.localizedDescription)")
                 throw error
@@ -57,12 +57,27 @@ class PublicCloudKitSyncManager {
         record[SharedCreationField.desc] = item.desc as CKRecordValue? // Handles nil
         record[SharedCreationField.sharedCreationID] = item.id.uuidString as CKRecordValue
 
-        // TODO: use CKAsset
-//        if let sources = item.externalSource, !sources.isEmpty {
-//            record[SharedCreationField.externalSource] = sources as CKRecordValue
-//        } else {
-//            record[SharedCreationField.externalSource] = nil // Explicitly nil if empty or nil
-//        }
+        var assets: [CKAsset] = []
+        if let dataSources = item.dataSources {
+            for dataSource in dataSources {
+                let tempDir = FileManager.default.temporaryDirectory
+                let tempURL = tempDir.appendingPathComponent(UUID().uuidString)
+                do {
+                    try dataSource.data.write(to: tempURL)
+                    let asset = CKAsset(fileURL: tempURL)
+                    assets.append(asset)
+                } catch {
+                    logger.error("Failed to write data to temporary file for CKAsset creation: \(error.localizedDescription)")
+                }
+            }
+        }
+
+        if !assets.isEmpty {
+            record[SharedCreationField.externalSourceAssets] = assets as CKRecordValue
+        } else {
+            record[SharedCreationField.externalSourceAssets] = nil
+        }
+        record[SharedCreationField.externalSource] = nil // Set legacy field to nil
 
         do {
             let savedRecord = try await publicDB.save(record)
@@ -70,12 +85,7 @@ class PublicCloudKitSyncManager {
 
             // Update SwiftData model with CloudKit metadata
             item.publicRecordName = savedRecord.recordID.recordName
-            if let tag = savedRecord.recordChangeTag {
-                item.lastModifiedInCloudTimestamp = Data(tag.utf8)
-            } else {
-                item.lastModifiedInCloudTimestamp = nil
-            }
-
+ 
             logger.debug("Updated SwiftData item \(item.name) with CloudKit metadata. ModelContext needs saving by caller.")
 
         } catch let error as CKError {
@@ -105,6 +115,78 @@ class PublicCloudKitSyncManager {
             logger.error("Error deleting record \(recordName) from public cloud: \(error.localizedDescription)")
             throw error
         }
+    }
+
+    // MARK: - Fetch from CloudKit by SharedCreation.id
+
+    /// Fetches a specific SharedCreationRecord from CloudKit by its original SwiftData model ID (UUID)
+    /// and returns a SharedCreation object without saving it locally.
+    /// - Parameter sharedCreationID: The UUID (id property) of the SharedCreation model to fetch.
+    /// - Returns: A SharedCreation object populated with data from CloudKit.
+    /// - Throws: An error if fetching from CloudKit fails or if no matching record is found.
+    func fetchSharedCreation(bySharedCreationID idToFetch: UUID) async throws -> SharedCreation {
+        logger.debug("Attempting to fetch SharedCreation by id \(idToFetch.uuidString).")
+
+        let predicate = NSPredicate(format: "%K == %@", SharedCreationField.sharedCreationID, idToFetch.uuidString)
+        let query = CKQuery(recordType: CloudKitRecordType.sharedCreation, predicate: predicate)
+
+        let fetchedRecord: CKRecord
+        do {
+            let (matchResults, _) = try await publicDB.records(matching: query, desiredKeys: nil, resultsLimit: 1)
+
+            if let firstMatch = matchResults.first {
+                switch firstMatch.1 {
+                case .success(let record):
+                    fetchedRecord = record
+                    logger.info("Successfully fetched record \(fetchedRecord.recordID.recordName) for sharedCreationID \(idToFetch.uuidString).")
+                case .failure(let error):
+                    logger.error("Error in fetched result for sharedCreationID \(idToFetch.uuidString): \(error.localizedDescription)")
+                    throw error
+                }
+            } else {
+                logger.warning("No record found in public CloudKit database for sharedCreationID \(idToFetch.uuidString).")
+                throw CKError(.unknownItem)
+            }
+        } catch {
+            logger.error("Error querying/fetching record by sharedCreationID \(idToFetch.uuidString) from public CloudKit: \(error.localizedDescription)")
+            throw error
+        }
+
+        let name = fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud"
+        let prompt = fetchedRecord[SharedCreationField.prompt] as? String ?? ""
+        let desc = fetchedRecord[SharedCreationField.desc] as? String
+
+        let sharedCreation = SharedCreation(
+            id: idToFetch,
+            name: name,
+            prompt: prompt,
+            desc: desc
+        )
+        
+        var dataSources: [DataSource] = []
+        // Try fetching from new asset field first
+        if let assets = fetchedRecord[SharedCreationField.externalSourceAssets] as? [CKAsset] {
+            logger.debug("Fetching from new externalSourceAssets field.")
+            for asset in assets {
+                if let fileURL = asset.fileURL,
+                   let data = try? Data(contentsOf: fileURL) {
+                    let dataSource = DataSource(data: data)
+                    dataSources.append(dataSource)
+                }
+            }
+        }
+        // Fallback to old data field
+        else if let dataList = fetchedRecord[SharedCreationField.externalSource] as? [Data] {
+            logger.debug("Fetching from legacy externalSource field.")
+            for data in dataList {
+                let dataSource = DataSource(data: data)
+                dataSources.append(dataSource)
+            }
+        }
+        sharedCreation.dataSources = dataSources
+        sharedCreation.publicRecordName = fetchedRecord.recordID.recordName
+
+        return sharedCreation
     }
 
     // MARK: - Fetch from CloudKit and Create Local Copies
@@ -137,8 +219,22 @@ class PublicCloudKitSyncManager {
             id: tempSharedCreationID, // Use the ID from the cloud record if it was stored
             name: fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud",
             prompt: fetchedRecord[SharedCreationField.prompt] as? String ?? "",
-            desc: fetchedRecord[SharedCreationField.desc] as? String,
+            desc: fetchedRecord[SharedCreationField.desc] as? String
         )
+
+        var dataSources: [DataSource] = []
+        if let assets = fetchedRecord[SharedCreationField.externalSourceAssets] as? [CKAsset] {
+            logger.debug("Fetching from new externalSourceAssets field for local copy.")
+            for asset in assets {
+                if let fileURL = asset.fileURL, let data = try? Data(contentsOf: fileURL) {
+                    dataSources.append(DataSource(data: data))
+                }
+            }
+        } else if let dataList = fetchedRecord[SharedCreationField.externalSource] as? [Data] {
+            logger.debug("Fetching from legacy externalSource field for local copy.")
+            dataSources = dataList.map { DataSource(data: $0) }
+        }
+        tempSharedCreation.dataSources = dataSources
 
         // Use the makeLocalCopy() method to get the Prompt and PromptHistory
         let (newPrompt, newPromptHistory) = tempSharedCreation.makeLocalCopy()
@@ -199,8 +295,22 @@ class PublicCloudKitSyncManager {
             id: idToFetch, // Use the ID we queried for
             name: fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud",
             prompt: fetchedRecord[SharedCreationField.prompt] as? String ?? "",
-            desc: fetchedRecord[SharedCreationField.desc] as? String,
+            desc: fetchedRecord[SharedCreationField.desc] as? String
         )
+
+        var dataSources: [DataSource] = []
+        if let assets = fetchedRecord[SharedCreationField.externalSourceAssets] as? [CKAsset] {
+            logger.debug("Fetching from new externalSourceAssets field for local copy.")
+            for asset in assets {
+                if let fileURL = asset.fileURL, let data = try? Data(contentsOf: fileURL) {
+                    dataSources.append(DataSource(data: data))
+                }
+            }
+        } else if let dataList = fetchedRecord[SharedCreationField.externalSource] as? [Data] {
+            logger.debug("Fetching from legacy externalSource field for local copy.")
+            dataSources = dataList.map { DataSource(data: $0) }
+        }
+        tempSharedCreation.dataSources = dataSources
 
         let (newPrompt, newPromptHistory) = tempSharedCreation.makeLocalCopy()
 

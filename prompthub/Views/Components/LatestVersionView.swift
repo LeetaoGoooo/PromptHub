@@ -89,7 +89,7 @@ struct LatestVersionView: View {
                         .buttonStyle(PlainButtonStyle())
 
                     Button {
-                        let success = copyPromptToClipboard(latestHistory.content)
+                        let success = copyPromptToClipboard(latestHistory.promptText)
                         if success {
                             showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
                         } else {
@@ -119,7 +119,7 @@ struct LatestVersionView: View {
                     )
                     .onChange(of: editablePrompt) { newValue in
                         if !isPreviewingOldVersion {
-                            latestHistory.content = newValue
+                            latestHistory.promptText = newValue
                             latestHistory.updatedAt = Date()
                             try? modelContext.save()
                         }
@@ -171,7 +171,7 @@ struct LatestVersionView: View {
 
                     Button("Return to latest") {
                         isPreviewingOldVersion = false
-                        editablePrompt = latestHistory.content
+                        editablePrompt = latestHistory.promptText
                     }
                     .buttonStyle(PlainButtonStyle())
                     .font(.caption)
@@ -213,7 +213,8 @@ struct LatestVersionView: View {
 
     @MainActor
     private func shareCreation() async {
-        let sharedItem = SharedCreation(name: prompt.name, prompt: latestHistory.content, desc: prompt.desc)
+        let dataSources = prompt.externalSource?.map { DataSource(data: $0) } ?? []
+        let sharedItem = SharedCreation(name: prompt.name, prompt: latestHistory.promptText, desc: prompt.desc, dataSources: dataSources)
         modelContext.insert(sharedItem)
 
         do {

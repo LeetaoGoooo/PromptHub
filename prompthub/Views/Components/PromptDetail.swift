@@ -77,12 +77,12 @@ struct PromptDetail: View {
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
             if let latest = history.first {
-                editablePrompt = latest.content
+                editablePrompt = latest.promptText
             }
         }
         .onChange(of: history) { newHistory in
             if let latest = newHistory.first, !isPreviewingOldVersion {
-                editablePrompt = latest.content
+                editablePrompt = latest.promptText
             }
         }
         .sheet(item: $selectedHistoryVersion) { version in
@@ -127,7 +127,7 @@ struct PromptDetail: View {
                 .font(.headline)
 
             ScrollView {
-                Text(version.content)
+                Text(version.promptText)
                     .font(.system(.body, design: .monospaced))
                     .padding()
                     .background(Color(NSColor.textBackgroundColor))
@@ -138,7 +138,7 @@ struct PromptDetail: View {
                 Spacer()
 
                 Button {
-                    copyPromptToClipboard(version.content)
+                    copyPromptToClipboard(version.promptText)
                 } label: {
                     Label("Copy Content", systemImage: "doc.on.doc")
                         .padding(8)
@@ -147,7 +147,7 @@ struct PromptDetail: View {
 
                 Button {
                     isPreviewingOldVersion = true
-                    editablePrompt = version.content
+                    editablePrompt = version.promptText
                     selectedHistoryVersion = nil
                 } label: {
                     Label("Preview in Editor", systemImage: "eye")
@@ -171,7 +171,7 @@ struct PromptDetail: View {
         }
         guard let latestHistory = history.first else { return }
         isGenerating = true
-        let userPrompt = latestHistory.content
+        let userPrompt = latestHistory.promptText
         let systemPrompt = settings.prompt
 
         let urlString = "\(settings.baseURL)/chat/completions"
@@ -238,7 +238,7 @@ struct PromptDetail: View {
             }
 
             if !accumulatedResponse.isEmpty {
-                newHistory.content = accumulatedResponse
+                newHistory.promptText = accumulatedResponse
                 try? modelContext.save()
             }
 

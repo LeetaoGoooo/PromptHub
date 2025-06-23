@@ -64,10 +64,23 @@ struct NewPromptDialog: View {
                     Text("Prompt")
                         .font(.subheadline)
 
-                    TextField("New Prompt", text: $prompt, axis: .vertical)
-                        .padding(8) // Light gray background
-                        .cornerRadius(6)
-                        .lineLimit(5 ... 10)
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: $prompt)
+                            .padding(4)
+                            .frame(minHeight: 120, maxHeight: 240)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+
+                        if prompt.isEmpty {
+                            Text("New Prompt")
+                                .foregroundColor(.gray.opacity(0.6))
+                                .padding(.horizontal, 9)
+                                .padding(.vertical, 12)
+                                .allowsHitTesting(false)
+                        }
+                    }
 
                 }.padding(.horizontal)
 
@@ -81,23 +94,10 @@ struct NewPromptDialog: View {
                 }
                 .padding(.horizontal)
 
-                VStack {
-
-                    DeletableImageView(image: $selectedImage)
-
-                    HStack(alignment: .center) {
-                        Text("Attachments")
-                            .font(.subheadline)
-                        Spacer()
-
-                        Button {
-                            showingFileImporter = true
-                        } label: {
-                            Image(systemName: "plus.circle")
-                        }
-                        .padding()
-                        .buttonStyle(.borderedProminent)
-                    }
+                DeletableImageView(image: $selectedImage)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    showingFileImporter = true
                 }
                 .onDrop(of: [.fileURL], isTargeted: nil) { providers in
                     handleDrop(providers: providers)
@@ -109,17 +109,15 @@ struct NewPromptDialog: View {
                 ) { result in
                     switch result {
                     case .success(let urls):
-                        guard let url = urls.first else {
-                            showToastMsg(msg: "No URL selected or multiple URLs")
-                            return
+                        if let url = urls.first {
+                            loadImage(from: url)
                         }
-                        loadImage(from: url)
                     case .failure(let error):
-                        showToastMsg(msg: "Error selecting file: \(error.localizedDescription)")
-                        selectedImage = nil
+                        print("Error: Could not load image from file importer: \(error.localizedDescription)")
                     }
                 }
-                .frame(minWidth: 256, minHeight: 256)
+                .frame(minWidth: 512, minHeight: 128)
+                .padding(.vertical)
 
                 HStack {
                     Spacer()
@@ -149,34 +147,39 @@ struct NewPromptDialog: View {
     @MainActor
     func savePrompt() {
         do {
-            
             let selectImageData: Data? = selectedImage?.png
             let externalSource: [Data] = selectImageData.map { [$0] } ?? []
             let promptName = promptName.trimmingCharacters(in: .whitespacesAndNewlines)
             let promptDesc = desc.trimmingCharacters(in: .whitespacesAndNewlines)
             let link = link.trimmingCharacters(in: .whitespacesAndNewlines)
-            
+
             if promptName.isEmpty {
                 showToastMsg(msg: "Name can't be empty")
                 return
             }
-            
-            let newPrompt = Prompt(name: promptName, desc: promptDesc.isEmpty ? nil : promptDesc , link: link.isEmpty ? nil: link, externalSource: externalSource)
+
+            if !link.isEmpty, (URL(string: link) == nil || URL(string: link)?.scheme == nil) {
+                showToastMsg(msg: "Source must be a valid URL (e.g. https://www.example.com)")
+                return
+            }
+
+            let newPrompt = Prompt(name: promptName, desc: promptDesc.isEmpty ? nil : promptDesc, link: link.isEmpty ? nil : link, externalSource: externalSource)
             modelContext.insert(newPrompt)
 
             let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-            
+
             if prompt.isEmpty {
                 showToastMsg(msg: "Prompt can't be empty")
                 return
             }
-            
+
             let newPromptHistory = newPrompt.createHistory(prompt: prompt, version: 0)
             modelContext.insert(newPromptHistory)
 
             // Save the context, committing the transaction.
             try modelContext.save()
 
+            isPresented = false
         } catch {
             print("Failed to save prompt and PromptHistory transactionally: \(error)")
             showToastMsg(msg: "Failed to save prompt: \(error)")

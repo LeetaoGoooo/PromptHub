@@ -11,21 +11,24 @@ import SwiftData
 @Model
 final class SharedCreation {
     var id: UUID = UUID()
-    var name: String = "";
-    var prompt: String = "";
+    var name: String = ""
+    var prompt: String = ""
     var desc: String?
-    @Attribute(.externalStorage)
-    var externalSource: [Data]?
-    var publicRecordName: String?
-    var lastModifiedInCloudTimestamp: Data?
+    
+    @Relationship(deleteRule: .cascade, inverse: \DataSource.creation)
+    var dataSources: [DataSource]? = []
 
-    init(id: UUID = UUID(), name: String, prompt: String, desc: String? = nil, externalSource: [Data]? = nil, publicRecordName: String? = nil, lastModifiedInCloudTimestamp: Data? = nil) {
+    var publicRecordName: String?
+    var lastModified: Date?
+
+    init(id: UUID = UUID(), name: String, prompt: String, desc: String? = nil, dataSources: [DataSource]? = [], publicRecordName: String? = nil, lastModified: Date? = .now) {
         self.id = id
         self.name = name
         self.prompt = prompt
         self.desc = desc
+        self.dataSources = dataSources
         self.publicRecordName = publicRecordName
-        self.lastModifiedInCloudTimestamp = lastModifiedInCloudTimestamp
+        self.lastModified = lastModified
     }
 
     func makeLocalCopy() -> (prompt: Prompt, promptHistory: PromptHistory) {
