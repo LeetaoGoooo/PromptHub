@@ -97,19 +97,35 @@ struct ContentView: View {
                     features: [
                         .init(
                             image: .init(
-                                systemName: "magnifyingglass.circle.fill", // 代表“搜索”和“优化”
-                                foregroundColor: .blue
+                                systemName: "square.grid.2x2.fill",
+                                foregroundColor: .purple
                             ),
-                            title: WhatsNew.Text("Status Bar Enhancements"),
-                            subtitle: WhatsNew.Text("A new search bar has been added to the status bar, with its display optimized for when you have many prompts.")
+                            title: WhatsNew.Text("Unified Prompt Browser"),
+                            subtitle: WhatsNew.Text("Brand new tabbed interface with organized categories: All, Mine, Shared, and Explore for better prompt management.")
                         ),
                         .init(
                             image: .init(
-                                systemName: "sidebar.squares.leading", // 代表“侧边栏”和“布局”
+                                systemName: "gear.circle.fill",
+                                foregroundColor: .orange
+                            ),
+                            title: WhatsNew.Text("Architecture Refactor"),
+                            subtitle: WhatsNew.Text("Complete data model restructuring with enhanced SwiftData integration and improved performance.")
+                        ),
+                        .init(
+                            image: .init(
+                                systemName: "magnifyingglass.circle.fill",
+                                foregroundColor: .blue
+                            ),
+                            title: WhatsNew.Text("Enhanced Search & Navigation"),
+                            subtitle: WhatsNew.Text("Optimized search functionality with better keyboard navigation and intuitive sidebar layout adjustments.")
+                        ),
+                        .init(
+                            image: .init(
+                                systemName: "icloud.and.arrow.up.fill",
                                 foregroundColor: .green
                             ),
-                            title: WhatsNew.Text("Intuitive Layout Adjustment"),
-                            subtitle: WhatsNew.Text("The sidebar's search bar has been repositioned to a more intuitive location for a smoother experience.")
+                            title: WhatsNew.Text("CloudKit Sync Improvements"),
+                            subtitle: WhatsNew.Text("Enhanced public cloud synchronization and sharing capabilities for better collaboration.")
                         )
                     ],
                     primaryAction: .init(
