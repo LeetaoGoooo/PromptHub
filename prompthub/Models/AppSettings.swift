@@ -14,7 +14,7 @@ class AppSettings: ObservableObject {
     public var openaiApiKey: String = "";
     
     @AppStorage("prompt")
-    public var prompt: String = NSLocalizedString("prompt_template", comment: "Default prompt template for optimizing prompts");
+    public var prompt: String = "prompt_template";
     
     @AppStorage("baseURL")
     public var baseURL: String = "https://api.openai.com/v1";

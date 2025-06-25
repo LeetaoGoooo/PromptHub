@@ -7,6 +7,7 @@
 
 import AlertToast
 import SwiftUI
+import SwiftData
 
 struct LatestVersionView: View {
     let latestHistory: PromptHistory
@@ -20,6 +21,7 @@ struct LatestVersionView: View {
     @State private var showToast = false
     @State private var toastTitle = ""
     @State private var toastType: AlertToast.AlertType = .regular
+    @State private var isCreateShareLink = false
 
     let copyPromptToClipboard: (_ prompt: String) -> Bool
     let copySharedLinkToClipboard: (_ url: URL) -> Bool
@@ -81,11 +83,21 @@ struct LatestVersionView: View {
                         }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
+                            .opacity(isCreateShareLink ? 0 : 1)
+                            .overlay {
+                                if isCreateShareLink {
+                                    ProgressView()
+                                        .scaleEffect(0.5)
+                                }
+                            }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(Color.accentColor.opacity(0.1))
                             .cornerRadius(8)
-                    }.help("Share")
+                    }
+                  
+                    .disabled(isCreateShareLink)
+                    .help("Share")
                         .buttonStyle(PlainButtonStyle())
 
                     Button {
@@ -213,6 +225,28 @@ struct LatestVersionView: View {
 
     @MainActor
     private func shareCreation() async {
+        isCreateShareLink = true
+        
+        // Check if a shared creation already exists for this prompt
+        if let existingSharedItem = findExistingSharedCreation() {
+            let urlScheme = "sharedprompt"
+            guard let shareURL = URL(string: "\(urlScheme)://creation/\(existingSharedItem.id.uuidString)") else {
+                showToastMsg(msg: "Could not create share URL")
+                isCreateShareLink = false
+                return
+            }
+            
+            let success = copySharedLinkToClipboard(shareURL)
+            if success {
+                showToastMsg(msg: "Existing Share Link Copied", alertType: .complete(Color.green))
+            } else {
+                showToastMsg(msg: "Copy Share Link Failed", alertType: .error(Color.red))
+            }
+            isCreateShareLink = false
+            return
+        }
+        
+        // Create new shared creation if none exists
         let dataSources = prompt.externalSource?.map { DataSource(data: $0) } ?? []
         let sharedItem = SharedCreation(name: prompt.name, prompt: latestHistory.promptText, desc: prompt.desc, dataSources: dataSources)
         modelContext.insert(sharedItem)
@@ -223,11 +257,14 @@ struct LatestVersionView: View {
             try await publicCloudKitSyncManager.pushItemToPublicCloud(sharedItem)
         } catch {
             showToastMsg(msg: "Error saving shared item: \(error)")
+            isCreateShareLink = false
+            return
         }
 
         let urlScheme = "sharedprompt"
         guard let shareURL = URL(string: "\(urlScheme)://creation/\(sharedItem.id.uuidString)") else {
             showToastMsg(msg: "Could not create share URL")
+            isCreateShareLink = false
             return
         }
 
@@ -237,6 +274,31 @@ struct LatestVersionView: View {
         } else {
             showToastMsg(msg: "Create Share Link Failed", alertType: .error(Color.red))
         }
+        isCreateShareLink = false
+    }
+    
+    private func findExistingSharedCreation() -> SharedCreation? {
+        // Capture the values as constants for the predicate
+        let promptName = prompt.name
+        let promptText = latestHistory.promptText
+        let promptDesc = prompt.desc
+        
+        let descriptor = FetchDescriptor<SharedCreation>(
+            predicate: #Predicate<SharedCreation> { sharedCreation in
+                sharedCreation.name == promptName && 
+                sharedCreation.prompt == promptText &&
+                sharedCreation.desc == promptDesc
+            }
+        )
+        
+        do {
+            let results = try modelContext.fetch(descriptor)
+            // Return the most recently modified shared creation if multiple exist
+            return results.max(by: { ($0.lastModified ?? Date.distantPast) < ($1.lastModified ?? Date.distantPast) })
+        } catch {
+            print("Error fetching existing shared creations: \(error)")
+            return nil
+        }
     }
 }
 
@@ -244,7 +306,7 @@ struct LatestVersionView: View {
     @Previewable @State var editablePrompt = "Sample editable prompt content"
     @Previewable @State var isGenerating = false
     @Previewable @State var isPreviewingOldVersion = false
-    
+
     LatestVersionView(
         latestHistory: PreviewData.samplePromptHistory.first!,
         prompt: PreviewData.samplePrompt,

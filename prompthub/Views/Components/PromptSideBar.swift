@@ -30,22 +30,40 @@ struct PromptSideBar: View {
                 .padding(.vertical, 10)
 
             List(selection: $promptSelection) {
-                ForEach(filteredPrompts) { prompt in
-                    Text(prompt.name)
-                        .contextMenu {
-                            Button("Edit") {
-                                  self.promptSelection = prompt
-                                  self.isEditingPromptSheetPresented = true
-                            }
-                            .frame(width: 100)
-
-                            Button("Delete", role: .destructive) {
-                                promptToDelete = prompt
-                            }.frame(width: 100)
-                        }.tag(prompt)
+                // All Prompts section
+                Section {
+                    HStack {
+                        Image(systemName: "square.grid.2x2")
+                            .foregroundColor(.secondary)
+                        Text("All Prompts")
+                    }
+                    .onTapGesture {
+                        promptSelection = nil
+                    }
                 }
-                .onDelete(perform: deletePrompts)
+                
+                // User prompts section
+                Section("My Prompts") {
+                    ForEach(filteredPrompts) { prompt in
+                        Text(prompt.name)
+                            .contextMenu {
+                                Button("Edit") {
+                                      self.promptSelection = prompt
+                                      self.isEditingPromptSheetPresented = true
+                                }
+                                .frame(width: 100)
+
+                                Button("Delete", role: .destructive) {
+                                    promptToDelete = prompt
+                                }.frame(width: 100)
+                            }
+                            .tag(prompt)
+                    }
+                    .onDelete(perform: deletePrompts)
+                }
             }
+            .listStyle(.sidebar)
+            .help("Click 'All Prompts' to browse all prompts, or select a specific prompt to view details")
 
 
             HStack {
@@ -63,14 +81,6 @@ struct PromptSideBar: View {
                 .padding(.leading, 8) // Give the button some breathing room
                 
                 Spacer()
-                
-                Button {
-                    promptSelection = nil
-                } label: {
-                    Image(systemName: "lightbulb.max")
-                }
-                .buttonStyle(.plain)
-                .frame(width: 16, height: 16)
                 
                 Button {
                     openWindow(id: "settings-window")

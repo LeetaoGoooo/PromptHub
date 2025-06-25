@@ -25,19 +25,6 @@ struct GalleryPromptItemView: View {
                 Spacer()
 
                 HStack(spacing: 8) {
-                
-                    Button {
-                            showingPreviewSheet = true
-                         } label: {
-                             Image(systemName: "eye")
-                                 .padding(.horizontal, 10)
-                                 .padding(.vertical, 5)
-                                 .background(Color.accentColor.opacity(0.1))
-                                 .cornerRadius(8)
-                                 .help("Preview Prompt")
-                         }
-                         .buttonStyle(PlainButtonStyle())
-                    
                     Button {
                         copyPromptToClipboard(galleryPromptItem.prompt)
                     } label: {
@@ -91,6 +78,9 @@ struct GalleryPromptItemView: View {
                 promptContent: galleryPromptItem.prompt,
                 copyPromptToClipboard: copyPromptToClipboard
             )
+        }
+        .onTapGesture{
+            showingPreviewSheet.toggle()
         }
     }
 

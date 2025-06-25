@@ -35,9 +35,18 @@ struct ContentView: View {
             if let selectedPrompt = promptSelection {
                 PromptDetail(prompt: selectedPrompt)
             } else {
-                GalleryPromptView()
+                UnifiedPromptBrowserView()
             }
-        }.sheet(isPresented: $isPresentingNewPromptDialog) {
+        }
+        .onKeyPress(.escape) {
+            // Clear selection when ESC is pressed, following macOS conventions
+            if promptSelection != nil {
+                promptSelection = nil
+                return .handled
+            }
+            return .ignored
+        }
+        .sheet(isPresented: $isPresentingNewPromptDialog) {
             NewPromptDialog(isPresented: $isPresentingNewPromptDialog)
         }
         .sheet(isPresented: $isEditingPromptSheetPresented) {

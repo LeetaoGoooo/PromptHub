@@ -81,10 +81,32 @@ class DeepLinkManager: ObservableObject {
 
         let context = ModelContext(modelContainer)
 
+        // Check if this link was created by the current user
+        let isOwnCreation = SharedCreation.isCreatedByCurrentUser(id: sharedItemID, modelContext: context)
+        
+        if isOwnCreation {
+            logger.info("SharedCreation \(sharedItemID.uuidString) was created by current user - skipping import")
+            self.importStatusMessage = "This is your own shared creation - no need to import!"
+            return
+        }
+
         do {
   
             let pubCloudKitManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox",  modelContext: context)
             let sharedCreation = try await pubCloudKitManager.fetchSharedCreation(bySharedCreationID: sharedItemID)
+            
+            // Check if a similar prompt already exists locally
+            let hasSimilarPrompt = SharedCreation.hasSimilarPromptLocally(
+                name: sharedCreation.name,
+                prompt: sharedCreation.prompt,
+                modelContext: context
+            )
+            
+            if hasSimilarPrompt {
+                logger.info("Similar prompt '\(sharedCreation.name)' already exists locally - skipping import")
+                self.importStatusMessage = "A similar prompt '\(sharedCreation.name)' already exists in your collection!"
+                return
+            }
             
             let sourceData = sharedCreation.dataSources?.map { $0.data }
             let newPrompt = Prompt(name: sharedCreation.name, desc: sharedCreation.desc, externalSource: sourceData)
