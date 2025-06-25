@@ -9,11 +9,40 @@ import SwiftData
 import SwiftUI
 import WhatsNewKit
 
+// Define selection state that can handle both "All Prompts" and specific prompts
+enum PromptSelection: Hashable, Equatable {
+    case allPrompts
+    case prompt(Prompt)
+    
+    // Custom equality implementation
+    static func == (lhs: PromptSelection, rhs: PromptSelection) -> Bool {
+        switch (lhs, rhs) {
+        case (.allPrompts, .allPrompts):
+            return true
+        case (.prompt(let lhsPrompt), .prompt(let rhsPrompt)):
+            return lhsPrompt.id == rhsPrompt.id
+        default:
+            return false
+        }
+    }
+    
+    // Custom hash implementation
+    func hash(into hasher: inout Hasher) {
+        switch self {
+        case .allPrompts:
+            hasher.combine("allPrompts")
+        case .prompt(let prompt):
+            hasher.combine("prompt")
+            hasher.combine(prompt.id)
+        }
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var isPresentingNewPromptDialog = false
-    @State private var promptSelection: Prompt?
+    @State private var promptSelection: PromptSelection = .allPrompts
 
     @State private var isEditingPromptSheetPresented = false
 
@@ -32,16 +61,17 @@ struct ContentView: View {
                 promptSelection: $promptSelection, isPresentingNewPromptDialog: $isPresentingNewPromptDialog
             ).frame(minWidth: 200)
         } detail: {
-            if let selectedPrompt = promptSelection {
-                PromptDetail(prompt: selectedPrompt)
-            } else {
+            switch promptSelection {
+            case .allPrompts:
                 UnifiedPromptBrowserView()
+            case .prompt(let selectedPrompt):
+                PromptDetail(prompt: selectedPrompt)
             }
         }
         .onKeyPress(.escape) {
             // Clear selection when ESC is pressed, following macOS conventions
-            if promptSelection != nil {
-                promptSelection = nil
+            if case .prompt(_) = promptSelection {
+                promptSelection = .allPrompts
                 return .handled
             }
             return .ignored
@@ -50,8 +80,8 @@ struct ContentView: View {
             NewPromptDialog(isPresented: $isPresentingNewPromptDialog)
         }
         .sheet(isPresented: $isEditingPromptSheetPresented) {
-            if let currentPromptForSheet = self.promptSelection {
-                EditPromptSheet(prompt: currentPromptForSheet, isPresented: self.$isEditingPromptSheetPresented)
+            if case .prompt(let currentPrompt) = promptSelection {
+                EditPromptSheet(prompt: currentPrompt, isPresented: self.$isEditingPromptSheetPresented)
                     .frame(minWidth: 400, idealWidth: 500, minHeight: 350, idealHeight: 450)
             }
         }

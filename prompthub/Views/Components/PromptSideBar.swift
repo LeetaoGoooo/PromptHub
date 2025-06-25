@@ -15,9 +15,7 @@ struct PromptSideBar: View {
     @Binding var isEditingPromptSheetPresented: Bool
     @State private var promptToDelete: Prompt?
     
-    @State private var searchText: String = ""
-    
-    @Binding var promptSelection: Prompt?
+    @Binding var promptSelection: PromptSelection
     @Binding var isPresentingNewPromptDialog: Bool
     
     @Environment(\.openWindow) var openWindow
@@ -25,39 +23,37 @@ struct PromptSideBar: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            SearchBarView(searchText: $searchText)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-
             List(selection: $promptSelection) {
                 // All Prompts section
                 Section {
-                    HStack {
-                        Image(systemName: "square.grid.2x2")
-                            .foregroundColor(.secondary)
+                    Label {
                         Text("All Prompts")
+                    } icon: {
+                        Image(systemName: "square.grid.2x2")
                     }
-                    .onTapGesture {
-                        promptSelection = nil
-                    }
+                    .tag(PromptSelection.allPrompts)
                 }
                 
                 // User prompts section
                 Section("My Prompts") {
-                    ForEach(filteredPrompts) { prompt in
-                        Text(prompt.name)
-                            .contextMenu {
-                                Button("Edit") {
-                                      self.promptSelection = prompt
-                                      self.isEditingPromptSheetPresented = true
-                                }
-                                .frame(width: 100)
-
-                                Button("Delete", role: .destructive) {
-                                    promptToDelete = prompt
-                                }.frame(width: 100)
+                    ForEach(prompts) { prompt in
+                        Label {
+                            Text(prompt.name)
+                        } icon: {
+                            Image(systemName: "doc.text")
+                        }
+                        .contextMenu {
+                            Button("Edit") {
+                                  self.promptSelection = .prompt(prompt)
+                                  self.isEditingPromptSheetPresented = true
                             }
-                            .tag(prompt)
+                            .frame(width: 100)
+
+                            Button("Delete", role: .destructive) {
+                                promptToDelete = prompt
+                            }.frame(width: 100)
+                        }
+                        .tag(PromptSelection.prompt(prompt))
                     }
                     .onDelete(perform: deletePrompts)
                 }
@@ -127,7 +123,7 @@ struct PromptSideBar: View {
     }
 
     private func deletePrompts(at offsets: IndexSet) {
-        let promptsToDelete = offsets.map { filteredPrompts[$0] }
+        let promptsToDelete = offsets.map { prompts[$0] }
         for prompt in promptsToDelete {
              promptToDelete = prompt
         }
@@ -148,28 +144,19 @@ struct PromptSideBar: View {
         do {
             try modelContext.save()
             
-            if promptSelection == prompt {
-                promptSelection = nil
+            if case .prompt(let selectedPrompt) = promptSelection, selectedPrompt == prompt {
+                promptSelection = .allPrompts
             }
         } catch {
             print("Failed to delete prompt or related history: \(error.localizedDescription)")
         }
         promptToDelete = nil
     }
-    
-    private var filteredPrompts: [Prompt] {
-        if searchText.isEmpty {
-            return prompts
-        } else {
-            return prompts.filter { prompt in
-                prompt.name.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-    }
+
 }
 
 #Preview {
-    @Previewable @State var promptSelection: Prompt? = nil
+    @Previewable @State var promptSelection: PromptSelection = .allPrompts
     @Previewable @State var isEditingPromptSheetPresented = false
     @Previewable @State var isPresentingNewPromptDialog = false
     
