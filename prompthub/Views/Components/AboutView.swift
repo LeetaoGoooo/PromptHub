@@ -58,8 +58,6 @@ struct AboutContentView: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider { // Added Preview for SettingsView
-    static var previews: some View {
-        SettingsView()
-    }
+#Preview {
+    AboutContentView()
 }

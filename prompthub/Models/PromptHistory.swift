@@ -9,20 +9,20 @@ import SwiftData
 import Foundation
 
 @Model
-class PromptHistory {
-    var id: UUID;
-    var promptId: UUID;
-    var prompt:String;
-    var createdAt: Date;
-    var updatedAt: Date;
-    var version: Int;
+final class PromptHistory {
+    var id: UUID = UUID()
+    var promptText: String = ""
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
+    var version: Int = 0
     
-    init(id: UUID = UUID(), promptId: UUID, prompt: String, createdAt: Date = Date(), updatedAt: Date = Date(), version: Int = 0) {
-        self.id = id;
-        self.promptId = promptId;
-        self.prompt = prompt;
-        self.createdAt = createdAt;
-        self.updatedAt = updatedAt;
-        self.version = version;        
+    @Relationship var prompt: Prompt?
+    
+    init(id: UUID = UUID(), promptText: String, createdAt: Date = Date(), updatedAt: Date = Date(), version: Int = 0) {
+        self.id = id
+        self.promptText = promptText
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.version = version
     }
 }

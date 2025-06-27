@@ -15,9 +15,7 @@ struct PromptSideBar: View {
     @Binding var isEditingPromptSheetPresented: Bool
     @State private var promptToDelete: Prompt?
     
-    @State private var searchText: String = ""
-    
-    @Binding var promptSelection: Prompt?
+    @Binding var promptSelection: PromptSelection
     @Binding var isPresentingNewPromptDialog: Bool
     
     @Environment(\.openWindow) var openWindow
@@ -25,16 +23,28 @@ struct PromptSideBar: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            SearchBarView(searchText: $searchText)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-
             List(selection: $promptSelection) {
-                ForEach(filteredPrompts) { prompt in
-                    Text(prompt.name)
+                // All Prompts section
+                Section {
+                    Label {
+                        Text("All Prompts")
+                    } icon: {
+                        Image(systemName: "square.grid.2x2")
+                    }
+                    .tag(PromptSelection.allPrompts)
+                }
+                
+                // User prompts section
+                Section("My Prompts") {
+                    ForEach(prompts) { prompt in
+                        Label {
+                            Text(prompt.name)
+                        } icon: {
+                            Image(systemName: "doc.text")
+                        }
                         .contextMenu {
                             Button("Edit") {
-                                  self.promptSelection = prompt
+                                  self.promptSelection = .prompt(prompt)
                                   self.isEditingPromptSheetPresented = true
                             }
                             .frame(width: 100)
@@ -42,10 +52,14 @@ struct PromptSideBar: View {
                             Button("Delete", role: .destructive) {
                                 promptToDelete = prompt
                             }.frame(width: 100)
-                        }.tag(prompt)
+                        }
+                        .tag(PromptSelection.prompt(prompt))
+                    }
+                    .onDelete(perform: deletePrompts)
                 }
-                .onDelete(perform: deletePrompts)
             }
+            .listStyle(.sidebar)
+            .help("Click 'All Prompts' to browse all prompts, or select a specific prompt to view details")
 
 
             HStack {
@@ -63,14 +77,6 @@ struct PromptSideBar: View {
                 .padding(.leading, 8) // Give the button some breathing room
                 
                 Spacer()
-                
-                Button {
-                    promptSelection = nil
-                } label: {
-                    Image(systemName: "lightbulb.max")
-                }
-                .buttonStyle(.plain)
-                .frame(width: 16, height: 16)
                 
                 Button {
                     openWindow(id: "settings-window")
@@ -117,7 +123,7 @@ struct PromptSideBar: View {
     }
 
     private func deletePrompts(at offsets: IndexSet) {
-        let promptsToDelete = offsets.map { filteredPrompts[$0] }
+        let promptsToDelete = offsets.map { prompts[$0] }
         for prompt in promptsToDelete {
              promptToDelete = prompt
         }
@@ -125,35 +131,39 @@ struct PromptSideBar: View {
 
 
     private func deletePrompt(_ prompt: Prompt) {
-        let promptId = prompt.id
-        let historyPredicate = #Predicate<PromptHistory> { $0.promptId == promptId }
-        let relatedPromptHistoriesDescriptor = FetchDescriptor<PromptHistory>(predicate: historyPredicate)
-
-        do {
-            let promptHistories = try modelContext.fetch(relatedPromptHistoriesDescriptor)
-            for history in promptHistories {
+        // Delete all related history items first
+        if let histories = prompt.history {
+            for history in histories {
                 modelContext.delete(history)
             }
-            modelContext.delete(prompt)
+        }
+        
+        // Then delete the prompt itself
+        modelContext.delete(prompt)
+        
+        do {
             try modelContext.save()
             
-            if promptSelection == prompt {
-                promptSelection = nil
+            if case .prompt(let selectedPrompt) = promptSelection, selectedPrompt == prompt {
+                promptSelection = .allPrompts
             }
-
         } catch {
             print("Failed to delete prompt or related history: \(error.localizedDescription)")
         }
         promptToDelete = nil
     }
+
+}
+
+#Preview {
+    @Previewable @State var promptSelection: PromptSelection = .allPrompts
+    @Previewable @State var isEditingPromptSheetPresented = false
+    @Previewable @State var isPresentingNewPromptDialog = false
     
-    private var filteredPrompts: [Prompt] {
-        if searchText.isEmpty {
-            return prompts
-        } else {
-            return prompts.filter { prompt in
-                prompt.name.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-    }
+    PromptSideBar(
+        isEditingPromptSheetPresented: $isEditingPromptSheetPresented,
+        promptSelection: $promptSelection,
+        isPresentingNewPromptDialog: $isPresentingNewPromptDialog
+    )
+    .modelContainer(PreviewData.previewContainer)
 }

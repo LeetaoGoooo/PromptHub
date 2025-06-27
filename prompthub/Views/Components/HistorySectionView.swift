@@ -82,7 +82,7 @@ struct HistorySectionView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
 
-                Text(history.prompt)
+                Text(history.promptText)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -93,7 +93,7 @@ struct HistorySectionView: View {
             HStack(spacing: 12) {
                 Button {
                     isPreviewingOldVersion = true
-                    editablePrompt = history.prompt
+                    editablePrompt = history.promptText
                 } label: {
                     Image(systemName: "eye")
                         .foregroundColor(.accentColor)
@@ -109,7 +109,7 @@ struct HistorySectionView: View {
                 .buttonStyle(PlainButtonStyle())
 
                 Button {
-                    let success = copyPromptToClipboard(history.prompt)
+                    let success = copyPromptToClipboard(history.promptText)
                     if (success) {
                         showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
                     } else {
@@ -145,4 +145,28 @@ struct HistorySectionView: View {
         toastTitle = msg
         toastType = alertType
     }
+}
+
+#Preview {
+    @Previewable @State var showOlderVersions = true
+    @Previewable @State var selectedHistoryVersion: PromptHistory?
+    @Previewable @State var isPreviewingOldVersion = false
+    @Previewable @State var editablePrompt = "Sample editable prompt"
+    
+    HistorySectionView(
+        history: PreviewData.samplePromptHistory,
+        showOlderVersions: $showOlderVersions,
+        selectedHistoryVersion: $selectedHistoryVersion,
+        isPreviewingOldVersion: $isPreviewingOldVersion,
+        editablePrompt: $editablePrompt,
+        copyPromptToClipboard: { prompt in
+            print("Copied: \(prompt)")
+            return true
+        },
+        deleteHistoryItem: { historyItem in
+            print("Deleted: \(historyItem.promptText)")
+        }
+    )
+    .modelContainer(PreviewData.previewContainer)
+    .padding()
 }

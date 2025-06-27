@@ -10,7 +10,6 @@ import SwiftUI
 import SwiftData
 import OSLog
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "DeepLinkManager")
 
 enum DeepLinkTarget: Identifiable {
     case showImportedPrompt(promptID: UUID)
@@ -28,6 +27,8 @@ class DeepLinkManager: ObservableObject {
     @Published var activeTarget: DeepLinkTarget? = nil
     @Published var importStatusMessage: String? = nil
 
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "DeepLinkManager")
+    
     let urlScheme = "sharedprompt"
 
     @MainActor
@@ -80,10 +81,42 @@ class DeepLinkManager: ObservableObject {
 
         let context = ModelContext(modelContainer)
 
+        // Check if this link was created by the current user
+        let isOwnCreation = SharedCreation.isCreatedByCurrentUser(id: sharedItemID, modelContext: context)
+        
+        if isOwnCreation {
+            logger.info("SharedCreation \(sharedItemID.uuidString) was created by current user - skipping import")
+            self.importStatusMessage = "This is your own shared creation - no need to import!"
+            return
+        }
+
         do {
   
             let pubCloudKitManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox",  modelContext: context)
-            let (newPrompt, _) = try await pubCloudKitManager.fetchAndCreateLocalCopy(bySharedCreationID: sharedItemID)
+            let sharedCreation = try await pubCloudKitManager.fetchSharedCreation(bySharedCreationID: sharedItemID)
+            
+            // Check if a similar prompt already exists locally
+            let hasSimilarPrompt = SharedCreation.hasSimilarPromptLocally(
+                name: sharedCreation.name,
+                prompt: sharedCreation.prompt,
+                modelContext: context
+            )
+            
+            if hasSimilarPrompt {
+                logger.info("Similar prompt '\(sharedCreation.name)' already exists locally - skipping import")
+                self.importStatusMessage = "A similar prompt '\(sharedCreation.name)' already exists in your collection!"
+                return
+            }
+            
+            let sourceData = sharedCreation.dataSources?.map { $0.data }
+            let newPrompt = Prompt(name: sharedCreation.name, desc: sharedCreation.desc, externalSource: sourceData)
+            let newHistory = newPrompt.createHistory(prompt: sharedCreation.prompt, version: 0)
+            
+            context.insert(newPrompt)
+            context.insert(newHistory)
+            
+            try context.save()
+            
             self.importStatusMessage = "'\(newPrompt.name)' imported successfully!"
             self.activeTarget = .showImportedPrompt(promptID: newPrompt.id) // For navigation
 

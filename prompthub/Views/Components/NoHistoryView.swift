@@ -19,3 +19,8 @@ struct NoHistoryView: View {
             .cornerRadius(12)
     }
 }
+
+#Preview {
+    NoHistoryView()
+        .padding()
+}

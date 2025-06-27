@@ -208,3 +208,9 @@ struct EditPromptSheet: View {
         showToast = true
     }
 }
+
+#Preview {
+    @Previewable @State var isPresented = true
+    EditPromptSheet(prompt: PreviewData.samplePrompt, isPresented: $isPresented)
+        .modelContainer(PreviewData.previewContainer)
+}

@@ -25,19 +25,6 @@ struct GalleryPromptItemView: View {
                 Spacer()
 
                 HStack(spacing: 8) {
-                
-                    Button {
-                            showingPreviewSheet = true
-                         } label: {
-                             Image(systemName: "eye")
-                                 .padding(.horizontal, 10)
-                                 .padding(.vertical, 5)
-                                 .background(Color.accentColor.opacity(0.1))
-                                 .cornerRadius(8)
-                                 .help("Preview Prompt")
-                         }
-                         .buttonStyle(PlainButtonStyle())
-                    
                     Button {
                         copyPromptToClipboard(galleryPromptItem.prompt)
                     } label: {
@@ -92,6 +79,9 @@ struct GalleryPromptItemView: View {
                 copyPromptToClipboard: copyPromptToClipboard
             )
         }
+        .onTapGesture{
+            showingPreviewSheet.toggle()
+        }
     }
 
     @MainActor
@@ -100,7 +90,7 @@ struct GalleryPromptItemView: View {
             let newPrompt = Prompt(name: galleryPromptItem.name, desc: galleryPromptItem.description, link: galleryPromptItem.link)
             modelContext.insert(newPrompt)
 
-            let newPromptHistory = PromptHistory(promptId: newPrompt.id, prompt: galleryPromptItem.prompt)
+            let newPromptHistory = newPrompt.createHistory(prompt: galleryPromptItem.prompt, version: 0)
             modelContext.insert(newPromptHistory)
 
             try modelContext.save()

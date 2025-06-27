@@ -10,28 +10,79 @@ import SwiftData
 
 @Model
 final class SharedCreation {
-    var id: UUID = UUID() 
+    var id: UUID = UUID()
     var name: String = ""
     var prompt: String = ""
-    var desc: String? = nil
-    var externalSource: [Data]? = nil
+    var desc: String?
     
+    @Relationship(deleteRule: .cascade, inverse: \DataSource.creation)
+    var dataSources: [DataSource]? = []
+
     var publicRecordName: String?
-    var lastModifiedInCloudTimestamp: Data?
-    
-    init(id: UUID = UUID(), name: String, prompt: String, desc: String? = nil, externalSource: [Data]? = nil, publicRecordName: String? = nil, lastModifiedInCloudTimestamp: Data? = nil) {
+    var lastModified: Date?
+
+    init(id: UUID = UUID(), name: String, prompt: String, desc: String? = nil, dataSources: [DataSource]? = [], publicRecordName: String? = nil, lastModified: Date? = .now) {
         self.id = id
         self.name = name
         self.prompt = prompt
-        self.externalSource = externalSource
         self.desc = desc
+        self.dataSources = dataSources
         self.publicRecordName = publicRecordName
-        self.lastModifiedInCloudTimestamp = lastModifiedInCloudTimestamp
+        self.lastModified = lastModified
+    }
+
+    func makeLocalCopy() -> (prompt: Prompt, promptHistory: PromptHistory) {
+        let prompt = Prompt(name: self.name, desc: self.desc)
+        let promptHistory = prompt.createHistory(prompt: self.prompt, version: 0)
+        return (prompt, promptHistory)
     }
     
-    func makeLocalCopy() -> (prompt:Prompt, promptHistory: PromptHistory) {
-        let prompt = Prompt(name: self.name, desc: self.desc, externalSource: self.externalSource)
-        let promptHistory = PromptHistory(promptId: prompt.id, prompt: self.prompt)
-        return (prompt, promptHistory)
+    /// Checks if this SharedCreation was created by the current user by looking for it in the local SwiftData store
+    /// - Parameter modelContext: The ModelContext to query against
+    /// - Returns: true if found locally (created by current user), false otherwise
+    static func isCreatedByCurrentUser(id: UUID, modelContext: ModelContext) -> Bool {
+        let descriptor = FetchDescriptor<SharedCreation>(
+            predicate: #Predicate<SharedCreation> { creation in
+                creation.id == id
+            }
+        )
+        
+        do {
+            let results = try modelContext.fetch(descriptor)
+            return !results.isEmpty
+        } catch {
+            return false
+        }
+    }
+    
+    /// Checks if a similar prompt already exists locally to prevent duplicate imports
+    /// - Parameters:
+    ///   - name: The name of the prompt to check
+    ///   - prompt: The content of the prompt to check
+    ///   - modelContext: The ModelContext to query against
+    /// - Returns: true if a similar prompt already exists locally, false otherwise
+    static func hasSimilarPromptLocally(name: String, prompt: String, modelContext: ModelContext) -> Bool {
+        // Check for existing prompts with same name and content
+        let promptDescriptor = FetchDescriptor<Prompt>(
+            predicate: #Predicate<Prompt> { existingPrompt in
+                existingPrompt.name == name
+            }
+        )
+        
+        do {
+            let existingPrompts = try modelContext.fetch(promptDescriptor)
+            
+            // Check if any existing prompt has the same content in its latest history
+            for existingPrompt in existingPrompts {
+                if let history = existingPrompt.history,
+                   let latestHistory = history.max(by: { $0.version < $1.version }),
+                   latestHistory.promptText == prompt {
+                    return true
+                }
+            }
+            return false
+        } catch {
+            return false
+        }
     }
 }

@@ -13,7 +13,7 @@ import UniformTypeIdentifiers
 struct PromptDetail: View {
     @Bindable var prompt:Prompt
     @Environment(\.modelContext) private var modelContext
-    @Query var history: [PromptHistory]
+    
     @State private var editablePrompt: String = ""
     @State private var showOlderVersions: Bool = false
     @State private var selectedHistoryVersion: PromptHistory?
@@ -21,18 +21,11 @@ struct PromptDetail: View {
     @EnvironmentObject var settings: AppSettings
     @State private var isGenerating = false
 
-    // Colors based on Apple design
     private let cardBackground = Color(NSColor.controlBackgroundColor)
     private let borderColor = Color(NSColor.separatorColor)
 
-    init(prompt: Prompt) {
-        self.prompt = prompt
-    
-        let currentPromptId = prompt.id
-
-        _history = Query(filter: #Predicate<PromptHistory> { history in
-            history.promptId == currentPromptId
-        }, sort: [SortDescriptor(\.version, order: .reverse)])
+    private var history: [PromptHistory] {
+        prompt.history?.sorted { $0.version > $1.version } ?? []
     }
 
     private func copyPromptToClipboard(_ prompt: String) -> Bool {
@@ -84,12 +77,12 @@ struct PromptDetail: View {
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
             if let latest = history.first {
-                editablePrompt = latest.prompt
+                editablePrompt = latest.promptText
             }
         }
         .onChange(of: history) { newHistory in
             if let latest = newHistory.first, !isPreviewingOldVersion {
-                editablePrompt = latest.prompt
+                editablePrompt = latest.promptText
             }
         }
         .sheet(item: $selectedHistoryVersion) { version in
@@ -134,7 +127,7 @@ struct PromptDetail: View {
                 .font(.headline)
 
             ScrollView {
-                Text(version.prompt)
+                Text(version.promptText)
                     .font(.system(.body, design: .monospaced))
                     .padding()
                     .background(Color(NSColor.textBackgroundColor))
@@ -145,7 +138,7 @@ struct PromptDetail: View {
                 Spacer()
 
                 Button {
-                    copyPromptToClipboard(version.prompt)
+                    copyPromptToClipboard(version.promptText)
                 } label: {
                     Label("Copy Content", systemImage: "doc.on.doc")
                         .padding(8)
@@ -154,7 +147,7 @@ struct PromptDetail: View {
 
                 Button {
                     isPreviewingOldVersion = true
-                    editablePrompt = version.prompt
+                    editablePrompt = version.promptText
                     selectedHistoryVersion = nil
                 } label: {
                     Label("Preview in Editor", systemImage: "eye")
@@ -178,7 +171,7 @@ struct PromptDetail: View {
         }
         guard let latestHistory = history.first else { return }
         isGenerating = true
-        let userPrompt = latestHistory.prompt
+        let userPrompt = latestHistory.promptText
         let systemPrompt = settings.prompt
 
         let urlString = "\(settings.baseURL)/chat/completions"
@@ -210,8 +203,8 @@ struct PromptDetail: View {
                 return
             }
 
-            let newHistory = PromptHistory(promptId: prompt.id, prompt: "")
             let version = (history.first?.version ?? 0) + 1
+            let newHistory = prompt.createHistory(prompt: "", version: version)
             
             newHistory.createdAt = Date()
             newHistory.updatedAt = Date()
@@ -245,7 +238,7 @@ struct PromptDetail: View {
             }
 
             if !accumulatedResponse.isEmpty {
-                newHistory.prompt = accumulatedResponse
+                newHistory.promptText = accumulatedResponse
                 try? modelContext.save()
             }
 
@@ -257,4 +250,10 @@ struct PromptDetail: View {
             isGenerating = false
         }
     }
+}
+
+#Preview {
+    PromptDetail(prompt: PreviewData.samplePrompt)
+        .modelContainer(PreviewData.previewContainer)
+        .environmentObject(AppSettings())
 }

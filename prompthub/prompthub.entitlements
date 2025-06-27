@@ -12,6 +12,10 @@
 	<array>
 		<string>CloudKit</string>
 	</array>
+	<key>com.apple.security.temporary-exception.shared-preference.read-write</key>
+	<array>
+    	<string>com.duck.leetao.prompthub</string>
+	</array>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
 	<key>com.apple.security.assets.pictures.read-only</key>

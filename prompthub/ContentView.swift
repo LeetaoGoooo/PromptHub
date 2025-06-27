@@ -9,11 +9,40 @@ import SwiftData
 import SwiftUI
 import WhatsNewKit
 
+// Define selection state that can handle both "All Prompts" and specific prompts
+enum PromptSelection: Hashable, Equatable {
+    case allPrompts
+    case prompt(Prompt)
+    
+    // Custom equality implementation
+    static func == (lhs: PromptSelection, rhs: PromptSelection) -> Bool {
+        switch (lhs, rhs) {
+        case (.allPrompts, .allPrompts):
+            return true
+        case (.prompt(let lhsPrompt), .prompt(let rhsPrompt)):
+            return lhsPrompt.id == rhsPrompt.id
+        default:
+            return false
+        }
+    }
+    
+    // Custom hash implementation
+    func hash(into hasher: inout Hasher) {
+        switch self {
+        case .allPrompts:
+            hasher.combine("allPrompts")
+        case .prompt(let prompt):
+            hasher.combine("prompt")
+            hasher.combine(prompt.id)
+        }
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var isPresentingNewPromptDialog = false
-    @State private var promptSelection: Prompt?
+    @State private var promptSelection: PromptSelection = .allPrompts
 
     @State private var isEditingPromptSheetPresented = false
 
@@ -32,17 +61,27 @@ struct ContentView: View {
                 promptSelection: $promptSelection, isPresentingNewPromptDialog: $isPresentingNewPromptDialog
             ).frame(minWidth: 200)
         } detail: {
-            if let selectedPrompt = promptSelection {
+            switch promptSelection {
+            case .allPrompts:
+                UnifiedPromptBrowserView()
+            case .prompt(let selectedPrompt):
                 PromptDetail(prompt: selectedPrompt)
-            } else {
-                GalleryPromptView()
             }
-        }.sheet(isPresented: $isPresentingNewPromptDialog) {
+        }
+        .onKeyPress(.escape) {
+            // Clear selection when ESC is pressed, following macOS conventions
+            if case .prompt(_) = promptSelection {
+                promptSelection = .allPrompts
+                return .handled
+            }
+            return .ignored
+        }
+        .sheet(isPresented: $isPresentingNewPromptDialog) {
             NewPromptDialog(isPresented: $isPresentingNewPromptDialog)
         }
         .sheet(isPresented: $isEditingPromptSheetPresented) {
-            if let currentPromptForSheet = self.promptSelection {
-                EditPromptSheet(prompt: currentPromptForSheet, isPresented: self.$isEditingPromptSheetPresented)
+            if case .prompt(let currentPrompt) = promptSelection {
+                EditPromptSheet(prompt: currentPrompt, isPresented: self.$isEditingPromptSheetPresented)
                     .frame(minWidth: 400, idealWidth: 500, minHeight: 350, idealHeight: 450)
             }
         }
@@ -58,19 +97,35 @@ struct ContentView: View {
                     features: [
                         .init(
                             image: .init(
-                                systemName: "magnifyingglass.circle.fill", // 代表“搜索”和“优化”
-                                foregroundColor: .blue
+                                systemName: "square.grid.2x2.fill",
+                                foregroundColor: .purple
                             ),
-                            title: WhatsNew.Text("Status Bar Enhancements"),
-                            subtitle: WhatsNew.Text("A new search bar has been added to the status bar, with its display optimized for when you have many prompts.")
+                            title: WhatsNew.Text("Unified Prompt Browser"),
+                            subtitle: WhatsNew.Text("Brand new tabbed interface with organized categories: All, Mine, Shared, and Explore for better prompt management.")
                         ),
                         .init(
                             image: .init(
-                                systemName: "sidebar.squares.leading", // 代表“侧边栏”和“布局”
+                                systemName: "gear.circle.fill",
+                                foregroundColor: .orange
+                            ),
+                            title: WhatsNew.Text("Architecture Refactor"),
+                            subtitle: WhatsNew.Text("Complete data model restructuring with enhanced SwiftData integration and improved performance.")
+                        ),
+                        .init(
+                            image: .init(
+                                systemName: "magnifyingglass.circle.fill",
+                                foregroundColor: .blue
+                            ),
+                            title: WhatsNew.Text("Enhanced Search & Navigation"),
+                            subtitle: WhatsNew.Text("Optimized search functionality with better keyboard navigation and intuitive sidebar layout adjustments.")
+                        ),
+                        .init(
+                            image: .init(
+                                systemName: "icloud.and.arrow.up.fill",
                                 foregroundColor: .green
                             ),
-                            title: WhatsNew.Text("Intuitive Layout Adjustment"),
-                            subtitle: WhatsNew.Text("The sidebar's search bar has been repositioned to a more intuitive location for a smoother experience.")
+                            title: WhatsNew.Text("CloudKit Sync Improvements"),
+                            subtitle: WhatsNew.Text("Enhanced public cloud synchronization and sharing capabilities for better collaboration.")
                         )
                     ],
                     primaryAction: .init(

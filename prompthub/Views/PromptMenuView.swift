@@ -69,22 +69,16 @@ struct PromptMenuView: View {
     }
 
     private func copyToClipboard(_ prompt: Prompt) {
-        let promptId = prompt.id
-        let relatedPromptHistoriesDescriptor = FetchDescriptor<PromptHistory>(predicate: #Predicate { history in
-            history.promptId == promptId
-        }, sortBy: [SortDescriptor(\.version, order: .reverse)])
+        let sortedHistory = prompt.history?.sorted { $0.version > $1.version }
         
-        do {
-            let promptHistories = try modelContext.fetch(relatedPromptHistoriesDescriptor)
-            if let latestPromptText = promptHistories.first?.prompt {
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.setString(latestPromptText, forType: .string)
-                
-                print("Copied: \(prompt.name)")
-            }
-        } catch {
-            print("Failed to fetch prompt history: \(error.localizedDescription)")
+        if let latestPromptText = sortedHistory?.first?.promptText {
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(latestPromptText, forType: .string)
+            
+            print("Copied: \(prompt.name)")
+        } else {
+            print("No history found for prompt: \(prompt.name)")
         }
     }
 }
@@ -148,4 +142,9 @@ struct PromptRowView: View {
             }
         }
     }
+}
+
+#Preview {
+    PromptMenuView()
+        .modelContainer(PreviewData.previewContainer)
 }
