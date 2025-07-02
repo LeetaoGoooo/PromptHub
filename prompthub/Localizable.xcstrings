@@ -788,6 +788,9 @@
         }
       }
     },
+    "Loading..." : {
+
+    },
     "Mine" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -1,5 +1,5 @@
 {
-  "originHash" : "d4a7d542fc61530976f9698cd29dac124cfb99410efbfeaef4e7428b7267438b",
+  "originHash" : "07e6b098e1d04c66892c0d52da8a3aacc67e000320513ffedbf5c42d9ea9eb6d",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -11,12 +11,129 @@
       }
     },
     {
+      "identity" : "jsonschema",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/loopwork-ai/JSONSchema",
+      "state" : {
+        "branch" : "main",
+        "revision" : "d1ca5ea865a5198c6c2bc5da026dc3fb1358545f"
+      }
+    },
+    {
       "identity" : "launchatlogin-modern",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sindresorhus/LaunchAtLogin-Modern",
       "state" : {
         "branch" : "main",
         "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc"
+      }
+    },
+    {
+      "identity" : "swift-anthropic",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-anthropic",
+      "state" : {
+        "branch" : "main",
+        "revision" : "3073127724e7679d98ce4ff763380e8226485bd8"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser",
+      "state" : {
+        "branch" : "main",
+        "revision" : "cf0f6b1d704ea937a2f65f2c4cb107dd769d96ff"
+      }
+    },
+    {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections.git",
+      "state" : {
+        "revision" : "c1805596154bb3a265fd91b8ac0c4433b4348fb0",
+        "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "swift-elevenlabs",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-elevenlabs",
+      "state" : {
+        "branch" : "main",
+        "revision" : "ff780660139032a2da87319ac8f8bf846969b11f"
+      }
+    },
+    {
+      "identity" : "swift-fal",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-fal",
+      "state" : {
+        "branch" : "main",
+        "revision" : "9e99ac5652f0229aa0cdbc378f392ebfed8d0ab7"
+      }
+    },
+    {
+      "identity" : "swift-gen-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-gen-kit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "868183db90fec3742b7fcf6db05dd4ae69151b29"
+      }
+    },
+    {
+      "identity" : "swift-llama",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-llama",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e07e8ccaa09e6b02aebe2e014e7dd900317692ad"
+      }
+    },
+    {
+      "identity" : "swift-mistral",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-mistral",
+      "state" : {
+        "branch" : "main",
+        "revision" : "9f945cbee60c0cb94074a0f2a797899e13693f1a"
+      }
+    },
+    {
+      "identity" : "swift-ollama",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-ollama",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1c7f65965e2e23cc787c7cf4e298872301f68245"
+      }
+    },
+    {
+      "identity" : "swift-openai",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-openai",
+      "state" : {
+        "branch" : "main",
+        "revision" : "752fb110f4250d3cf444f9fd50081f8a4524ca93"
+      }
+    },
+    {
+      "identity" : "swift-perplexity",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-perplexity",
+      "state" : {
+        "branch" : "main",
+        "revision" : "c457e4358ecd2bd1f7e9d0bf5a1f67efd6646449"
+      }
+    },
+    {
+      "identity" : "swift-shared-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nathanborror/swift-shared-kit",
+      "state" : {
+        "branch" : "main",
+        "revision" : "3159eb54575d9f8b432bc236f7f46a8d6431d563"
       }
     },
     {

@@ -10,6 +10,7 @@
 		0E1E0AC92DE01FD100392E15 /* AlertToast in Frameworks */ = {isa = PBXBuildFile; productRef = 0E1E0AC82DE01FD100392E15 /* AlertToast */; };
 		0E32437A2DEDCFC500581488 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E3243792DEDCFC500581488 /* WhatsNewKit */; };
 		0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 0E554B372D7EEE30008DC907 /* LaunchAtLogin */; };
+		0E5749462E128445001CB54A /* GenKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E5749452E128445001CB54A /* GenKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +96,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E5749462E128445001CB54A /* GenKit in Frameworks */,
 				0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */,
 				0E1E0AC92DE01FD100392E15 /* AlertToast in Frameworks */,
 				0E32437A2DEDCFC500581488 /* WhatsNewKit in Frameworks */,
@@ -161,6 +163,7 @@
 				0E554B372D7EEE30008DC907 /* LaunchAtLogin */,
 				0E1E0AC82DE01FD100392E15 /* AlertToast */,
 				0E3243792DEDCFC500581488 /* WhatsNewKit */,
+				0E5749452E128445001CB54A /* GenKit */,
 			);
 			productName = prompthub;
 			productReference = 0E6CAD342D72E6CE001FD9B3 /* prompthub.app */;
@@ -249,6 +252,7 @@
 				0E554B362D7EEE14008DC907 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 				0E1E0AC72DE01FD100392E15 /* XCRemoteSwiftPackageReference "AlertToast" */,
 				0E3243782DEDCFC500581488 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
+				0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0E6CAD352D72E6CE001FD9B3 /* Products */;
@@ -650,6 +654,14 @@
 				kind = branch;
 			};
 		};
+		0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nathanborror/swift-gen-kit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -667,6 +679,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0E554B362D7EEE14008DC907 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
 			productName = LaunchAtLogin;
+		};
+		0E5749452E128445001CB54A /* GenKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */;
+			productName = GenKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
