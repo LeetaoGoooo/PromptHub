@@ -795,22 +795,22 @@
         }
       }
     },
-    "Icon Meanings" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图标含义"
-          }
-        }
-      }
-    },
     "History Versions" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "历史版本"
+          }
+        }
+      }
+    },
+    "Icon Meanings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图标含义"
           }
         }
       }
@@ -1415,6 +1415,9 @@
     "Shared on %@" : {
 
     },
+    "Shared Prompt" : {
+
+    },
     "Shared prompt (private)" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1424,9 +1427,6 @@
           }
         }
       }
-    },
-    "Shared Prompt" : {
-
     },
     "Shared: %@" : {
 

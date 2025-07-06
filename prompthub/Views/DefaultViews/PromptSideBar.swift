@@ -131,24 +131,18 @@ struct PromptSideBar: View {
 
 
     private func deletePrompt(_ prompt: Prompt) {
-        // Delete all related history items first
-        if let histories = prompt.history {
-            for history in histories {
-                modelContext.delete(history)
-            }
-        }
-        
-        // Then delete the prompt itself
+        // Delete the prompt - SwiftData will automatically cascade delete related history
         modelContext.delete(prompt)
         
         do {
             try modelContext.save()
             
+            // Reset selection if the deleted prompt was currently selected
             if case .prompt(let selectedPrompt) = promptSelection, selectedPrompt == prompt {
                 promptSelection = .allPrompts
             }
         } catch {
-            print("Failed to delete prompt or related history: \(error.localizedDescription)")
+            print("Failed to delete prompt: \(error.localizedDescription)")
         }
         promptToDelete = nil
     }

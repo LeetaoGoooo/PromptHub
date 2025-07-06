@@ -7,16 +7,20 @@
 
 import SwiftUI
 import AlertToast
+import OSLog
 
 struct SharedCreationItemView: View {
     let sharedCreation: SharedCreation
     let showToastMsg: (_ msg: String, _ alertType: AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (_ prompt: String) -> Void
+    let onDeleted: (() -> Void)?
     @Environment(\.modelContext) private var modelContext
     @State private var isHovering = false
     @State private var showingPreviewSheet = false
     @State private var showingDeleteConfirmation = false
     @State private var isDeleting = false
+    
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "SharedCreationItemView")
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -66,10 +70,14 @@ struct SharedCreationItemView: View {
                             showingDeleteConfirmation = true
                         } label: {
                             if isDeleting {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
+                                HStack(spacing: 4) {
+                                    ProgressView()
+                                        .scaleEffect(0.6)
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .background(Color.red.opacity(0.1))
+                                .cornerRadius(8)
                             } else {
                                 Image(systemName: "trash")
                                     .foregroundColor(.red)
@@ -115,10 +123,12 @@ struct SharedCreationItemView: View {
             titleVisibility: .visible
         ) {
             Button("Delete", role: .destructive) {
+                isDeleting = true
                 Task {
                     await deleteSharedCreation()
                 }
             }
+            .disabled(isDeleting)
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Are you sure you want to delete '\(sharedCreation.name)'? This action cannot be undone and will remove it from the public gallery.")
@@ -139,25 +149,43 @@ struct SharedCreationItemView: View {
     }
     
     private func deleteSharedCreation() async {
-        isDeleting = true
-        
         do {
             let syncManager = PublicCloudKitSyncManager(
                 containerIdentifier: "iCloud.com.duck.leetao.promptbox",
                 modelContext: modelContext
             )
             
-            try await syncManager.deleteSharedCreation(sharedCreation)
+            showToastMsg(
+                "Deleting shared creation...",
+                .regular
+            )
             
+            logger.info("Starting deletion for SharedCreation: \(self.sharedCreation.id)")
+            // Delete from CloudKit
+            try await syncManager.deleteSharedCreation(sharedCreation)
+            logger.info("CloudKit deletion completed successfully for SharedCreation: \(self.sharedCreation.id)")
             showToastMsg(
                 "Shared creation deleted successfully",
                 .complete(.green)
             )
+            
+            // Trigger refresh callback
+            onDeleted?()
         } catch {
-            showToastMsg(
-                "Failed to delete shared creation: \(error.localizedDescription)",
-                .error(.red)
-            )
+            logger.error("Deletion failed for SharedCreation: \(self.sharedCreation.id), error: \(error.localizedDescription)")
+            
+            // Check if this is a CloudKit sync error
+            if (error as NSError).domain == "CloudKitSync" && (error as NSError).code == 1001 {
+                showToastMsg(
+                    "CloudKit deletion failed. Please try again when online.",
+                    .error(.orange)
+                )
+            } else {
+                showToastMsg(
+                    "Failed to delete shared creation: \(error.localizedDescription)",
+                    .error(.red)
+                )
+            }
         }
         
         isDeleting = false

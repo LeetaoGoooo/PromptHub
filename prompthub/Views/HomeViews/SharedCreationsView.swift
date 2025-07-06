@@ -11,7 +11,6 @@ import SwiftData
 import SwiftUI
 
 struct SharedCreationsView: View {
-    @Query private var localSharedCreations: [SharedCreation]
     @Environment(\.modelContext) private var modelContext
     
     let searchText: String
@@ -33,39 +32,34 @@ struct SharedCreationsView: View {
         return PromptViewHelpers.columns(for: width)
     }
     
-    // Combine and categorize shared creations
+    // Combine and categorize shared creations based on whether they exist locally
+    // Items with publicRecordName that exist locally are user's creations
     private var categorizedSharedCreations: (userCreations: [SharedCreation], otherCreations: [SharedCreation]) {
-        let allCreations = localSharedCreations + publicSharedCreations
-        
         // Filter by search text first
         let filteredCreations: [SharedCreation]
         if searchText.isEmpty {
-            filteredCreations = allCreations
+            filteredCreations = publicSharedCreations
         } else {
-            filteredCreations = allCreations.filter { creation in
+            filteredCreations = publicSharedCreations.filter { creation in
                 creation.name.localizedCaseInsensitiveContains(searchText) ||
-                (creation.desc?.localizedCaseInsensitiveContains(searchText) ?? false)
+                    (creation.desc?.localizedCaseInsensitiveContains(searchText) ?? false)
             }
         }
         
-        // Remove duplicates based on ID (public versions override local ones)
-        var uniqueCreations: [UUID: SharedCreation] = [:]
-        for creation in filteredCreations {
-            uniqueCreations[creation.id] = creation
-        }
-        
-        // Categorize into user's and others'
-        let userCreations = uniqueCreations.values.filter { creation in
+        // Categorize into user's and others' based on local existence
+        let userCreations = filteredCreations.filter { creation in
+            // If this SharedCreation exists locally (has been pushed from this device), it's user's creation
             SharedCreation.isCreatedByCurrentUser(id: creation.id, modelContext: modelContext)
         }
         
-        let otherCreations = uniqueCreations.values.filter { creation in
+        let otherCreations = filteredCreations.filter { creation in
+            // If this SharedCreation doesn't exist locally, it's from other users
             !SharedCreation.isCreatedByCurrentUser(id: creation.id, modelContext: modelContext)
         }
         
         return (
-            userCreations: Array(userCreations).sorted { $0.lastModified ?? Date.distantPast > $1.lastModified ?? Date.distantPast },
-            otherCreations: Array(otherCreations).sorted { $0.lastModified ?? Date.distantPast > $1.lastModified ?? Date.distantPast }
+            userCreations: userCreations.sorted { $0.lastModified ?? Date.distantPast > $1.lastModified ?? Date.distantPast },
+            otherCreations: otherCreations.sorted { $0.lastModified ?? Date.distantPast > $1.lastModified ?? Date.distantPast }
         )
     }
     
@@ -146,7 +140,12 @@ struct SharedCreationsView: View {
                                                 SharedCreationItemView(
                                                     sharedCreation: creation,
                                                     showToastMsg: showToastMsg,
-                                                    copyPromptToClipboard: copyPromptToClipboard
+                                                    copyPromptToClipboard: copyPromptToClipboard,
+                                                    onDeleted: {
+                                                        Task {
+                                                            await loadPublicSharedCreations()
+                                                        }
+                                                    }
                                                 )
                                                 .background(
                                                     PromptViewHelpers.promptItemBackground(borderColor: Color.orange.opacity(0.3))
@@ -182,7 +181,8 @@ struct SharedCreationsView: View {
                                             SharedCreationItemView(
                                                 sharedCreation: creation,
                                                 showToastMsg: showToastMsg,
-                                                copyPromptToClipboard: copyPromptToClipboard
+                                                copyPromptToClipboard: copyPromptToClipboard,
+                                                onDeleted:nil
                                             )
                                             .background(
                                                 PromptViewHelpers.promptItemBackground(borderColor: Color.orange.opacity(0.3))

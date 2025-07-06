@@ -288,6 +288,7 @@ struct LatestVersionView: View {
             try modelContext.save()
             let publicCloudKitSyncManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox", modelContext: modelContext)
             try await publicCloudKitSyncManager.pushItemToPublicCloud(sharedItem)
+            try modelContext.save()
             existingSharedCreation = sharedItem
         } catch {
             showToastMsg(msg: "Error saving shared item: \(error)")
