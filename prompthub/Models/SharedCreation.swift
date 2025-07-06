@@ -20,8 +20,10 @@ final class SharedCreation {
 
     var publicRecordName: String?
     var lastModified: Date?
+    
+    var isPublic: Bool = false
 
-    init(id: UUID = UUID(), name: String, prompt: String, desc: String? = nil, dataSources: [DataSource]? = [], publicRecordName: String? = nil, lastModified: Date? = .now) {
+    init(id: UUID = UUID(), name: String, prompt: String, desc: String? = nil, dataSources: [DataSource]? = [], publicRecordName: String? = nil, lastModified: Date? = .now, isPublic: Bool = false) {
         self.id = id
         self.name = name
         self.prompt = prompt
@@ -29,6 +31,7 @@ final class SharedCreation {
         self.dataSources = dataSources
         self.publicRecordName = publicRecordName
         self.lastModified = lastModified
+        self.isPublic = isPublic
     }
 
     func makeLocalCopy() -> (prompt: Prompt, promptHistory: PromptHistory) {

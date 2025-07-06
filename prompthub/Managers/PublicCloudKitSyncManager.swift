@@ -13,6 +13,7 @@ enum SharedCreationField {
     static let externalSource = "externalSource" // Legacy: BYTES_LIST
     static let externalSourceAssets = "externalSourceAssets" // New: ASSET_LIST
     static let sharedCreationID = "sharedCreationID"
+    static let isPublic = "isPublic"
 }
 
 @MainActor
@@ -56,6 +57,7 @@ class PublicCloudKitSyncManager {
         record[SharedCreationField.prompt] = item.prompt as CKRecordValue
         record[SharedCreationField.desc] = item.desc as CKRecordValue? // Handles nil
         record[SharedCreationField.sharedCreationID] = item.id.uuidString as CKRecordValue
+        record[SharedCreationField.isPublic] = item.isPublic as CKRecordValue
         
         var assets: [CKAsset] = []
         if let dataSources = item.dataSources {
@@ -193,12 +195,14 @@ class PublicCloudKitSyncManager {
         let name = fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud"
         let prompt = fetchedRecord[SharedCreationField.prompt] as? String ?? ""
         let desc = fetchedRecord[SharedCreationField.desc] as? String
+        let isPublic = fetchedRecord[SharedCreationField.isPublic] as? Bool ?? false
         
         let sharedCreation = SharedCreation(
             id: idToFetch,
             name: name,
             prompt: prompt,
-            desc: desc
+            desc: desc,
+            isPublic: isPublic
         )
         
         var dataSources: [DataSource] = []
@@ -257,7 +261,8 @@ class PublicCloudKitSyncManager {
             id: tempSharedCreationID, // Use the ID from the cloud record if it was stored
             name: fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud",
             prompt: fetchedRecord[SharedCreationField.prompt] as? String ?? "",
-            desc: fetchedRecord[SharedCreationField.desc] as? String
+            desc: fetchedRecord[SharedCreationField.desc] as? String,
+            isPublic: fetchedRecord[SharedCreationField.isPublic] as? Bool ?? false
         )
         
         var dataSources: [DataSource] = []
@@ -333,7 +338,8 @@ class PublicCloudKitSyncManager {
             id: idToFetch, // Use the ID we queried for
             name: fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud",
             prompt: fetchedRecord[SharedCreationField.prompt] as? String ?? "",
-            desc: fetchedRecord[SharedCreationField.desc] as? String
+            desc: fetchedRecord[SharedCreationField.desc] as? String,
+            isPublic: fetchedRecord[SharedCreationField.isPublic] as? Bool ?? false
         )
         
         var dataSources: [DataSource] = []
@@ -417,12 +423,14 @@ class PublicCloudKitSyncManager {
         let name = record[SharedCreationField.name] as? String ?? "Untitled from Cloud"
         let prompt = record[SharedCreationField.prompt] as? String ?? ""
         let desc = record[SharedCreationField.desc] as? String
+        let isPublic = record[SharedCreationField.isPublic] as? Bool ?? false
         
         let sharedCreation = SharedCreation(
             id: id,
             name: name,
             prompt: prompt,
-            desc: desc
+            desc: desc,
+            isPublic: isPublic
         )
         
         // Handle external sources (both new and legacy format)

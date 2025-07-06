@@ -67,66 +67,50 @@ struct UnifiedPromptBrowserView: View {
     @State private var showToast = false
     @State private var toastMessage = ""
     @State private var toastType: AlertToast.AlertType = .regular
-    
-    private func columns(for width: CGFloat) -> [GridItem] {
-        let columnCount = max(1, Int(width / 300))
-        return Array(repeating: GridItem(.flexible(), spacing: 16), count: columnCount)
-    }
-    
-    private var filteredGalleryPrompts: [GalleryPrompt] {
-        if searchText.isEmpty {
-            return galleryPrompts
-        }
-        return galleryPrompts.filter { prompt in
-            prompt.name.localizedCaseInsensitiveContains(searchText) ||
-            (prompt.description?.localizedCaseInsensitiveContains(searchText) ?? false)
-        }
-    }
-    
-    private var filteredUserPrompts: [Prompt] {
-        if searchText.isEmpty {
-            return userPrompts
-        }
-        return userPrompts.filter { prompt in
-            prompt.name.localizedCaseInsensitiveContains(searchText) ||
-            (prompt.desc?.localizedCaseInsensitiveContains(searchText) ?? false)
-        }
-    }
-    
-    private var filteredSharedCreations: [SharedCreation] {
-        if searchText.isEmpty {
-            return sharedCreations
-        }
-        return sharedCreations.filter { creation in
-            creation.name.localizedCaseInsensitiveContains(searchText) ||
-            (creation.desc?.localizedCaseInsensitiveContains(searchText) ?? false)
-        }
-    }
+    @State private var showIconLegend = false
     
     var body: some View {
         VStack(spacing: 0) {
             // Tab Bar
             HStack(spacing: 0) {
                 ForEach(PromptTab.allCases, id: \.self) { tab in
-                    Button {
-                        selectedTab = tab
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 14, weight: .medium))
-                            Text(tab.localizedTitle)
-                                .font(.system(size: 14, weight: .medium))
+                    HStack(spacing: 4) {
+                        Button {
+                            selectedTab = tab
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: tab.icon)
+                                    .font(.system(size: 14, weight: .medium))
+                                Text(tab.localizedTitle)
+                                    .font(.system(size: 14, weight: .medium))
+                            }
+                            .foregroundColor(selectedTab == tab ? tab.accentColor : .secondary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(selectedTab == tab ? tab.accentColor.opacity(0.1) : Color.clear)
+                            )
                         }
-                        .foregroundColor(selectedTab == tab ? tab.accentColor : .secondary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(selectedTab == tab ? tab.accentColor.opacity(0.1) : Color.clear)
-                        )
+                        .buttonStyle(PlainButtonStyle())
+                        .animation(.easeInOut(duration: 0.2), value: selectedTab)
+                        
+                        // Add info icon only for All tab
+                        if tab == .all {
+                            Button {
+                                showIconLegend.toggle()
+                            } label: {
+                                Image(systemName: "info.circle")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                                    .opacity(0.7)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .popover(isPresented: $showIconLegend, arrowEdge: .bottom) {
+                                IconLegendView()
+                            }
+                        }
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .animation(.easeInOut(duration: 0.2), value: selectedTab)
                 }
                 Spacer()
             }
@@ -149,13 +133,33 @@ struct UnifiedPromptBrowserView: View {
             Group {
                 switch selectedTab {
                 case .all:
-                    allPromptsView
+                    AllPromptsView(
+                        searchText: searchText,
+                        galleryPrompts: galleryPrompts,
+                        isLoading: isLoading,
+                        showToastMsg: showToastMessage,
+                        copyPromptToClipboard: copyToClipboard
+                    )
                 case .mine:
-                    myPromptsView
+                    MyPromptsView(
+                        searchText: searchText,
+                        showToastMsg: showToastMessage,
+                        copyPromptToClipboard: copyToClipboard
+                    )
                 case .shared:
-                    sharedCreationsView
+                    SharedCreationsView(
+                        searchText: searchText,
+                        showToastMsg: showToastMessage,
+                        copyPromptToClipboard: copyToClipboard
+                    )
                 case .explore:
-                    exploreView
+                    ExploreView(
+                        searchText: searchText,
+                        galleryPrompts: galleryPrompts,
+                        isLoading: isLoading,
+                        showToastMsg: showToastMessage,
+                        copyPromptToClipboard: copyToClipboard
+                    )
                 }
             }
         }
@@ -164,284 +168,6 @@ struct UnifiedPromptBrowserView: View {
         }
         .onAppear {
             loadGalleryPrompts()
-        }
-    }
-    
-    @ViewBuilder
-    private var allPromptsView: some View {
-        if isLoading {
-            ProgressView("Loading Prompts...")
-                .progressViewStyle(CircularProgressViewStyle())
-                .scaleEffect(1.2)
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            GeometryReader { geometry in
-                ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
-                        // User's prompts first
-                        ForEach(filteredUserPrompts) { prompt in
-                            UserPromptItemView(
-                                prompt: prompt,
-                                showToastMsg: showToastMessage,
-                                copyPromptToClipboard: copyToClipboard
-                            )
-                            .background {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(NSColor.windowBackgroundColor))
-                            }
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                            }
-                            .shadow(
-                                color: Color.black.opacity(0.12),
-                                radius: 5,
-                                x: 0,
-                                y: 2
-                            )
-                        }
-                        
-                        // Local shared creations
-                        ForEach(filteredSharedCreations, id: \.id) { creation in
-                            SharedCreationItemView(
-                                sharedCreation: creation,
-                                showToastMsg: showToastMessage,
-                                copyPromptToClipboard: copyToClipboard
-                            )
-                            .background {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(NSColor.windowBackgroundColor))
-                            }
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                            }
-                            .shadow(
-                                color: Color.black.opacity(0.12),
-                                radius: 5,
-                                x: 0,
-                                y: 2
-                            )
-                        }
-                        
-                        // Gallery prompts
-                        ForEach(filteredGalleryPrompts) { prompt in
-                            GalleryPromptItemView(
-                                galleryPromptItem: prompt,
-                                showToastMsg: showToastMessage,
-                                copyPromptToClipboard: copyToClipboard
-                            )
-                            .background {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(NSColor.windowBackgroundColor))
-                            }
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.gray.opacity(0.25), lineWidth: 1)
-                            }
-                            .shadow(
-                                color: Color.black.opacity(0.12),
-                                radius: 5,
-                                x: 0,
-                                y: 2
-                            )
-                        }
-                    }
-                    .padding()
-                }
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private var myPromptsView: some View {
-        if filteredUserPrompts.isEmpty && !searchText.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 48))
-                    .foregroundColor(.secondary)
-                Text("No matching prompts found")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                Text("Try using different keywords")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if filteredUserPrompts.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "doc.text")
-                    .font(.system(size: 48))
-                    .foregroundColor(.secondary)
-                Text("No custom prompts yet")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                Text("Click the \"+\" button in the sidebar to create your first prompt")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            GeometryReader { geometry in
-                ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
-                        ForEach(filteredUserPrompts) { prompt in
-                            UserPromptItemView(
-                                prompt: prompt,
-                                showToastMsg: showToastMessage,
-                                copyPromptToClipboard: copyToClipboard
-                            )
-                            .background {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(NSColor.windowBackgroundColor))
-                            }
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                            }
-                            .shadow(
-                                color: Color.black.opacity(0.12),
-                                radius: 5,
-                                x: 0,
-                                y: 2
-                            )
-                        }
-                    }
-                    .padding()
-                }
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private var sharedCreationsView: some View {
-        if filteredSharedCreations.isEmpty && !searchText.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 48))
-                    .foregroundColor(.secondary)
-                Text("No matching shared creations found")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                Text("Try using different keywords")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if filteredSharedCreations.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 48))
-                    .foregroundColor(.secondary)
-                Text("No shared creations yet")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                Text("Share your prompts to see them here")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            GeometryReader { geometry in
-                ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
-                        // Local shared creations
-                        ForEach(filteredSharedCreations, id: \.id) { creation in
-                            SharedCreationItemView(
-                                sharedCreation: creation,
-                                showToastMsg: showToastMessage,
-                                copyPromptToClipboard: copyToClipboard
-                            )
-                            .background {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(NSColor.windowBackgroundColor))
-                            }
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                            }
-                            .shadow(
-                                color: Color.black.opacity(0.12),
-                                radius: 5,
-                                x: 0,
-                                y: 2
-                            )
-                        }
-                    }
-                    .padding()
-                }
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private var exploreView: some View {
-        if isLoading {
-            ProgressView("Loading Prompts...")
-                .progressViewStyle(CircularProgressViewStyle())
-                .scaleEffect(1.2)
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if filteredGalleryPrompts.isEmpty && !searchText.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 48))
-                    .foregroundColor(.secondary)
-                Text("No matching content found")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                Text("Try using different keywords")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if filteredGalleryPrompts.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "globe")
-                    .font(.system(size: 48))
-                    .foregroundColor(.secondary)
-                Text("No content available")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                Text("Gallery prompts will appear here")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            GeometryReader { geometry in
-                ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
-                        // Gallery prompts
-                        ForEach(filteredGalleryPrompts) { prompt in
-                            GalleryPromptItemView(
-                                galleryPromptItem: prompt,
-                                showToastMsg: showToastMessage,
-                                copyPromptToClipboard: copyToClipboard
-                            )
-                            .background {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(NSColor.windowBackgroundColor))
-                            }
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.gray.opacity(0.25), lineWidth: 1)
-                            }
-                            .shadow(
-                                color: Color.black.opacity(0.12),
-                                radius: 5,
-                                x: 0,
-                                y: 2
-                            )
-                        }
-                    }
-                    .padding()
-                }
-            }
         }
     }
     
@@ -465,6 +191,42 @@ struct UnifiedPromptBrowserView: View {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
         showToastMessage("Copied to clipboard", .complete(.green))
+    }
+}
+
+struct IconLegendView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Icon Meanings")
+                .font(.headline)
+                .padding(.bottom, 4)
+            
+            HStack(spacing: 8) {
+                Image(systemName: "person.crop.circle.fill")
+                    .foregroundColor(.blue)
+                Text("Unshared prompt")
+                    .font(.system(size: 13))
+                Spacer()
+            }
+            
+            HStack(spacing: 8) {
+                Image(systemName: "shared.with.you.slash")
+                    .foregroundColor(.orange)
+                Text("Shared prompt (private)")
+                    .font(.system(size: 13))
+                Spacer()
+            }
+            
+            HStack(spacing: 8) {
+                Image(systemName: "shared.with.you")
+                    .foregroundColor(.green)
+                Text("Public prompt")
+                    .font(.system(size: 13))
+                Spacer()
+            }
+        }
+        .padding(12)
+        .frame(width: 200)
     }
 }
 

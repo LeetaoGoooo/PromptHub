@@ -79,6 +79,50 @@ enum SchemaV1: VersionedSchema {
 
 enum SchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
+    static var models: [any PersistentModel.Type] { [Prompt.self, PromptHistory.self, ExternalSource.self, SharedCreationV2.self, DataSourceV2.self] }
+    
+    @Model
+    final class SharedCreationV2 {
+        var id: UUID = UUID()
+        var name: String = ""
+        var prompt: String = ""
+        var desc: String?
+        
+        @Relationship(deleteRule: .cascade, inverse: \DataSourceV2.creation)
+        var dataSources: [DataSourceV2]? = []
+        
+        var publicRecordName: String?
+        var lastModified: Date?
+        
+        init(id: UUID = UUID(), name: String, prompt: String, desc: String? = nil, dataSources: [DataSourceV2]? = [], publicRecordName: String? = nil, lastModified: Date? = .now) {
+            self.id = id
+            self.name = name
+            self.prompt = prompt
+            self.desc = desc
+            self.dataSources = dataSources
+            self.publicRecordName = publicRecordName
+            self.lastModified = lastModified
+        }
+    }
+    
+    @Model
+    final class DataSourceV2 {
+        var id: UUID = UUID()
+
+        @Attribute(.externalStorage)
+        var data: Data = Data()
+
+        var creation: SharedCreationV2?
+
+        init(data: Data) {
+            self.data = data
+        }
+    }
+}
+
+
+enum SchemaV3: VersionedSchema {
+    static var versionIdentifier = Schema.Version(3, 0, 0)
     static var models: [any PersistentModel.Type] { [Prompt.self, PromptHistory.self, ExternalSource.self, SharedCreation.self, DataSource.self] }
 }
 
@@ -87,7 +131,7 @@ let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "PromptH
 
 enum PromptHubMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
     }
 
     private static var tempLegacySources: [UUID: [Data]] = [:]
@@ -96,8 +140,13 @@ enum PromptHubMigrationPlan: SchemaMigrationPlan {
     private static var tempShareCreationLegacySources: [UUID: [Data]] = [:]
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2]
+        [migrateV1toV2, migrateV2toV3]
     }
+    
+    static let migrateV2toV3 = MigrationStage.lightweight(
+        fromVersion: SchemaV2.self,
+        toVersion: SchemaV3.self
+    )
 
 
     static let migrateV1toV2 = MigrationStage.custom(
@@ -165,13 +214,13 @@ enum PromptHubMigrationPlan: SchemaMigrationPlan {
 
             logger.info("[didMigrate V1->V6] Created new DataSource entities.")
             
-            let newShareCreations = try context.fetch(FetchDescriptor<SharedCreation>())
+            let newShareCreations = try context.fetch(FetchDescriptor<SchemaV2.SharedCreationV2>())
             let shareCreationsById = Dictionary(uniqueKeysWithValues: newShareCreations.map({ ($0.id, $0) }))
             
             for (shareCreationId, sourcesData) in Self.tempShareCreationLegacySources {
                 guard let targetShareCreation = shareCreationsById[shareCreationId] else { continue }
                 for dataItem in sourcesData {
-                    let newSource = DataSource(data: dataItem)
+                    let newSource = SchemaV2.DataSourceV2(data: dataItem)
                     newSource.creation = targetShareCreation
                     context.insert(newSource)
                 }

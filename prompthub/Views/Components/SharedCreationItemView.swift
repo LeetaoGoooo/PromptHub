@@ -23,8 +23,8 @@ struct SharedCreationItemView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Image(systemName:  "person.fill" )
-                            .foregroundColor(.blue)
+                        Image(systemName: sharedCreation.isPublic ? "shared.with.you": "shared.with.you.slash" )
+                            .foregroundColor(sharedCreation.isPublic ? .green : .orange)
                             .font(.caption)
                         Text(sharedCreation.name)
                             .font(.headline)
