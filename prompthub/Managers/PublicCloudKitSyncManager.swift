@@ -10,9 +10,10 @@ enum SharedCreationField {
     static let name = "name"
     static let prompt = "prompt"
     static let desc = "desc"
-    static let externalSource = "externalSource" // Legacy: BYTES_LIST
-    static let externalSourceAssets = "externalSourceAssets" // New: ASSET_LIST
+    static let externalSource = "externalSource"
+    static let externalSourceAssets = "externalSourceAssets"
     static let sharedCreationID = "sharedCreationID"
+    static let isPublic = "isPublic"
 }
 
 @MainActor
@@ -56,6 +57,7 @@ class PublicCloudKitSyncManager {
         record[SharedCreationField.prompt] = item.prompt as CKRecordValue
         record[SharedCreationField.desc] = item.desc as CKRecordValue? // Handles nil
         record[SharedCreationField.sharedCreationID] = item.id.uuidString as CKRecordValue
+        record[SharedCreationField.isPublic] = item.isPublic as CKRecordValue
         
         var assets: [CKAsset] = []
         if let dataSources = item.dataSources {
@@ -106,38 +108,87 @@ class PublicCloudKitSyncManager {
     /// - Parameter sharedCreation: The SharedCreation to delete
     /// - Throws: An error if deletion from CloudKit fails or if saving to SwiftData fails
     func deleteSharedCreation(_ sharedCreation: SharedCreation) async throws {
-        logger.debug("Attempting to delete SharedCreation: \(sharedCreation.name) (ID: \(sharedCreation.id.uuidString))")
+        let recordName = sharedCreation.publicRecordName
+        if recordName == nil {
+            return
+        }
+        logger.debug("Attempting to delete SharedCreation with recordName: \(recordName!)")
         
-        // First delete from CloudKit if it exists there
-        if let recordName = sharedCreation.publicRecordName {
+        // First, find the local SharedCreation by recordName
+        let descriptor = FetchDescriptor<SharedCreation>(
+            predicate: #Predicate<SharedCreation> { creation in
+                creation.publicRecordName == recordName
+            }
+        )
+        
+        let localSharedCreations: [SharedCreation]
+        do {
+            localSharedCreations = try modelContext.fetch(descriptor)
+        } catch {
+            logger.error("Failed to fetch local SharedCreation with recordName \(recordName!): \(error.localizedDescription)")
+            throw error
+        }
+        
+        guard let localSharedCreation = localSharedCreations.first else {
+            logger.warning("No local SharedCreation found with recordName \(recordName!)")
+            // Still try to delete from CloudKit in case it exists there
+            try await deleteItemFromPublicCloud(recordName: recordName!)
+            return
+        }
+        
+        var cloudKitDeleteSuccessful = false
+        
+        // Delete from CloudKit
+        do {
+            try await deleteItemFromPublicCloud(recordName: recordName!)
+            logger.info("Successfully deleted record \(recordName!) from CloudKit for SharedCreation \(localSharedCreation.name)")
+            cloudKitDeleteSuccessful = true
+        } catch {
+            logger.error("Failed to delete record \(recordName!) from CloudKit: \(error.localizedDescription)")
+            // Don't throw here - we'll try to delete locally and let the user know about the CloudKit failure
+            cloudKitDeleteSuccessful = false
+        }
+        
+        // Only delete from local store if CloudKit deletion was successful
+        if cloudKitDeleteSuccessful {
+            // Delete from local SwiftData store
+            modelContext.delete(localSharedCreation)
+            
             do {
-                try await deleteItemFromPublicCloud(recordName: recordName)
-                logger.info("Successfully deleted record \(recordName) from CloudKit for SharedCreation \(sharedCreation.name)")
+                try modelContext.save()
+                logger.info("Successfully deleted SharedCreation \(localSharedCreation.name) from local store")
             } catch {
-                logger.error("Failed to delete record \(recordName) from CloudKit: \(error.localizedDescription)")
+                logger.error("Failed to save ModelContext after deleting SharedCreation \(localSharedCreation.name): \(error.localizedDescription)")
                 throw error
             }
         } else {
-            logger.debug("SharedCreation \(sharedCreation.name) has no publicRecordName, skipping CloudKit deletion")
-        }
-        
-        // Then delete from local SwiftData store
-        modelContext.delete(sharedCreation)
-        
-        do {
-            try modelContext.save()
-            logger.info("Successfully deleted SharedCreation \(sharedCreation.name) from local store")
-        } catch {
-            logger.error("Failed to save ModelContext after deleting SharedCreation \(sharedCreation.name): \(error.localizedDescription)")
-            throw error
+            // CloudKit deletion failed, don't delete locally to maintain consistency
+            throw NSError(domain: "CloudKitSync", code: 1001, userInfo: [
+                NSLocalizedDescriptionKey: "Failed to delete from CloudKit. Local copy preserved for retry."
+            ])
         }
     }
     
     /// Checks if a SharedCreation can be deleted (i.e., it was created by the current user)
-    /// - Parameter sharedCreation: The SharedCreation to check
+    /// - Parameter recordName: The CloudKit record name of the SharedCreation to check
     /// - Returns: true if the SharedCreation can be deleted, false otherwise
-    func canDeleteSharedCreation(_ sharedCreation: SharedCreation) -> Bool {
-        return SharedCreation.isCreatedByCurrentUser(id: sharedCreation.id, modelContext: modelContext)
+    func canDeleteSharedCreation(recordName: String) -> Bool {
+        let descriptor = FetchDescriptor<SharedCreation>(
+            predicate: #Predicate<SharedCreation> { creation in
+                creation.publicRecordName == recordName
+            }
+        )
+        
+        do {
+            let localSharedCreations = try modelContext.fetch(descriptor)
+            guard let localSharedCreation = localSharedCreations.first else {
+                return false // No local record found, cannot delete
+            }
+            return SharedCreation.isCreatedByCurrentUser(id: localSharedCreation.id, modelContext: modelContext)
+        } catch {
+            logger.error("Failed to fetch local SharedCreation with recordName \(recordName): \(error.localizedDescription)")
+            return false
+        }
     }
     
     func deleteItemFromPublicCloud(recordName: String) async throws {
@@ -193,12 +244,14 @@ class PublicCloudKitSyncManager {
         let name = fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud"
         let prompt = fetchedRecord[SharedCreationField.prompt] as? String ?? ""
         let desc = fetchedRecord[SharedCreationField.desc] as? String
+        let isPublic = fetchedRecord[SharedCreationField.isPublic] as? Bool ?? false
         
         let sharedCreation = SharedCreation(
             id: idToFetch,
             name: name,
             prompt: prompt,
-            desc: desc
+            desc: desc,
+            isPublic: isPublic
         )
         
         var dataSources: [DataSource] = []
@@ -257,7 +310,8 @@ class PublicCloudKitSyncManager {
             id: tempSharedCreationID, // Use the ID from the cloud record if it was stored
             name: fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud",
             prompt: fetchedRecord[SharedCreationField.prompt] as? String ?? "",
-            desc: fetchedRecord[SharedCreationField.desc] as? String
+            desc: fetchedRecord[SharedCreationField.desc] as? String,
+            isPublic: fetchedRecord[SharedCreationField.isPublic] as? Bool ?? false
         )
         
         var dataSources: [DataSource] = []
@@ -333,7 +387,8 @@ class PublicCloudKitSyncManager {
             id: idToFetch, // Use the ID we queried for
             name: fetchedRecord[SharedCreationField.name] as? String ?? "Untitled from Cloud",
             prompt: fetchedRecord[SharedCreationField.prompt] as? String ?? "",
-            desc: fetchedRecord[SharedCreationField.desc] as? String
+            desc: fetchedRecord[SharedCreationField.desc] as? String,
+            isPublic: fetchedRecord[SharedCreationField.isPublic] as? Bool ?? false
         )
         
         var dataSources: [DataSource] = []
@@ -417,12 +472,14 @@ class PublicCloudKitSyncManager {
         let name = record[SharedCreationField.name] as? String ?? "Untitled from Cloud"
         let prompt = record[SharedCreationField.prompt] as? String ?? ""
         let desc = record[SharedCreationField.desc] as? String
+        let isPublic = record[SharedCreationField.isPublic] as? Bool ?? false
         
         let sharedCreation = SharedCreation(
             id: id,
             name: name,
             prompt: prompt,
-            desc: desc
+            desc: desc,
+            isPublic: isPublic
         )
         
         // Handle external sources (both new and legacy format)
@@ -453,5 +510,66 @@ class PublicCloudKitSyncManager {
         }
         
         return sharedCreation
+    }
+    
+    // MARK: - Cleanup Functions
+    
+    /// Cleans up local SharedCreations that no longer exist in CloudKit
+    /// This function fetches all local SharedCreations with publicRecordName and verifies they still exist in CloudKit
+    /// If they don't exist in CloudKit, they are removed from local storage
+    func cleanupOrphanedLocalSharedCreations() async throws {
+        logger.debug("Starting cleanup of orphaned local SharedCreations")
+        
+        // Fetch all local SharedCreations that have a publicRecordName
+        let descriptor = FetchDescriptor<SharedCreation>(
+            predicate: #Predicate<SharedCreation> { creation in
+                creation.publicRecordName != nil
+            }
+        )
+        
+        let localSharedCreations: [SharedCreation]
+        do {
+            localSharedCreations = try modelContext.fetch(descriptor)
+        } catch {
+            logger.error("Failed to fetch local SharedCreations: \(error.localizedDescription)")
+            throw error
+        }
+        
+        logger.info("Found \(localSharedCreations.count) local SharedCreations with publicRecordName")
+        
+        var deletedCount = 0
+        
+        for sharedCreation in localSharedCreations {
+            guard let recordName = sharedCreation.publicRecordName else { continue }
+            
+            // Check if the record still exists in CloudKit
+            let recordID = CKRecord.ID(recordName: recordName)
+            
+            do {
+                _ = try await publicDB.record(for: recordID)
+                // Record exists in CloudKit, keep the local copy
+                logger.trace("Record \(recordName) still exists in CloudKit, keeping local copy")
+            } catch let error as CKError where error.code == .unknownItem {
+                // Record doesn't exist in CloudKit, remove local copy
+                logger.info("Record \(recordName) no longer exists in CloudKit, removing local copy for SharedCreation: \(sharedCreation.name)")
+                modelContext.delete(sharedCreation)
+                deletedCount += 1
+            } catch {
+                // Other error, log but don't delete
+                logger.warning("Error checking CloudKit record \(recordName): \(error.localizedDescription). Keeping local copy.")
+            }
+        }
+        
+        if deletedCount > 0 {
+            do {
+                try modelContext.save()
+                logger.info("Successfully cleaned up \(deletedCount) orphaned local SharedCreations")
+            } catch {
+                logger.error("Failed to save ModelContext after cleanup: \(error.localizedDescription)")
+                throw error
+            }
+        } else {
+            logger.info("No orphaned local SharedCreations found")
+        }
     }
 }

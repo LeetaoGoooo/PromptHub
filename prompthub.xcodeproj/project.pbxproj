@@ -10,6 +10,7 @@
 		0E1E0AC92DE01FD100392E15 /* AlertToast in Frameworks */ = {isa = PBXBuildFile; productRef = 0E1E0AC82DE01FD100392E15 /* AlertToast */; };
 		0E32437A2DEDCFC500581488 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E3243792DEDCFC500581488 /* WhatsNewKit */; };
 		0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 0E554B372D7EEE30008DC907 /* LaunchAtLogin */; };
+		0E5749462E128445001CB54A /* GenKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E5749452E128445001CB54A /* GenKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,22 +40,20 @@
 		0E6FDD652D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Views/Components/AboutView.swift,
-				Views/Components/GeneralView.swift,
-				Views/Components/PromptDetail.swift,
-				Views/PromptMenuView.swift,
-				Views/SettingsView.swift,
+				Views/SettingViews/AboutView.swift,
+				Views/SettingViews/GeneralView.swift,
+				Views/SettingViews/SettingsView.swift,
+				Views/StatusBarViews/PromptMenuView.swift,
 			);
 			target = 0E6CAD462D72E6D0001FD9B3 /* prompthubTests */;
 		};
 		0E6FDD662D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Views/Components/AboutView.swift,
-				Views/Components/GeneralView.swift,
-				Views/Components/PromptDetail.swift,
-				Views/PromptMenuView.swift,
-				Views/SettingsView.swift,
+				Views/SettingViews/AboutView.swift,
+				Views/SettingViews/GeneralView.swift,
+				Views/SettingViews/SettingsView.swift,
+				Views/StatusBarViews/PromptMenuView.swift,
 			);
 			target = 0E6CAD502D72E6D0001FD9B3 /* prompthubUITests */;
 		};
@@ -95,6 +94,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E5749462E128445001CB54A /* GenKit in Frameworks */,
 				0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */,
 				0E1E0AC92DE01FD100392E15 /* AlertToast in Frameworks */,
 				0E32437A2DEDCFC500581488 /* WhatsNewKit in Frameworks */,
@@ -161,6 +161,7 @@
 				0E554B372D7EEE30008DC907 /* LaunchAtLogin */,
 				0E1E0AC82DE01FD100392E15 /* AlertToast */,
 				0E3243792DEDCFC500581488 /* WhatsNewKit */,
+				0E5749452E128445001CB54A /* GenKit */,
 			);
 			productName = prompthub;
 			productReference = 0E6CAD342D72E6CE001FD9B3 /* prompthub.app */;
@@ -249,6 +250,7 @@
 				0E554B362D7EEE14008DC907 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 				0E1E0AC72DE01FD100392E15 /* XCRemoteSwiftPackageReference "AlertToast" */,
 				0E3243782DEDCFC500581488 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
+				0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0E6CAD352D72E6CE001FD9B3 /* Products */;
@@ -455,7 +457,7 @@
 				CODE_SIGN_ENTITLEMENTS = prompthub/prompthub.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "\"prompthub/Preview Content\"";
 				DEVELOPMENT_TEAM = H6F75GR6PJ;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -471,7 +473,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.4.0;
+				MARKETING_VERSION = 2.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.duck.leetao.prompthub;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = macosx;
@@ -490,7 +492,7 @@
 				CODE_SIGN_ENTITLEMENTS = prompthub/prompthub.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "\"prompthub/Preview Content\"";
 				DEVELOPMENT_TEAM = H6F75GR6PJ;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -506,7 +508,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.4.0;
+				MARKETING_VERSION = 2.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.duck.leetao.prompthub;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = macosx;
@@ -650,6 +652,14 @@
 				kind = branch;
 			};
 		};
+		0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nathanborror/swift-gen-kit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -667,6 +677,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0E554B362D7EEE14008DC907 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
 			productName = LaunchAtLogin;
+		};
+		0E5749452E128445001CB54A /* GenKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */;
+			productName = GenKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

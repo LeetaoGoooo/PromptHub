@@ -60,5 +60,10 @@ extension Prompt {
         history.prompt = self
         return history
     }
+    
+    func getLatestPromptContent() -> String {
+        let sortedHistory = history?.sorted { $0.version > $1.version }
+        return sortedHistory?.first?.promptText ?? ""
+    }
 }
 

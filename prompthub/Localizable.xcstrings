@@ -32,6 +32,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "About" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -54,6 +57,9 @@
         }
       }
     },
+    "AI" : {
+
+    },
     "All" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -69,6 +75,7 @@
 
     },
     "API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -172,6 +179,7 @@
 
     },
     "Base URL (OpenAI API)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -188,6 +196,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "书签数据已过期。请考虑重新选择文件。"
+          }
+        }
+      }
+    },
+    "Can't open: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法打开：%@"
           }
         }
       }
@@ -218,6 +237,9 @@
       }
     },
     "Close" : {
+
+    },
+    "Community Shared Prompts" : {
 
     },
     "Confirm Delete" : {
@@ -284,8 +306,41 @@
         }
       }
     },
+    "Copy Prompt Failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制提示词失败"
+          }
+        }
+      }
+    },
+    "Copy Prompt Succeed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制提示词成功"
+          }
+        }
+      }
+    },
     "Copy Share Link" : {
       "comment" : "Tooltip for copy share link button"
+    },
+    "Copy Share Link Failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制分享链接失败"
+          }
+        }
+      }
     },
     "Copyright @ 2025 leetao " : {
       "extractionState" : "manual",
@@ -294,6 +349,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "版权所有 @ 2025 leetao "
+          }
+        }
+      }
+    },
+    "Could not create share URL" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法创建分享链接"
           }
         }
       }
@@ -316,6 +382,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "找不到提示词文件"
+          }
+        }
+      }
+    },
+    "Create Share Link Failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建分享链接失败"
           }
         }
       }
@@ -475,6 +552,7 @@
       }
     },
     "Enter your Base URL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -485,6 +563,7 @@
       }
     },
     "Enter your OpenAI API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -538,6 +617,17 @@
         }
       }
     },
+    "Error publishing prompt: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发布提示词错误：%@"
+          }
+        }
+      }
+    },
     "Error resolving bookmark data: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -545,6 +635,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "解析书签数据出错: %@"
+          }
+        }
+      }
+    },
+    "Error saving shared item: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存共享项目错误：%@"
           }
         }
       }
@@ -577,6 +678,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "错误：无法从数据加载图片。"
+          }
+        }
+      }
+    },
+    "Existing Share Link Copied" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已复制现有分享链接"
           }
         }
       }
@@ -636,9 +748,6 @@
           }
         }
       }
-    },
-    "Gallery prompts will appear here" : {
-      "comment" : "Instructions for explore view"
     },
     "General" : {
       "extractionState" : "manual",
@@ -703,6 +812,19 @@
         }
       }
     },
+    "Host" : {
+
+    },
+    "Icon Meanings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图标含义"
+          }
+        }
+      }
+    },
     "Image Viewer" : {
       "localizations" : {
         "zh-Hans" : {
@@ -719,6 +841,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导入状态"
+          }
+        }
+      }
+    },
+    "Invalid URL: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效的 URL：%@"
           }
         }
       }
@@ -788,6 +921,18 @@
         }
       }
     },
+    "Loading public shared creations..." : {
+
+    },
+    "Loading..." : {
+
+    },
+    "Make Private" : {
+
+    },
+    "Make Public" : {
+
+    },
     "Mine" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -800,6 +945,7 @@
       }
     },
     "Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -809,10 +955,16 @@
         }
       }
     },
+    "Models" : {
+
+    },
     "Modified: %@" : {
 
     },
     "My Prompts" : {
+
+    },
+    "My Shared Prompts" : {
 
     },
     "Name" : {
@@ -859,9 +1011,6 @@
         }
       }
     },
-    "No content available" : {
-      "comment" : "Message when no content is available"
-    },
     "No custom prompts yet" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -905,9 +1054,6 @@
         }
       }
     },
-    "No matching content found" : {
-      "comment" : "Message when search returns no results"
-    },
     "No matching prompts found" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -918,9 +1064,6 @@
           }
         }
       }
-    },
-    "No matching shared creations found" : {
-      "comment" : "Message when search returns no results"
     },
     "No prompts available" : {
       "extractionState" : "manual",
@@ -933,8 +1076,8 @@
         }
       }
     },
-    "No shared creations yet" : {
-      "comment" : "Message when user has no shared creations"
+    "No Service Selected" : {
+
     },
     "No URL selected or multiple URLs" : {
       "extractionState" : "manual",
@@ -946,6 +1089,12 @@
           }
         }
       }
+    },
+    "None" : {
+
+    },
+    "Not Set" : {
+
     },
     "Note: Dropped item is an alias or symbolic link. URL should be to the target if resolved from a bookmark." : {
       "extractionState" : "manual",
@@ -970,6 +1119,7 @@
       }
     },
     "OpenAI Configuration" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -988,6 +1138,12 @@
           }
         }
       }
+    },
+    "Personal Prompt" : {
+
+    },
+    "Please select a service from the list above." : {
+
     },
     "Preview in Editor" : {
       "extractionState" : "manual",
@@ -1080,6 +1236,17 @@
         }
       }
     },
+    "Prompt Published Successfully" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提示词发布成功"
+          }
+        }
+      }
+    },
     "prompt_template" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1104,6 +1271,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "提示词中心"
+          }
+        }
+      }
+    },
+    "Public prompt" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公开提示词"
+          }
+        }
+      }
+    },
+    "Public Shared Prompt" : {
+
+    },
+    "Publish" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发布"
           }
         }
       }
@@ -1195,6 +1386,9 @@
         }
       }
     },
+    "Service" : {
+
+    },
     "Settings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1215,6 +1409,28 @@
         }
       }
     },
+    "Share Link With Your Friends Now" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现在就与朋友分享链接吧"
+          }
+        }
+      }
+    },
+    "Share or Publish" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享或发布"
+          }
+        }
+      }
+    },
     "Share your favorite prompts with colleagues or friends in just one tap." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1226,11 +1442,21 @@
         }
       }
     },
-    "Share your prompts to see them here" : {
-      "comment" : "Instructions for creating shared creations"
-    },
     "Shared on %@" : {
 
+    },
+    "Shared Prompt" : {
+
+    },
+    "Shared prompt (private)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享提示词（私有）"
+          }
+        }
+      }
     },
     "Shared: %@" : {
 
@@ -1267,6 +1493,7 @@
       }
     },
     "Test" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1306,6 +1533,9 @@
         }
       }
     },
+    "Token" : {
+
+    },
     "Track Prompt Origins" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1324,6 +1554,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尝试使用不同的关键词"
+          }
+        }
+      }
+    },
+    "Unshared prompt" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未分享提示词"
           }
         }
       }
