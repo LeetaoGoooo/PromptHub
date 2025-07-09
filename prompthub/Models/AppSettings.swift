@@ -21,7 +21,7 @@ class AppSettings: ObservableObject {
     
     
     @AppStorage("lastShownWhatsNewVersion")
-    public var lastShownWhatsNewVersion: String = "2.2.1"
+    public var lastShownWhatsNewVersion: String = "2.5.0"
     
     
     init() {

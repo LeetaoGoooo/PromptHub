@@ -96,35 +96,27 @@ struct ContentView: View {
                     features: [
                         .init(
                             image: .init(
-                                systemName: "square.grid.2x2.fill",
-                                foregroundColor: .purple
+                                systemName: "square.stack.3d.up.fill",
+                                foregroundColor: .cyan
                             ),
-                            title: WhatsNew.Text("Unified Prompt Browser"),
-                            subtitle: WhatsNew.Text("Brand new tabbed interface with organized categories: All, Mine, Shared, and Explore for better prompt management.")
+                            title: WhatsNew.Text("Expanded AI Model Support"),
+                            subtitle: WhatsNew.Text("Now supports a wider range of AI services, including Anthropic, Llama, Mistral, and Ollama, in addition to OpenAI.")
                         ),
                         .init(
                             image: .init(
-                                systemName: "gear.circle.fill",
-                                foregroundColor: .orange
-                            ),
-                            title: WhatsNew.Text("Architecture Refactor"),
-                            subtitle: WhatsNew.Text("Complete data model restructuring with enhanced SwiftData integration and improved performance.")
-                        ),
-                        .init(
-                            image: .init(
-                                systemName: "magnifyingglass.circle.fill",
+                                systemName: "magnifyingglass",
                                 foregroundColor: .blue
                             ),
-                            title: WhatsNew.Text("Enhanced Search & Navigation"),
-                            subtitle: WhatsNew.Text("Optimized search functionality with better keyboard navigation and intuitive sidebar layout adjustments.")
+                            title: WhatsNew.Text("Universal Search & Public Sharing"),
+                            subtitle: WhatsNew.Text("Search through all prompts, not just your own. You can also make your prompts public for everyone to discover in the Explore tab.")
                         ),
                         .init(
                             image: .init(
-                                systemName: "icloud.and.arrow.up.fill",
-                                foregroundColor: .green
+                                systemName: "wand.and.stars",
+                                foregroundColor: .orange
                             ),
-                            title: WhatsNew.Text("CloudKit Sync Improvements"),
-                            subtitle: WhatsNew.Text("Enhanced public cloud synchronization and sharing capabilities for better collaboration.")
+                            title: WhatsNew.Text("UI & Status Bar Enhancements"),
+                            subtitle: WhatsNew.Text("We've optimized the status bar for a cleaner look, along with various other UI improvements and bug fixes for a smoother experience.")
                         )
                     ],
                     primaryAction: .init(
