@@ -9,10 +9,13 @@ import AppKit
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
+import GenKit
+import AlertToast
 
 struct PromptDetail: View {
     @Bindable var prompt:Prompt
     @Environment(\.modelContext) private var modelContext
+    @Environment(ServicesManager.self) private var servicesManager
     
     @State private var editablePrompt: String = ""
     @State private var showOlderVersions: Bool = false
@@ -20,6 +23,9 @@ struct PromptDetail: View {
     @State private var isPreviewingOldVersion: Bool = false
     @EnvironmentObject var settings: AppSettings
     @State private var isGenerating = false
+    @State private var showToast = false
+    @State private var toastTitle = ""
+    @State private var toastType: AlertToast.AlertType = .regular
 
     private let cardBackground = Color(NSColor.controlBackgroundColor)
     private let borderColor = Color(NSColor.separatorColor)
@@ -87,6 +93,9 @@ struct PromptDetail: View {
         }
         .sheet(item: $selectedHistoryVersion) { version in
             versionDetailSheet(version)
+        }
+        .toast(isPresenting: $showToast) {
+            AlertToast(type: toastType, title: toastTitle)
         }
     }
 
@@ -163,90 +172,110 @@ struct PromptDetail: View {
     }
 
     @MainActor
+    private func showToastMsg(msg: String, alertType: AlertToast.AlertType = .error(Color.red)) {
+        showToast.toggle()
+        toastTitle = msg
+        toastType = alertType
+    }
+
+    @MainActor
     private func modifyPromptWithOpenAIStream() async {
-        guard settings.isTestPassed else { return }
-        guard !settings.openaiApiKey.isEmpty else {
-            print("OpenAI API key is missing.")
+        guard let latestHistory = history.first else { return }
+        
+    
+        guard let selectedService = servicesManager.get(servicesManager.selectedServiceID) else {
+            showToastMsg(msg: "No selected service found", alertType: .error(Color.red))
             return
         }
-        guard let latestHistory = history.first else { return }
+        
+        
+        guard !selectedService.token.isEmpty else {
+            showToastMsg(msg: "Service token is missing", alertType: .error(Color.red))
+            return
+        }
+        
+        guard !(selectedService.preferredChatModel == nil) else {
+            showToastMsg(msg: "Service model is missing", alertType: .error(Color.red))
+            return
+        }
+        
+        guard !selectedService.models.isEmpty && ((selectedService.models.first(where:{$0.id == selectedService.preferredChatModel})) != nil) else {
+            showToastMsg(msg: "Service model is missing", alertType: .error(Color.red))
+            return
+        }
+        
+        
         isGenerating = true
         let userPrompt = latestHistory.promptText
         let systemPrompt = settings.prompt
-
-        let urlString = "\(settings.baseURL)/chat/completions"
-        guard let url = URL(string: urlString) else {
-            print("Invalid URL")
-            isGenerating = false
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(settings.openaiApiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try? JSONSerialization.data(withJSONObject: [
-            "model": settings.model, 
-            "messages": [
-                ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userPrompt]
-            ],
-            "stream": true
-        ])
-
+        
         do {
-            let (asyncBytes, response) = try await URLSession.shared.bytes(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                print("Error: Received status code \(statusCode)")
-                return
-            }
-
+            let service = selectedService.modelService(session: nil)
+            
+            let models = selectedService.models
+            let modelId = selectedService.preferredChatModel!
+            let model = selectedService.models.first(where:{$0.id == modelId})!
+            
             let version = (history.first?.version ?? 0) + 1
             let newHistory = prompt.createHistory(prompt: "", version: version)
             
             newHistory.createdAt = Date()
             newHistory.updatedAt = Date()
             newHistory.version = version
-            try? modelContext.insert(newHistory);
-
+            try? modelContext.insert(newHistory)
+            
             var accumulatedResponse = ""
             
-            for try await line in asyncBytes.lines {
-                if line.hasPrefix("data: ") {
-                    let jsonDataString = line.dropFirst(6).trimmingCharacters(in: .whitespacesAndNewlines)
-                    if jsonDataString == "[DONE]" {
-                        break
-                    }
-                    if let jsonData = jsonDataString.data(using: .utf8) {
-                        do {
-                            let completionResponse = try JSONDecoder().decode(OpenAIStreamingChatResponse.self, from: jsonData)
-                            if let choice = completionResponse.choices.first, let content = choice.delta?.content {
-                                DispatchQueue.main.async {
-                                    editablePrompt += content
-                                }
-                                accumulatedResponse += content
+            // Create a basic chat completion request
+            let request = ChatServiceRequest(
+                model: model,
+                messages: [
+                    Message(role: .system, content: systemPrompt),
+                    Message(role: .user, content: userPrompt)
+                ]
+            )
+            
+            if let chatService = service as? ChatService {
+                do {
+                    var streamRequest = ChatSessionRequest(service: chatService, model: model)
+                    streamRequest.with(system: systemPrompt)
+                    streamRequest.with(history: [Message(role: .user, content: userPrompt)])
+                    
+                  
+                    for try await message in ChatSession.shared.stream(streamRequest) {
+                        if let content = message.content {
+                            DispatchQueue.main.async {
+                                self.editablePrompt = content
                             }
-                        } catch {
-                            print("Error decoding JSON data: \(error)")
-                            print("Raw JSON: \(jsonDataString)")
-                            isGenerating = false
+                            accumulatedResponse = content
                         }
                     }
+                } catch {
+                    showToastMsg(msg: "Streaming failed, using fallback completion", alertType: .error(Color.orange))
+                    let response = try await chatService.completion(request)
+                    if let content = response.content {
+                        DispatchQueue.main.async {
+                            self.editablePrompt = content
+                        }
+                        accumulatedResponse = content
+                    }
                 }
+            } else {
+                showToastMsg(msg: "Selected service does not support chat completion", alertType: .error(Color.red))
+                isGenerating = false
+                return
             }
-
+            
+            // Save the accumulated response
             if !accumulatedResponse.isEmpty {
                 newHistory.promptText = accumulatedResponse
                 try? modelContext.save()
             }
-
-
+            
             isGenerating = false
-
+            
         } catch {
-            print("Error making API request: \(error)")
+            showToastMsg(msg: "Error making GenKit API request: \(error)", alertType: .error(Color.red))
             isGenerating = false
         }
     }
@@ -256,4 +285,5 @@ struct PromptDetail: View {
     PromptDetail(prompt: PreviewData.samplePrompt)
         .modelContainer(PreviewData.previewContainer)
         .environmentObject(AppSettings())
+        .environment(ServicesManager())
 }

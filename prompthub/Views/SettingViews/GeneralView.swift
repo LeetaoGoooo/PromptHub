@@ -34,50 +34,23 @@ struct GeneralView: View {
             }
             .padding(.bottom, 5)
 
-            Section(header: Text("OpenAI Configuration")) {
+            Section(header: Text("AI")) {
                 VStack(alignment: .leading) {
-                    Text("API Key")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                    SecureField("Enter your OpenAI API Key", text: settings.$openaiApiKey)
-                        .textFieldStyle(.roundedBorder)
-                        .padding(.bottom, 5)
-                        .onChange(of: settings.openaiApiKey) { _ in
-                            updateTestButtonStatus()
-                        }
+                    ServicesView()
+                    
+                    VStack(alignment:.leading){
+                        Text("Template")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
 
-                    Text("Base URL (OpenAI API)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                    TextField("Enter your Base URL", text: settings.$baseURL)
-                        .textFieldStyle(.roundedBorder)
-                        .padding(.bottom, 5)
-                        .onChange(of: settings.baseURL) { _ in
-                            updateTestButtonStatus()
-                        }
-
-                    Text("Model")
-                       .font(.subheadline)
-                        .foregroundColor(.gray)
-                     
-                    Picker("", selection: settings.$model) {
-                        ForEach(OpenAIModels, id: \.self) { model in
-                            Text(model).tag(model)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, 5)
+                        TextEditor(text: settings.$prompt)
+                             .textFieldStyle(.roundedBorder)
+                            .font(.system(.body, design: .monospaced))
+                            .frame(minHeight: 160)
+                            .padding(.bottom, 5)
+                            .padding(.leading, 6)
                         
-                    Text("Template")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-
-                    TextEditor(text: settings.$prompt)
-                        .font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 160)
-                        .textFieldStyle(.roundedBorder)
-                        .padding(.bottom, 5)
+                    }
                 }
                 .padding(.vertical, 2)
             }
@@ -85,19 +58,6 @@ struct GeneralView: View {
 
             HStack {
                 Spacer()
-                Button("Test") {
-                    testConnectivityToOpenAI()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(testButtonDisabled)
-                .overlay(alignment: .center) {
-                    if isTesting {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-                }
-
-
                 Button("Quit") {
                     isQuitting = true
                 }
@@ -136,68 +96,8 @@ struct GeneralView: View {
         .alert(item: $testResultAlert) { identifiableAlert in
             identifiableAlert.alert
         }
-        .onAppear {
-            updateTestButtonStatus()
-        }
     }
 
-    private func updateTestButtonStatus() {
-        testButtonDisabled = settings.openaiApiKey.isEmpty || settings.baseURL.isEmpty
-    
-        if testButtonDisabled {
-            settings.isTestPassed = false
-        }
-    }
-
-
-    private func testConnectivityToOpenAI() {
-        guard !settings.baseURL.isEmpty, !settings.openaiApiKey.isEmpty else { return }
-
-        isTesting = true
-        testResultAlert = nil
-
-        let urlString = settings.baseURL.starts(with: "http") ? settings.baseURL : "https://" + settings.baseURL
-        guard let url = URL(string: urlString + "/models") else {
-            showTestResult(success: false, message: "Invalid URL format.")
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(settings.openaiApiKey)", forHTTPHeaderField: "Authorization")
-
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                isTesting = false
-                if let error = error {
-                    let errorMessage = "Network error: \(error.localizedDescription)"
-                    updateTestResultInAppStorage(success: false, message: errorMessage)
-                    showTestResult(success: false, message: errorMessage)
-                    return
-                }
-
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    let errorMessage = "Invalid response from OpenAI API."
-                    updateTestResultInAppStorage(success: false, message: errorMessage)
-                    showTestResult(success: false, message: errorMessage)
-                    return
-                }
-
-                if (200...299).contains(httpResponse.statusCode) {
-                    let successMessage = "OpenAI API connectivity test successful! Status code: \(httpResponse.statusCode)"
-                    updateTestResultInAppStorage(success: true, message: successMessage)
-                    showTestResult(success: true, message: successMessage)
-                } else {
-                    var errorMessage = "OpenAI API connectivity test failed. Status code: \(httpResponse.statusCode)"
-                    if let data = data, let errorDetails = String(data: data, encoding: .utf8) {
-                        errorMessage += "\nDetails: \(errorDetails)"
-                    }
-                    updateTestResultInAppStorage(success: false, message: errorMessage)
-                    showTestResult(success: false, message: errorMessage)
-                }
-            }
-        }.resume()
-    }
 
 
     private func showTestResult(success: Bool, message: String) {
@@ -224,4 +124,5 @@ struct GeneralView: View {
 #Preview {
     GeneralView()
         .environmentObject(AppSettings())
+        .environment(ServicesManager())
 }

@@ -42,6 +42,8 @@ struct prompthubApp: App {
             ContentView()
                 .environmentObject(appSettings)
                 .environmentObject(deepLinkManager)
+                .environment(ServicesManager())
+            
                 .onAppear {
                     // Perform one-time cleanup when the app starts
                     performOneTimeCleanup()
@@ -86,6 +88,7 @@ struct prompthubApp: App {
         Window("Settings", id: "settings-window") {
             SettingsView()
                 .environmentObject(appSettings)
+                .environment(ServicesManager())
                 .frame(minWidth: 550, minHeight: 450)
         }
         #if os(macOS)

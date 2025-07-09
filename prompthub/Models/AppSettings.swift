@@ -10,21 +10,28 @@ import SwiftUI
 
 @MainActor
 class AppSettings: ObservableObject {
-    @AppStorage("openaiApiKey")
-    public var openaiApiKey: String = "";
+    private let promptDefaultKey = "prompt_template"
     
     @AppStorage("prompt")
     public var prompt: String = "prompt_template";
     
-    @AppStorage("baseURL")
-    public var baseURL: String = "https://api.openai.com/v1";
     
     @AppStorage("isTestPassed")
     public var isTestPassed: Bool = false;
     
-    @AppStorage("model")
-    public var model: String = OpenAIModels.first!;
     
     @AppStorage("lastShownWhatsNewVersion")
-    public var lastShownWhatsNewVersion: String = "2.2.1" 
+    public var lastShownWhatsNewVersion: String = "2.2.1"
+    
+    
+    init() {
+          if prompt == promptDefaultKey {
+              prompt = NSLocalizedString(promptDefaultKey, comment: "The default prompt template for the AI.")
+          }
+      }
+      
+      func resetPromptToDefault() {
+          prompt = NSLocalizedString(promptDefaultKey, comment: "The default prompt template for the AI.")
+      }
+
 }

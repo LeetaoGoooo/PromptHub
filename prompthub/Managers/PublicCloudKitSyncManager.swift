@@ -10,8 +10,8 @@ enum SharedCreationField {
     static let name = "name"
     static let prompt = "prompt"
     static let desc = "desc"
-    static let externalSource = "externalSource" // Legacy: BYTES_LIST
-    static let externalSourceAssets = "externalSourceAssets" // New: ASSET_LIST
+    static let externalSource = "externalSource"
+    static let externalSourceAssets = "externalSourceAssets"
     static let sharedCreationID = "sharedCreationID"
     static let isPublic = "isPublic"
 }

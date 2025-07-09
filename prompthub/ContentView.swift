@@ -69,7 +69,6 @@ struct ContentView: View {
             }
         }
         .onKeyPress(.escape) {
-            // Clear selection when ESC is pressed, following macOS conventions
             if case .prompt(_) = promptSelection {
                 promptSelection = .allPrompts
                 return .handled

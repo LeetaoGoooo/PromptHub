@@ -57,6 +57,9 @@
         }
       }
     },
+    "AI" : {
+
+    },
     "All" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -72,6 +75,7 @@
 
     },
     "API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -175,6 +179,7 @@
 
     },
     "Base URL (OpenAI API)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -547,6 +552,7 @@
       }
     },
     "Enter your Base URL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -557,6 +563,7 @@
       }
     },
     "Enter your OpenAI API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -805,6 +812,9 @@
         }
       }
     },
+    "Host" : {
+
+    },
     "Icon Meanings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -935,6 +945,7 @@
       }
     },
     "Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -943,6 +954,9 @@
           }
         }
       }
+    },
+    "Models" : {
+
     },
     "Modified: %@" : {
 
@@ -1062,6 +1076,9 @@
         }
       }
     },
+    "No Service Selected" : {
+
+    },
     "No URL selected or multiple URLs" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1072,6 +1089,12 @@
           }
         }
       }
+    },
+    "None" : {
+
+    },
+    "Not Set" : {
+
     },
     "Note: Dropped item is an alias or symbolic link. URL should be to the target if resolved from a bookmark." : {
       "extractionState" : "manual",
@@ -1096,6 +1119,7 @@
       }
     },
     "OpenAI Configuration" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1116,6 +1140,9 @@
       }
     },
     "Personal Prompt" : {
+
+    },
+    "Please select a service from the list above." : {
 
     },
     "Preview in Editor" : {
@@ -1359,6 +1386,9 @@
         }
       }
     },
+    "Service" : {
+
+    },
     "Settings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1463,6 +1493,7 @@
       }
     },
     "Test" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1501,6 +1532,9 @@
           }
         }
       }
+    },
+    "Token" : {
+
     },
     "Track Prompt Origins" : {
       "extractionState" : "manual",

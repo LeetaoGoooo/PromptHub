@@ -15,7 +15,6 @@ struct LatestVersionView: View {
     @Binding var editablePrompt: String
     @Binding var isGenerating: Bool
     @Binding var isPreviewingOldVersion: Bool
-    @EnvironmentObject var settings: AppSettings
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) var openURL
     @State private var showToast = false
@@ -24,6 +23,7 @@ struct LatestVersionView: View {
     @State private var isCreateShareLink = false
     @State private var isTogglingPublic = false
     @State private var existingSharedCreation: SharedCreation?
+    @Environment(ServicesManager.self) private var servicesManager
 
     let copyPromptToClipboard: (_ prompt: String) -> Bool
     let copySharedLinkToClipboard: (_ url: URL) -> Bool
@@ -178,7 +178,6 @@ struct LatestVersionView: View {
                     Image(systemName: "wand.and.stars")
                 }
                 .padding(8)
-                .disabled(!settings.isTestPassed)
             }
             .background(Color(NSColor.textBackgroundColor))
             .cornerRadius(12)
