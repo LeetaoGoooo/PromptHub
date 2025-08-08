@@ -878,6 +878,12 @@
         }
       }
     },
+    "Keep" : {
+
+    },
+    "Keep Changes" : {
+
+    },
     "Key" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1354,6 +1360,9 @@
         }
       }
     },
+    "Review Changes" : {
+
+    },
     "Save" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1504,6 +1513,7 @@
       }
     },
     "Test Failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1514,6 +1524,7 @@
       }
     },
     "Test Result:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1524,6 +1535,7 @@
       }
     },
     "Test Successful" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1557,6 +1569,12 @@
           }
         }
       }
+    },
+    "Undo" : {
+
+    },
+    "Undo Changes" : {
+
     },
     "Unshared prompt" : {
       "localizations" : {

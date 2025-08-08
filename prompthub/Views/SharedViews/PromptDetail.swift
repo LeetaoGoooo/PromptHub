@@ -182,12 +182,10 @@ struct PromptDetail: View {
     private func modifyPromptWithOpenAIStream() async {
         guard let latestHistory = history.first else { return }
         
-    
         guard let selectedService = servicesManager.get(servicesManager.selectedServiceID) else {
             showToastMsg(msg: "No selected service found", alertType: .error(Color.red))
             return
         }
-        
         
         guard !selectedService.token.isEmpty else {
             showToastMsg(msg: "Service token is missing", alertType: .error(Color.red))
@@ -204,7 +202,6 @@ struct PromptDetail: View {
             return
         }
         
-        
         isGenerating = true
         let userPrompt = latestHistory.promptText
         let systemPrompt = settings.prompt
@@ -215,14 +212,6 @@ struct PromptDetail: View {
             let models = selectedService.models
             let modelId = selectedService.preferredChatModel!
             let model = selectedService.models.first(where:{$0.id == modelId})!
-            
-            let version = (history.first?.version ?? 0) + 1
-            let newHistory = prompt.createHistory(prompt: "", version: version)
-            
-            newHistory.createdAt = Date()
-            newHistory.updatedAt = Date()
-            newHistory.version = version
-            try? modelContext.insert(newHistory)
             
             var accumulatedResponse = ""
             
@@ -241,10 +230,10 @@ struct PromptDetail: View {
                     streamRequest.with(system: systemPrompt)
                     streamRequest.with(history: [Message(role: .user, content: userPrompt)])
                     
-                  
                     for try await message in ChatSession.shared.stream(streamRequest) {
                         if let content = message.content {
                             DispatchQueue.main.async {
+                                // 只更新 editablePrompt，不创建历史记录
                                 self.editablePrompt = content
                             }
                             accumulatedResponse = content
@@ -255,6 +244,7 @@ struct PromptDetail: View {
                     let response = try await chatService.completion(request)
                     if let content = response.content {
                         DispatchQueue.main.async {
+                            // 只更新 editablePrompt，不创建历史记录
                             self.editablePrompt = content
                         }
                         accumulatedResponse = content
@@ -264,12 +254,6 @@ struct PromptDetail: View {
                 showToastMsg(msg: "Selected service does not support chat completion", alertType: .error(Color.red))
                 isGenerating = false
                 return
-            }
-            
-            // Save the accumulated response
-            if !accumulatedResponse.isEmpty {
-                newHistory.promptText = accumulatedResponse
-                try? modelContext.save()
             }
             
             isGenerating = false

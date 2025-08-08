@@ -64,21 +64,8 @@ struct GeneralView: View {
                 .buttonStyle(.borderedProminent)
             }
             .padding(.vertical, 2)
+            .padding(.bottom, 32)
 
-            Section(header:
-                        HStack(spacing: 12) {
-                            Text("Test Result:")
-                            if settings.isTestPassed  {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                            } else {
-                                Image(systemName: "x.circle")
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    ) {
-            }
-            .padding(.bottom, 10)
 
 
         }
@@ -99,16 +86,6 @@ struct GeneralView: View {
     }
 
 
-
-    private func showTestResult(success: Bool, message: String) {
-        testResultAlert = IdentifiableAlert(
-            alert: Alert(
-                title: Text(success ? "Test Successful" : "Test Failed"),
-                message: Text(message),
-                dismissButton: .default(Text("OK"))
-            )
-        )
-    }
 
     private func updateTestResultInAppStorage(success: Bool, message: String) {
         settings.isTestPassed = success
