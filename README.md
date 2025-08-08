@@ -55,7 +55,7 @@ PromptHub helps you better organize your prompts with comprehensive features inc
         <sub><b>Prompt Preview</b></sub>
       </td>
       <td align="center">
-        <img src="./screens/diff.png" width="280" alt="Prompt Diff"/>
+        <img src="./screens/diff.jpg" width="280" alt="Prompt Diff"/>
         <br/>
         <sub><b>Prompt Diff</b></sub>
       </td>
