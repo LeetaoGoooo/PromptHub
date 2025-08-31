@@ -91,49 +91,52 @@ struct ContentView: View {
             
             if lastShownVersion != currentAppVersion {
                 self.whatsNew = WhatsNew(
-                        version: WhatsNew.Version(stringLiteral: currentAppVersion),
-                        title: WhatsNew.Title(stringLiteral: "What's New in PromptBox \(currentAppVersion)!"),
-                        features: [
-                            .init(
-                                image: .init(
-                                    systemName: "plus.forwardslash.minus",
-                                    foregroundColor: .green
-                                ),
-                                title: WhatsNew.Text("Version Comparison & Diff"),
-                                subtitle: WhatsNew.Text("Easily compare changes between the current and previous versions of your prompt. The diff view highlights additions and deletions, helping you decide whether to save your edits.")
+                    version: WhatsNew.Version(stringLiteral: currentAppVersion),
+                    title: WhatsNew.Title(stringLiteral: "What's New in PromptBox \(currentAppVersion)!"),
+                    features: [
+
+                        .init(
+                            image: .init(
+                                systemName: "arrow.left.arrow.right.square",
+                                foregroundColor: .purple
                             ),
-                            .init(
-                                image: .init(
-                                    systemName: "square.stack.3d.up.fill",
-                                    foregroundColor: .cyan
-                                ),
-                                title: WhatsNew.Text("Expanded AI Model Support"),
-                                subtitle: WhatsNew.Text("Now supports a wider range of AI services, including Anthropic, Llama, Mistral, and Ollama, in addition to OpenAI.")
+                            title: WhatsNew.Text("Prompt Playground & A/B Testing"),
+                            subtitle: WhatsNew.Text("Directly test and compare different versions of your prompt side-by-side. Instantly see the AI's response to each, helping you choose the most effective one.")
+                        ),
+
+                        .init(
+                            image: .init(
+                                systemName: "plus.forwardslash.minus",
+                                foregroundColor: .green
                             ),
-                            .init(
-                                image: .init(
-                                    systemName: "magnifyingglass",
-                                    foregroundColor: .blue
-                                ),
-                                title: WhatsNew.Text("Universal Search & Public Sharing"),
-                                subtitle: WhatsNew.Text("Search through all prompts, not just your own. You can also make your prompts public for everyone to discover in the Explore tab.")
+                            title: WhatsNew.Text("Version Comparison & Diff"),
+                            subtitle: WhatsNew.Text("Easily compare text changes between prompt versions. The diff view highlights additions and deletions, helping you track your edits.")
+                        ),
+
+                        .init(
+                            image: .init(
+                                systemName: "square.stack.3d.up.fill",
+                                foregroundColor: .cyan
                             ),
-                            .init(
-                                image: .init(
-                                    systemName: "wand.and.stars",
-                                    foregroundColor: .orange
-                                ),
-                                title: WhatsNew.Text("General Improvements & Fixes"),
-                                subtitle: WhatsNew.Text("Includes various UI improvements, performance optimizations, and bug fixes for a smoother and more reliable experience.")
-                            )
-                        ],
-                        primaryAction: .init(
-                            title: WhatsNew.Text("Got It"),
-                            onDismiss: {
-                                appSettings.lastShownWhatsNewVersion = self.currentAppVersion
-                            }
+                            title: WhatsNew.Text("Expanded AI Model Support"),
+                            subtitle: WhatsNew.Text("Now supports a wider range of AI services, including Anthropic, Llama, Mistral, and Ollama, in addition to OpenAI.")
+                        ),
+                        .init(
+                            image: .init(
+                                systemName: "wand.and.stars",
+                                foregroundColor: .orange
+                            ),
+                            title: WhatsNew.Text("UI Polish & Performance Boosts"),
+                            subtitle: WhatsNew.Text("Enjoy a faster, smoother experience with various UI tweaks and under-the-hood optimizations for a more reliable workflow.")
                         )
+                    ],
+                    primaryAction: .init(
+                        title: WhatsNew.Text("Got It"),
+                        onDismiss: {
+                            appSettings.lastShownWhatsNewVersion = self.currentAppVersion
+                        }
                     )
+                )
             } else {
                 self.whatsNew = nil
             }

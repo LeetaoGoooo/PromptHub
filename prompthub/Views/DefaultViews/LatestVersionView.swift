@@ -25,228 +25,258 @@ struct LatestVersionView: View {
     @State private var existingSharedCreation: SharedCreation?
     @Environment(ServicesManager.self) private var servicesManager
 
-
     @State private var isShowingDiff = false
     @State private var originalText = ""
     @State private var modifiedText = ""
-    @State private var diffResults:[DiffResult] = []
+    @State private var diffResults: [DiffResult] = []
+    @State private var isShowingTestView = false
 
     let copyPromptToClipboard: (_ prompt: String) -> Bool
     let copySharedLinkToClipboard: (_ url: URL) -> Bool
     let modifyPromptWithOpenAIStream: () async -> Void
     private let borderColor = Color(NSColor.separatorColor)
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(prompt.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    if prompt.desc != nil {
-                        Text(prompt.desc!)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .help(prompt.desc!)
-                    }
-                }
-                Spacer()
+    @State private var mainContentHeight: CGFloat?
 
-                HStack(alignment: .bottom) {
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(prompt.name)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        if prompt.desc != nil {
+                            Text(prompt.desc!)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .help(prompt.desc!)
+                        }
+                    }
                     Spacer()
 
-                    if isShowingDiff {
-                        Button {
-                            keepChanges()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark")
-                                Text("Keep")
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.green.opacity(0.1))
-                            .foregroundColor(.green)
-                            .cornerRadius(8)
-                        }
-                        .help("Keep Changes")
-                        .buttonStyle(PlainButtonStyle())
+                    HStack(alignment: .bottom) {
+                        Spacer()
 
-                        Button {
-                            undoChanges()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "xmark")
-                                Text("Undo")
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.red.opacity(0.1))
-                            .foregroundColor(.red)
-                            .cornerRadius(8)
-                        }
-                        .help("Undo Changes")
-                        .buttonStyle(PlainButtonStyle())
-                    } else {
-              
-                        if let imageData = prompt.externalSource?.first {
-                            HoverImageButton(imageData: imageData)
-                        }
-
-                        if let urlValue = prompt.link {
+                        if isShowingDiff {
                             Button {
-                                if let url = URL(string: urlValue) {
-                                    openURL(url) { accepted in
-                                        if !accepted {
-                                            Task { @MainActor in
-                                                showToastMsg(msg: "Can't open: \(urlValue)")
+                                keepChanges()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark")
+                                    Text("Keep")
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.green.opacity(0.1))
+                                .foregroundColor(.green)
+                                .cornerRadius(8)
+                            }
+                            .help("Keep Changes")
+                            .buttonStyle(PlainButtonStyle())
+
+                            Button {
+                                undoChanges()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "xmark")
+                                    Text("Undo")
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.red.opacity(0.1))
+                                .foregroundColor(.red)
+                                .cornerRadius(8)
+                            }
+                            .help("Undo Changes")
+                            .buttonStyle(PlainButtonStyle())
+
+                            Button {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    isShowingTestView.toggle()
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "arrow.left.arrow.right")
+                                    Text("Compare")
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.blue.opacity(0.1))
+                                .foregroundColor(.blue)
+                                .cornerRadius(8)
+                            }
+                            .help("Compare Results")
+                            .buttonStyle(PlainButtonStyle())
+                        } else {
+                            if let imageData = prompt.externalSource?.first {
+                                HoverImageButton(imageData: imageData)
+                            }
+
+                            if let urlValue = prompt.link {
+                                Button {
+                                    if let url = URL(string: urlValue) {
+                                        openURL(url) { accepted in
+                                            if !accepted {
+                                                Task { @MainActor in
+                                                    showToastMsg(msg: "Can't open: \(urlValue)")
+                                                }
                                             }
                                         }
+                                    } else {
+                                        Task { @MainActor in
+                                            showToastMsg(msg: "Invalid URL: \(urlValue)")
+                                        }
                                     }
-                                } else {
-                                    Task { @MainActor in
-                                        showToastMsg(msg: "Invalid URL: \(urlValue)")
-                                    }
+                                } label: {
+                                    Image(systemName: "safari")
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(Color.accentColor.opacity(0.1))
+                                        .cornerRadius(8)
                                 }
-                            } label: {
-                                Image(systemName: "safari")
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Color.accentColor.opacity(0.1))
-                                    .cornerRadius(8)
+                                .help("Origin")
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .help("Origin")
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                        Button {
-                            Task {
-                                await shareCreation()
-                            }
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                                .opacity(isCreateShareLink ? 0 : 1)
-                                .overlay {
-                                    if isCreateShareLink {
-                                        ProgressView()
-                                            .scaleEffect(0.5)
-                                    }
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Color.accentColor.opacity(0.1))
-                                .cornerRadius(8)
-                        }
-                        .help("Share")
-                        .buttonStyle(PlainButtonStyle())
-                        .disabled(isCreateShareLink)
-
-                        // Public toggle button - only show if prompt has been shared
-                        if existingSharedCreation != nil {
                             Button {
                                 Task {
-                                    await togglePublicStatus()
+                                    await shareCreation()
                                 }
                             } label: {
-                                Image(systemName: (existingSharedCreation?.isPublic  ?? true) ? "shared.with.you" : "shared.with.you.slash")
-                                    .opacity(isTogglingPublic ? 0 : 1)
+                                Image(systemName: "square.and.arrow.up")
+                                    .opacity(isCreateShareLink ? 0 : 1)
                                     .overlay {
-                                        if isTogglingPublic {
+                                        if isCreateShareLink {
                                             ProgressView()
                                                 .scaleEffect(0.5)
                                         }
                                     }
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 5)
-                                    .background(Color.accentColor.opacity(0.1)
-                                    )
+                                    .background(Color.accentColor.opacity(0.1))
                                     .cornerRadius(8)
                             }
-                            .help(existingSharedCreation?.isPublic == true ? "Make Private" : "Make Public")
+                            .help("Share")
                             .buttonStyle(PlainButtonStyle())
-                            .disabled(isTogglingPublic)
+                            .disabled(isCreateShareLink)
+
+                            // Public toggle button - only show if prompt has been shared
+                            if existingSharedCreation != nil {
+                                Button {
+                                    Task {
+                                        await togglePublicStatus()
+                                    }
+                                } label: {
+                                    Image(systemName: (existingSharedCreation?.isPublic ?? true) ? "shared.with.you" : "shared.with.you.slash")
+                                        .opacity(isTogglingPublic ? 0 : 1)
+                                        .overlay {
+                                            if isTogglingPublic {
+                                                ProgressView()
+                                                    .scaleEffect(0.5)
+                                            }
+                                        }
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(Color.accentColor.opacity(0.1)
+                                        )
+                                        .cornerRadius(8)
+                                }
+                                .help(existingSharedCreation?.isPublic == true ? "Make Private" : "Make Public")
+                                .buttonStyle(PlainButtonStyle())
+                                .disabled(isTogglingPublic)
+                            }
+
+                            Button {
+                                let success = copyPromptToClipboard(latestHistory.promptText)
+                                if success {
+                                    showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
+                                } else {
+                                    showToastMsg(msg: "Copy Prompt Failed", alertType: .error(Color.red))
+                                }
+                            } label: {
+                                Image(systemName: "doc.on.doc")
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.accentColor.opacity(0.1))
+                                    .cornerRadius(8)
+                                    .help("Copy")
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                }
+
+                if isShowingDiff {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Review Changes")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+
+                        DiffRenderer(diffResults: diffResults)
+                    }
+                    .padding(16)
+                    .background(Color(NSColor.textBackgroundColor))
+                    .cornerRadius(12)
+                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                } else {
+                    ZStack(alignment: .bottomTrailing) {
+                        NoScrollBarTextEditor(text: $editablePrompt, font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular), autoScroll: isGenerating)
+                            .frame(minHeight: 300)
+                            .padding(10)
+                            .background(Color(NSColor.textBackgroundColor))
+                            .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(borderColor, lineWidth: 1)
+                            )
+                            .onChange(of: editablePrompt) { newValue in
+                                if !isPreviewingOldVersion && !isShowingDiff {
+                                    latestHistory.promptText = newValue
+                                    latestHistory.updatedAt = Date()
+                                    try? modelContext.save()
+                                }
+                            }
+
+                        if isGenerating {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .padding(8)
+                                .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
+                                .cornerRadius(8)
+                                .padding([.bottom, .trailing], 40)
                         }
 
                         Button {
-                            let success = copyPromptToClipboard(latestHistory.promptText)
-                            if success {
-                                showToastMsg(msg: "Copy Prompt Succeed", alertType: .complete(Color.green))
-                            } else {
-                                showToastMsg(msg: "Copy Prompt Failed", alertType: .error(Color.red))
-                            }
+                            Task { await modifyPromptWithOpenAIStreamAndShowDiff() }
                         } label: {
-                            Image(systemName: "doc.on.doc")
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Color.accentColor.opacity(0.1))
-                                .cornerRadius(8)
-                                .help("Copy")
+                            Image(systemName: "wand.and.stars")
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .padding(8)
+                        .disabled(isGenerating)
                     }
+                    .background(Color(NSColor.textBackgroundColor))
+                    .cornerRadius(12)
+                    .padding(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                }
+
+                if !isShowingDiff {
+                    metadataView(for: latestHistory)
+                        .padding(.top, 8)
                 }
             }
-
-            if isShowingDiff {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Review Changes")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    DiffRenderer(diffResults: diffResults)
-                        
-                }
-                .padding(16)
-                .background(Color(NSColor.textBackgroundColor))
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-            } else {
-    
-                ZStack(alignment: .bottomTrailing) {
-                    NoScrollBarTextEditor(text: $editablePrompt, font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular), autoScroll: isGenerating)
-                        .frame(minHeight: 300)
-                        .padding(10)
-                        .background(Color(NSColor.textBackgroundColor))
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(borderColor, lineWidth: 1)
-                        )
-                        .onChange(of: editablePrompt) { newValue in
-                            if !isPreviewingOldVersion && !isShowingDiff {
-                                latestHistory.promptText = newValue
-                                latestHistory.updatedAt = Date()
-                                try? modelContext.save()
-                            }
+            .frame(maxWidth: .infinity)
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear {
+                            self.mainContentHeight = geometry.size.height
                         }
-
-                    if isGenerating {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                            .padding(8)
-                            .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
-                            .cornerRadius(8)
-                            .padding([.bottom, .trailing], 40)
-                    }
-
-                    Button {
-                        Task { await modifyPromptWithOpenAIStreamAndShowDiff() }
-                    } label: {
-                        Image(systemName: "wand.and.stars")
-                    }
-                    .padding(8)
-                    .disabled(isGenerating)
+                        .onChange(of: geometry.size.height) { newHeight in
+                            self.mainContentHeight = newHeight
+                        }
                 }
-                .background(Color(NSColor.textBackgroundColor))
-                .cornerRadius(12)
-                .padding(16)
-                .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-            }
-
-            if !isShowingDiff {
-                metadataView(for: latestHistory)
-                    .padding(.top, 8)
-            }
-        }.frame(maxWidth: .infinity)
+            )
             .toast(isPresenting: $showToast) {
                 AlertToast(type: toastType, title: toastTitle)
             }
@@ -256,17 +286,30 @@ struct LatestVersionView: View {
             .onChange(of: prompt) {
                 checkForExistingSharedCreation()
             }
+
+            if isShowingTestView {
+                Spacer()
+                VStack {
+                    PromptTestView(
+                        originPrompt: originalText,
+                        refactorPrompt: modifiedText
+                    )
+                }
+                .frame(height: mainContentHeight)
+                .transition(.move(edge: .trailing))
+            }
+        }.frame(maxHeight: .infinity, alignment: .top)
     }
 
     private func modifyPromptWithOpenAIStreamAndShowDiff() async {
         originalText = editablePrompt
-    
+
         await modifyPromptWithOpenAIStream()
-        
+
         modifiedText = editablePrompt
-        
+
         generateDiff()
-        
+
         isShowingDiff = true
     }
 
@@ -277,35 +320,30 @@ struct LatestVersionView: View {
     }
 
     private func keepChanges() {
-        // 使用 prompt.createHistory 方法创建新历史记录
         let version = (prompt.history?.map { $0.version }.max() ?? 0) + 1
         let newHistory = prompt.createHistory(prompt: modifiedText, version: version)
-        
-        // 设置时间戳
+
         newHistory.createdAt = Date()
         newHistory.updatedAt = Date()
         newHistory.version = version
-        
-        // 插入到 modelContext
+
         modelContext.insert(newHistory)
-        
-        // 更新 editablePrompt
+
         editablePrompt = modifiedText
-        
+
         do {
             try modelContext.save()
             showToastMsg(msg: "Changes Saved", alertType: .complete(Color.green))
         } catch {
             showToastMsg(msg: "Error saving changes: \(error)")
         }
-        
+
         resetDiffState()
     }
 
-
     private func undoChanges() {
         editablePrompt = originalText
-    
+
         showToastMsg(msg: "Changes Undone", alertType: .complete(Color.orange))
         resetDiffState()
     }
@@ -315,6 +353,7 @@ struct LatestVersionView: View {
         originalText = ""
         modifiedText = ""
         diffResults = []
+        isShowingTestView = false
     }
 
     private func metadataView(for itemHistory: PromptHistory) -> some View {
@@ -433,18 +472,18 @@ struct LatestVersionView: View {
     @MainActor
     private func togglePublicStatus() async {
         guard let sharedCreation = existingSharedCreation else { return }
-        
+
         isTogglingPublic = true
-        
+
         // Toggle the public status
         sharedCreation.isPublic.toggle()
         sharedCreation.lastModified = Date()
-        
+
         do {
             try modelContext.save()
             let publicCloudKitSyncManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox", modelContext: modelContext)
             try await publicCloudKitSyncManager.pushItemToPublicCloud(sharedCreation)
-            
+
             let statusMessage = sharedCreation.isPublic ? "Prompt Made Public" : "Prompt Made Private"
             showToastMsg(msg: statusMessage, alertType: .complete(Color.green))
         } catch {
@@ -452,10 +491,10 @@ struct LatestVersionView: View {
             sharedCreation.isPublic.toggle()
             showToastMsg(msg: "Error updating prompt status: \(error)")
         }
-        
+
         isTogglingPublic = false
     }
-    
+
     private func checkForExistingSharedCreation() {
         existingSharedCreation = findExistingSharedCreation()
     }

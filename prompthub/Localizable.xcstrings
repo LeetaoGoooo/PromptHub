@@ -242,6 +242,12 @@
     "Community Shared Prompts" : {
 
     },
+    "Compare" : {
+
+    },
+    "Compare Results" : {
+
+    },
     "Confirm Delete" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1340,6 +1346,9 @@
         }
       }
     },
+    "Refactor" : {
+
+    },
     "Reset Images" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1361,6 +1370,9 @@
       }
     },
     "Review Changes" : {
+
+    },
+    "Run" : {
 
     },
     "Save" : {
@@ -1511,6 +1523,9 @@
           }
         }
       }
+    },
+    "Test Content" : {
+
     },
     "Test Failed" : {
       "extractionState" : "stale",
