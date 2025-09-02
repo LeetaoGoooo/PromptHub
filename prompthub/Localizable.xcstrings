@@ -258,10 +258,19 @@
     "Close" : {
 
     },
+    "Close comparison view" : {
+
+    },
     "Community Shared Prompts" : {
 
     },
     "Compare" : {
+
+    },
+    "Compare All" : {
+
+    },
+    "Compare All Results" : {
 
     },
     "Compare Results" : {
@@ -358,6 +367,9 @@
           }
         }
       }
+    },
+    "Copy result to clipboard" : {
+
     },
     "Copy Share Link" : {
       "comment" : "Tooltip for copy share link button"
@@ -604,6 +616,9 @@
         }
       }
     },
+    "Enter your test input here..." : {
+
+    },
     "Error getting resource values for dropped file: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -647,6 +662,9 @@
           }
         }
       }
+    },
+    "Error occurred" : {
+
     },
     "Error publishing prompt: %@" : {
       "extractionState" : "stale",
@@ -803,6 +821,9 @@
           }
         }
       }
+    },
+    "Generating..." : {
+
     },
     "GitHub" : {
       "extractionState" : "manual",
@@ -1118,6 +1139,9 @@
           }
         }
       }
+    },
+    "No result" : {
+
     },
     "No Service Selected" : {
 
@@ -1549,6 +1573,9 @@
         }
       }
     },
+    "Streaming..." : {
+
+    },
     "Template" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1711,6 +1738,9 @@
           }
         }
       }
+    },
+    "View in full screen" : {
+
     },
     "Visual Prompt Previews" : {
       "extractionState" : "manual",

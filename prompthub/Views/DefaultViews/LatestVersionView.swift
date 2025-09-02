@@ -207,8 +207,7 @@ struct LatestVersionView: View {
                                 Image(systemName: "testtube.2")
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 5)
-                                    .background(Color.purple.opacity(0.1))
-                                    .foregroundColor(.purple)
+                                    .background(Color.accentColor.opacity(0.1))
                                     .cornerRadius(8)
                                     .help("Test Prompt")
                             }
