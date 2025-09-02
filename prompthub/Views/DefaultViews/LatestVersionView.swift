@@ -30,6 +30,7 @@ struct LatestVersionView: View {
     @State private var modifiedText = ""
     @State private var diffResults: [DiffResult] = []
     @State private var isShowingTestView = false
+    @State private var isShowingSingleTestView = false
 
     let copyPromptToClipboard: (_ prompt: String) -> Bool
     let copySharedLinkToClipboard: (_ url: URL) -> Bool
@@ -199,6 +200,19 @@ struct LatestVersionView: View {
                                     .help("Copy")
                             }
                             .buttonStyle(PlainButtonStyle())
+                            
+                            Button {
+                                isShowingSingleTestView.toggle()
+                            } label: {
+                                Image(systemName: "testtube.2")
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.purple.opacity(0.1))
+                                    .foregroundColor(.purple)
+                                    .cornerRadius(8)
+                                    .help("Test Prompt")
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                 }
@@ -289,6 +303,9 @@ struct LatestVersionView: View {
                 refactorPrompt: modifiedText
             )
             .frame(minWidth: 800, minHeight: 600)
+        }
+        .sheet(isPresented: $isShowingSingleTestView) {
+            SinglePromptTestView(prompt: editablePrompt)
         }
     }
 

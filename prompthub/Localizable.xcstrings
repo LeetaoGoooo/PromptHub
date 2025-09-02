@@ -35,6 +35,16 @@
     "%lld" : {
 
     },
+    "%lld of %lld models selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld models selected"
+          }
+        }
+      }
+    },
     "About" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -84,6 +94,9 @@
           }
         }
       }
+    },
+    "API token required" : {
+
     },
     "Are you sure you want to delete '%@'?" : {
       "extractionState" : "manual",
@@ -222,6 +235,12 @@
         }
       }
     },
+    "Choose one or more models to test" : {
+
+    },
+    "Clear All" : {
+
+    },
     "Click 'All Prompts' to browse all prompts, or select a specific prompt to view details" : {
 
     },
@@ -249,6 +268,9 @@
 
     },
     "Compare the outputs of original and refactored prompts" : {
+
+    },
+    "Configure" : {
 
     },
     "Confirm Delete" : {
@@ -670,6 +692,9 @@
         }
       }
     },
+    "Error: %@" : {
+
+    },
     "Error: Could not create NSImage from URL: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1026,6 +1051,9 @@
         }
       }
     },
+    "No configured services available" : {
+
+    },
     "No custom prompts yet" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1381,6 +1409,9 @@
     "Run" : {
 
     },
+    "Run Tests" : {
+
+    },
     "Save" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1412,6 +1443,12 @@
           }
         }
       }
+    },
+    "Select All" : {
+
+    },
+    "Select Models" : {
+
     },
     "Service" : {
 
@@ -1498,6 +1535,9 @@
         }
       }
     },
+    "Single Prompt Test" : {
+
+    },
     "Source" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1544,6 +1584,9 @@
         }
       }
     },
+    "Test Prompt" : {
+
+    },
     "Test Result:" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1565,6 +1608,12 @@
           }
         }
       }
+    },
+    "Test your prompt across multiple models" : {
+
+    },
+    "These services need API tokens to be used:" : {
+
     },
     "Token" : {
 
@@ -1590,6 +1639,9 @@
           }
         }
       }
+    },
+    "Unconfigured Services" : {
+
     },
     "Undo" : {
 
