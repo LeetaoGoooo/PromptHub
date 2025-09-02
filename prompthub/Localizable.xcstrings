@@ -33,7 +33,14 @@
       }
     },
     "%lld" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
     },
     "%lld of %lld models selected" : {
       "localizations" : {
@@ -41,6 +48,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld of %2$lld models selected"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选择 %1$lld 个模型，共 %2$lld 个"
           }
         }
       }
@@ -68,7 +81,14 @@
       }
     },
     "AI" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人工智能"
+          }
+        }
+      }
     },
     "All" : {
       "extractionState" : "manual",
@@ -82,7 +102,14 @@
       }
     },
     "All Prompts" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有提示词"
+          }
+        }
+      }
     },
     "API Key" : {
       "extractionState" : "stale",
@@ -96,7 +123,14 @@
       }
     },
     "API token required" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 API 令牌"
+          }
+        }
+      }
     },
     "Are you sure you want to delete '%@'?" : {
       "extractionState" : "manual",
@@ -110,7 +144,14 @@
       }
     },
     "Are you sure you want to delete '%@'? This action cannot be undone and will remove it from the public gallery." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除'%@'吗？此操作无法撤销，并将从公共画廊中移除。"
+          }
+        }
+      }
     },
     "Are you sure you want to delete '%@'? This action cannot be undone." : {
       "localizations" : {
@@ -175,7 +216,14 @@
       }
     },
     "Attachment %lld" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附件 %lld"
+          }
+        }
+      }
     },
     "Attachments" : {
       "extractionState" : "manual",
@@ -189,7 +237,14 @@
       }
     },
     "Attachments:" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附件："
+          }
+        }
+      }
     },
     "Base URL (OpenAI API)" : {
       "extractionState" : "stale",
@@ -236,13 +291,34 @@
       }
     },
     "Choose one or more models to test" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个或多个模型进行测试"
+          }
+        }
+      }
     },
     "Clear All" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除全部"
+          }
+        }
+      }
     },
     "Click 'All Prompts' to browse all prompts, or select a specific prompt to view details" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击\"所有提示词\"浏览所有提示词，或选择特定提示词查看详情"
+          }
+        }
+      }
     },
     "Click the \"+\" button in the sidebar to create your first prompt" : {
       "extractionState" : "manual",
@@ -256,31 +332,94 @@
       }
     },
     "Close" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        }
+      }
     },
     "Close comparison view" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭对比视图"
+          }
+        }
+      }
     },
     "Community Shared Prompts" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "社区共享提示词"
+          }
+        }
+      }
     },
     "Compare" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对比"
+          }
+        }
+      }
     },
     "Compare All" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部对比"
+          }
+        }
+      }
     },
     "Compare All Results" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对比所有结果"
+          }
+        }
+      }
     },
     "Compare Results" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对比结果"
+          }
+        }
+      }
     },
     "Compare the outputs of original and refactored prompts" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对比原始和重构提示词的输出结果"
+          }
+        }
+      }
     },
     "Configure" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置"
+          }
+        }
+      }
     },
     "Confirm Delete" : {
       "localizations" : {
@@ -369,10 +508,25 @@
       }
     },
     "Copy result to clipboard" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制结果到剪贴板"
+          }
+        }
+      }
     },
     "Copy Share Link" : {
-      "comment" : "Tooltip for copy share link button"
+      "comment" : "Tooltip for copy share link button",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制分享链接"
+          }
+        }
+      }
     },
     "Copy Share Link Failed" : {
       "extractionState" : "stale",
@@ -495,7 +649,15 @@
       }
     },
     "Delete Shared Creation" : {
-      "comment" : "Tooltip for delete button"
+      "comment" : "Tooltip for delete button",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除共享创作"
+          }
+        }
+      }
     },
     "Description" : {
       "extractionState" : "manual",
@@ -617,7 +779,14 @@
       }
     },
     "Enter your test input here..." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在此输入您的测试内容..."
+          }
+        }
+      }
     },
     "Error getting resource values for dropped file: %@" : {
       "extractionState" : "manual",
@@ -664,7 +833,14 @@
       }
     },
     "Error occurred" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发生错误"
+          }
+        }
+      }
     },
     "Error publishing prompt: %@" : {
       "extractionState" : "stale",
@@ -711,7 +887,14 @@
       }
     },
     "Error: %@" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误：%@"
+          }
+        }
+      }
     },
     "Error: Could not create NSImage from URL: %@" : {
       "extractionState" : "manual",
@@ -823,7 +1006,14 @@
       }
     },
     "Generating..." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "生成中..."
+          }
+        }
+      }
     },
     "GitHub" : {
       "extractionState" : "manual",
@@ -868,7 +1058,14 @@
       }
     },
     "Host" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主机"
+          }
+        }
+      }
     },
     "Icon Meanings" : {
       "localizations" : {
@@ -934,10 +1131,24 @@
       }
     },
     "Keep" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留"
+          }
+        }
+      }
     },
     "Keep Changes" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保留更改"
+          }
+        }
+      }
     },
     "Key" : {
       "extractionState" : "manual",
@@ -983,16 +1194,44 @@
       }
     },
     "Loading public shared creations..." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载公共共享创作..."
+          }
+        }
+      }
     },
     "Loading..." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载中..."
+          }
+        }
+      }
     },
     "Make Private" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设为私有"
+          }
+        }
+      }
     },
     "Make Public" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设为公开"
+          }
+        }
+      }
     },
     "Mine" : {
       "extractionState" : "manual",
@@ -1017,16 +1256,44 @@
       }
     },
     "Models" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型"
+          }
+        }
+      }
     },
     "Modified: %@" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "修改时间: %@"
+          }
+        }
+      }
     },
     "My Prompts" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我的提示词"
+          }
+        }
+      }
     },
     "My Shared Prompts" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我分享的提示词"
+          }
+        }
+      }
     },
     "Name" : {
       "extractionState" : "manual",
@@ -1073,7 +1340,14 @@
       }
     },
     "No configured services available" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无可用的已配置服务"
+          }
+        }
+      }
     },
     "No custom prompts yet" : {
       "extractionState" : "manual",
@@ -1141,10 +1415,24 @@
       }
     },
     "No result" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无结果"
+          }
+        }
+      }
     },
     "No Service Selected" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择服务"
+          }
+        }
+      }
     },
     "No URL selected or multiple URLs" : {
       "extractionState" : "manual",
@@ -1158,10 +1446,24 @@
       }
     },
     "None" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无"
+          }
+        }
+      }
     },
     "Not Set" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未设置"
+          }
+        }
+      }
     },
     "Note: Dropped item is an alias or symbolic link. URL should be to the target if resolved from a bookmark." : {
       "extractionState" : "manual",
@@ -1207,10 +1509,24 @@
       }
     },
     "Personal Prompt" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人提示词"
+          }
+        }
+      }
     },
     "Please select a service from the list above." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请从上方列表中选择一个服务。"
+          }
+        }
+      }
     },
     "Preview in Editor" : {
       "extractionState" : "manual",
@@ -1268,7 +1584,14 @@
       }
     },
     "Prompt Comparison Test" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提示词对比测试"
+          }
+        }
+      }
     },
     "Prompt Content" : {
       "extractionState" : "manual",
@@ -1282,7 +1605,14 @@
       }
     },
     "Prompt Content:" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提示词内容："
+          }
+        }
+      }
     },
     "Prompt deleted successfully" : {
       "comment" : "Success message for prompt deletion",
@@ -1356,7 +1686,14 @@
       }
     },
     "Public Shared Prompt" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公开共享提示词"
+          }
+        }
+      }
     },
     "Publish" : {
       "extractionState" : "stale",
@@ -1370,7 +1707,14 @@
       }
     },
     "Quit" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出"
+          }
+        }
+      }
     },
     "Quit Application?" : {
       "localizations" : {
@@ -1405,7 +1749,14 @@
       }
     },
     "Refactor" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重构"
+          }
+        }
+      }
     },
     "Reset Images" : {
       "localizations" : {
@@ -1428,13 +1779,34 @@
       }
     },
     "Review Changes" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "审查更改"
+          }
+        }
+      }
     },
     "Run" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "运行"
+          }
+        }
+      }
     },
     "Run Tests" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "运行测试"
+          }
+        }
+      }
     },
     "Save" : {
       "localizations" : {
@@ -1469,13 +1841,34 @@
       }
     },
     "Select All" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全选"
+          }
+        }
+      }
     },
     "Select Models" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择模型"
+          }
+        }
+      }
     },
     "Service" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务"
+          }
+        }
+      }
     },
     "Settings" : {
       "localizations" : {
@@ -1531,10 +1924,24 @@
       }
     },
     "Shared on %@" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享于 %@"
+          }
+        }
+      }
     },
     "Shared Prompt" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享提示词"
+          }
+        }
+      }
     },
     "Shared prompt (private)" : {
       "localizations" : {
@@ -1547,7 +1954,14 @@
       }
     },
     "Shared: %@" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享时间: %@"
+          }
+        }
+      }
     },
     "Show" : {
       "localizations" : {
@@ -1560,7 +1974,14 @@
       }
     },
     "Single Prompt Test" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单提示词测试"
+          }
+        }
+      }
     },
     "Source" : {
       "extractionState" : "manual",
@@ -1574,7 +1995,14 @@
       }
     },
     "Streaming..." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式传输中..."
+          }
+        }
+      }
     },
     "Template" : {
       "localizations" : {
@@ -1598,7 +2026,14 @@
       }
     },
     "Test Content" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试内容"
+          }
+        }
+      }
     },
     "Test Failed" : {
       "extractionState" : "stale",
@@ -1612,7 +2047,14 @@
       }
     },
     "Test Prompt" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试提示词"
+          }
+        }
+      }
     },
     "Test Result:" : {
       "extractionState" : "stale",
@@ -1637,13 +2079,34 @@
       }
     },
     "Test your prompt across multiple models" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在多个模型上测试您的提示词"
+          }
+        }
+      }
     },
     "These services need API tokens to be used:" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些服务需要 API 令牌才能使用："
+          }
+        }
+      }
     },
     "Token" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "令牌"
+          }
+        }
+      }
     },
     "Track Prompt Origins" : {
       "extractionState" : "manual",
@@ -1668,13 +2131,34 @@
       }
     },
     "Unconfigured Services" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未配置的服务"
+          }
+        }
+      }
     },
     "Undo" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤销"
+          }
+        }
+      }
     },
     "Undo Changes" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤销更改"
+          }
+        }
+      }
     },
     "Unshared prompt" : {
       "localizations" : {
@@ -1740,7 +2224,14 @@
       }
     },
     "View in full screen" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全屏查看"
+          }
+        }
+      }
     },
     "Visual Prompt Previews" : {
       "extractionState" : "manual",
