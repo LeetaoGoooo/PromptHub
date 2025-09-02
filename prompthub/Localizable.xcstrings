@@ -248,6 +248,9 @@
     "Compare Results" : {
 
     },
+    "Compare the outputs of original and refactored prompts" : {
+
+    },
     "Confirm Delete" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1211,6 +1214,9 @@
           }
         }
       }
+    },
+    "Prompt Comparison Test" : {
+
     },
     "Prompt Content" : {
       "extractionState" : "manual",
