@@ -24,20 +24,53 @@ struct PromptTestView: View {
     @State private var toastType: AlertToast.AlertType = .regular
     
     @Environment(ServicesManager.self) private var servicesManager
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        VStack(alignment: .leading) {
-            VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header with title and close button
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Prompt Comparison Test")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    Text("Compare the outputs of original and refactored prompts")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                        .background(Color.clear)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("Close")
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Test Content")
                     .font(.headline)
+                    .foregroundColor(.primary)
             
                 TextEditor(text: $userInput)
                     .padding(8)
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .background(Color(NSColor.textBackgroundColor))
                     .cornerRadius(8)
                     .frame(minHeight: 120, maxHeight: 240)
             }
-            .padding()
+            .padding(16)
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
             
             HStack {
                 if let selectedService = servicesManager.get(servicesManager.selectedServiceID) {
@@ -58,24 +91,36 @@ struct PromptTestView: View {
                     }
                 } label: {
                     Label("Run", systemImage: "play")
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.accentColor.opacity(0.1))
+                        .foregroundColor(.accentColor)
+                        .cornerRadius(8)
                 }.disabled(userInput.isEmpty || isGenerating)
+                    .buttonStyle(PlainButtonStyle())
                 
-            }.padding(.horizontal)
+            }.padding(.horizontal, 20)
                
-            HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading) {
+            HStack(alignment: .top, spacing: 20) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Origin")
                         .font(.headline)
-                    
+                        .foregroundColor(.primary)
+                 
                     ZStack(alignment: .bottomTrailing) {
                         ScrollView {
                             TextEditor(text: .constant(originOutputResult))
-                                .padding(8)
-                                .background(Color(nsColor: .controlBackgroundColor))
-                                .cornerRadius(8)
+                                .padding(12)
+                                .background(Color(NSColor.textBackgroundColor))
                                 .disabled(true)
                                 .frame(maxHeight: .infinity)
                         }
+                        .background(Color(NSColor.textBackgroundColor))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.blue.opacity(0.3), lineWidth: 2)
+                        )
+                        .cornerRadius(8)
                             
                         if isGenerating {
                             ProgressView()
@@ -87,21 +132,31 @@ struct PromptTestView: View {
                         }
                     }
                 }
+                .padding(16)
+                .background(Color.blue.opacity(0.05))
+                .cornerRadius(12)
+                .shadow(color: Color.blue.opacity(0.1), radius: 2, x: 0, y: 1)
                 .frame(maxHeight: .infinity)
                 
-                VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Refactor")
                         .font(.headline)
-                  
+                        .foregroundColor(.primary)
+         
                     ZStack(alignment: .bottomTrailing) {
                         ScrollView {
                             TextEditor(text: .constant(refactorOutputResult))
-                                .padding(8)
-                                .background(Color(nsColor: .controlBackgroundColor))
-                                .cornerRadius(8)
+                                .padding(12)
+                                .background(Color(NSColor.textBackgroundColor))
                                 .disabled(true)
                                 .frame(maxHeight: .infinity)
                         }
+                        .background(Color(NSColor.textBackgroundColor))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.green.opacity(0.3), lineWidth: 2)
+                        )
+                        .cornerRadius(8)
                             
                         if isGenerating {
                             ProgressView()
@@ -113,11 +168,16 @@ struct PromptTestView: View {
                         }
                     }
                 }
+                .padding(16)
+                .background(Color.green.opacity(0.05))
+                .cornerRadius(12)
+                .shadow(color: Color.green.opacity(0.1), radius: 2, x: 0, y: 1)
                 .frame(maxHeight: .infinity)
                 
-            }.padding()
+            }.padding(.horizontal, 20)
         }
-        .padding()
+        .padding(20)
+        .background(Color(NSColor.windowBackgroundColor))
         .toast(isPresenting: $showToast) {
             AlertToast(type: toastType, title: toastTitle)
         }

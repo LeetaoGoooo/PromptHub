@@ -97,37 +97,38 @@ struct ContentView: View {
 
                         .init(
                             image: .init(
-                                systemName: "arrow.left.arrow.right.square",
+                                systemName: "testtube.2",
+                                foregroundColor: .blue
+                            ),
+                            title: WhatsNew.Text("Multi-Model Prompt Testing"),
+                            subtitle: WhatsNew.Text("Test your prompts across multiple AI models simultaneously. Select from all configured services and compare results side-by-side to find the best performing model for your use case.")
+                        ),
+
+                        .init(
+                            image: .init(
+                                systemName: "rectangle.split.3x1",
                                 foregroundColor: .purple
                             ),
-                            title: WhatsNew.Text("Prompt Playground & A/B Testing"),
-                            subtitle: WhatsNew.Text("Directly test and compare different versions of your prompt side-by-side. Instantly see the AI's response to each, helping you choose the most effective one.")
+                            title: WhatsNew.Text("Global Comparison View"),
+                            subtitle: WhatsNew.Text("View all model results in a comprehensive comparison interface. Expand, collapse, and analyze outputs from different AI models in an organized, easy-to-navigate layout.")
                         ),
 
                         .init(
                             image: .init(
-                                systemName: "plus.forwardslash.minus",
+                                systemName: "wave.3.right",
                                 foregroundColor: .green
                             ),
-                            title: WhatsNew.Text("Version Comparison & Diff"),
-                            subtitle: WhatsNew.Text("Easily compare text changes between prompt versions. The diff view highlights additions and deletions, helping you track your edits.")
+                            title: WhatsNew.Text("Real-time Streaming Results"),
+                            subtitle: WhatsNew.Text("Watch AI responses generate in real-time as they stream. See live updates across all selected models with progress indicators and smooth animations.")
                         ),
 
                         .init(
                             image: .init(
-                                systemName: "square.stack.3d.up.fill",
-                                foregroundColor: .cyan
-                            ),
-                            title: WhatsNew.Text("Expanded AI Model Support"),
-                            subtitle: WhatsNew.Text("Now supports a wider range of AI services, including Anthropic, Llama, Mistral, and Ollama, in addition to OpenAI.")
-                        ),
-                        .init(
-                            image: .init(
-                                systemName: "wand.and.stars",
+                                systemName: "slider.horizontal.3",
                                 foregroundColor: .orange
                             ),
-                            title: WhatsNew.Text("UI Polish & Performance Boosts"),
-                            subtitle: WhatsNew.Text("Enjoy a faster, smoother experience with various UI tweaks and under-the-hood optimizations for a more reliable workflow.")
+                            title: WhatsNew.Text("Enhanced Model Management"),
+                            subtitle: WhatsNew.Text("Intuitive model selection sidebar with easy configuration management. Select all, clear all, or pick specific models with visual feedback for configured and unconfigured services.")
                         )
                     ],
                     primaryAction: .init(

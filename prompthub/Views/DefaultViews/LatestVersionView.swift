@@ -30,6 +30,7 @@ struct LatestVersionView: View {
     @State private var modifiedText = ""
     @State private var diffResults: [DiffResult] = []
     @State private var isShowingTestView = false
+    @State private var isShowingSingleTestView = false
 
     let copyPromptToClipboard: (_ prompt: String) -> Bool
     let copySharedLinkToClipboard: (_ url: URL) -> Bool
@@ -39,21 +40,20 @@ struct LatestVersionView: View {
     @State private var mainContentHeight: CGFloat?
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 20) {
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(prompt.name)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        if prompt.desc != nil {
-                            Text(prompt.desc!)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .help(prompt.desc!)
-                        }
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(prompt.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    if prompt.desc != nil {
+                        Text(prompt.desc!)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .help(prompt.desc!)
                     }
-                    Spacer()
+                }
+                Spacer()
 
                     HStack(alignment: .bottom) {
                         Spacer()
@@ -92,9 +92,7 @@ struct LatestVersionView: View {
                             .buttonStyle(PlainButtonStyle())
 
                             Button {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                    isShowingTestView.toggle()
-                                }
+                                isShowingTestView.toggle()
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: "arrow.left.arrow.right")
@@ -202,6 +200,18 @@ struct LatestVersionView: View {
                                     .help("Copy")
                             }
                             .buttonStyle(PlainButtonStyle())
+                            
+                            Button {
+                                isShowingSingleTestView.toggle()
+                            } label: {
+                                Image(systemName: "testtube.2")
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.accentColor.opacity(0.1))
+                                    .cornerRadius(8)
+                                    .help("Test Prompt")
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                 }
@@ -260,45 +270,42 @@ struct LatestVersionView: View {
                     .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
                 }
 
-                if !isShowingDiff {
-                    metadataView(for: latestHistory)
-                        .padding(.top, 8)
-                }
+            if !isShowingDiff {
+                metadataView(for: latestHistory)
+                    .padding(.top, 8)
             }
-            .frame(maxWidth: .infinity)
-            .background(
-                GeometryReader { geometry in
-                    Color.clear
-                        .onAppear {
-                            self.mainContentHeight = geometry.size.height
-                        }
-                        .onChange(of: geometry.size.height) { newHeight in
-                            self.mainContentHeight = newHeight
-                        }
-                }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear {
+                        self.mainContentHeight = geometry.size.height
+                    }
+                    .onChange(of: geometry.size.height) { newHeight in
+                        self.mainContentHeight = newHeight
+                    }
+            }
+        )
+        .toast(isPresenting: $showToast) {
+            AlertToast(type: toastType, title: toastTitle)
+        }
+        .onAppear {
+            checkForExistingSharedCreation()
+        }
+        .onChange(of: prompt) {
+            checkForExistingSharedCreation()
+        }
+        .sheet(isPresented: $isShowingTestView) {
+            PromptTestView(
+                originPrompt: originalText,
+                refactorPrompt: modifiedText
             )
-            .toast(isPresenting: $showToast) {
-                AlertToast(type: toastType, title: toastTitle)
-            }
-            .onAppear {
-                checkForExistingSharedCreation()
-            }
-            .onChange(of: prompt) {
-                checkForExistingSharedCreation()
-            }
-
-            if isShowingTestView {
-                Spacer()
-                VStack {
-                    PromptTestView(
-                        originPrompt: originalText,
-                        refactorPrompt: modifiedText
-                    )
-                }
-                .frame(height: mainContentHeight)
-                .transition(.move(edge: .trailing))
-            }
-        }.frame(maxHeight: .infinity, alignment: .top)
+            .frame(minWidth: 800, minHeight: 600)
+        }
+        .sheet(isPresented: $isShowingSingleTestView) {
+            SinglePromptTestView(prompt: editablePrompt)
+        }
     }
 
     private func modifyPromptWithOpenAIStreamAndShowDiff() async {
@@ -353,7 +360,6 @@ struct LatestVersionView: View {
         originalText = ""
         modifiedText = ""
         diffResults = []
-        isShowingTestView = false
     }
 
     private func metadataView(for itemHistory: PromptHistory) -> some View {
