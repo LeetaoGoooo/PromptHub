@@ -1161,6 +1161,9 @@
         }
       }
     },
+    "Keyboard Shortcuts" : {
+
+    },
     "Launch:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1528,6 +1531,9 @@
         }
       }
     },
+    "Press the keyboard shortcut to quickly search for prompts from anywhere in the app." : {
+
+    },
     "Preview in Editor" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1705,6 +1711,9 @@
           }
         }
       }
+    },
+    "Quick Search:" : {
+
     },
     "Quit" : {
       "localizations" : {

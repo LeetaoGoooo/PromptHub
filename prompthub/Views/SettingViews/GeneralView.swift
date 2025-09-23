@@ -34,6 +34,9 @@ struct GeneralView: View {
             }
             .padding(.bottom, 5)
 
+            KeyboardShortcutSettingsView()
+                .padding(.bottom, 10)
+
             Section(header: Text("AI")) {
                 VStack(alignment: .leading) {
                     ServicesView()

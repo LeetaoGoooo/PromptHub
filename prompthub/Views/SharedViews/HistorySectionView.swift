@@ -8,14 +8,14 @@ struct HistorySectionView: View {
     @Binding var selectedHistoryVersion: PromptHistory?
     @Binding var isPreviewingOldVersion: Bool
     @Binding var editablePrompt: String
+    @Binding var showToast: Bool
+    @Binding var toastTitle: String
+    @Binding var toastType: AlertToast.AlertType
     let copyPromptToClipboard: (_ prompt: String) -> Bool
     let deleteHistoryItem: (_ historyItem: PromptHistory) -> Void
     private let cardBackground = Color(NSColor.controlBackgroundColor)
     @State private var showDeleteConfirmation: Bool = false
     @State private var itemToDelete: PromptHistory?
-    @State private var showToast = false
-    @State private var toastTitle = ""
-    @State private var toastType:  AlertToast.AlertType  = .regular
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -134,14 +134,10 @@ struct HistorySectionView: View {
         .padding(12)
         .background(Color(NSColor.systemGray.withAlphaComponent(0.1)))
         .cornerRadius(8)
-        .toast(isPresenting: $showToast) {
-            AlertToast(type:  toastType, title: toastTitle)
-        }
     }
     
     private func showToastMsg(msg: String, alertType:AlertToast.AlertType = .error(Color.red)) {
-        print(msg)
-        showToast.toggle()
+        showToast = true
         toastTitle = msg
         toastType = alertType
     }
@@ -152,6 +148,9 @@ struct HistorySectionView: View {
     @Previewable @State var selectedHistoryVersion: PromptHistory?
     @Previewable @State var isPreviewingOldVersion = false
     @Previewable @State var editablePrompt = "Sample editable prompt"
+    @Previewable @State var showToast = false
+    @Previewable @State var toastTitle = ""
+    @Previewable @State var toastType: AlertToast.AlertType = .regular
     
     HistorySectionView(
         history: PreviewData.samplePromptHistory,
@@ -159,6 +158,9 @@ struct HistorySectionView: View {
         selectedHistoryVersion: $selectedHistoryVersion,
         isPreviewingOldVersion: $isPreviewingOldVersion,
         editablePrompt: $editablePrompt,
+        showToast: $showToast,
+        toastTitle: $toastTitle,
+        toastType: $toastType,
         copyPromptToClipboard: { prompt in
             print("Copied: \(prompt)")
             return true

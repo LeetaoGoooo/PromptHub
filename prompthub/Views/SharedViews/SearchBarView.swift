@@ -5,14 +5,13 @@
 //  Created by leetao on 2025/6/16.
 //
 
-import SwiftUICore
 import SwiftUI
 
 
 struct SearchBarView: View {
     @Binding var searchText: String
     
-    @FocusState private var isTextFieldFocused: Bool
+    var isFocused: FocusState<Bool>.Binding
     
     var body: some View {
         HStack(spacing: 8) {
@@ -21,7 +20,7 @@ struct SearchBarView: View {
             
             TextField("Search prompt...", text: $searchText)
                 .textFieldStyle(.plain)
-                .focused($isTextFieldFocused)
+                .focused(isFocused)
             
             if !searchText.isEmpty {
                 Button {
@@ -37,16 +36,17 @@ struct SearchBarView: View {
         .padding(8)
         .background(Color(.unemphasizedSelectedContentBackgroundColor))
         .cornerRadius(8)
-        .onAppear {
-            DispatchQueue.main.async {
-                isTextFieldFocused = true
-            }
-        }
     }
 }
 
 #Preview {
-    @Previewable @State var searchText = ""
-    SearchBarView(searchText: $searchText)
+    @FocusState var isFocused: Bool
+    @State var searchText = ""
+    
+    return SearchBarView(searchText: $searchText, isFocused: $isFocused)
         .padding()
+        .onAppear {
+            // Simulate the parent view's behavior in the preview
+            isFocused = true
+        }
 }

@@ -20,6 +20,8 @@ struct PromptMenuView: View {
     @State private var galleryPrompts: [GalleryPrompt] = []
     @State private var isLoading = true
 
+    @FocusState private var isSearchFieldFocused: Bool
+    
     private var filteredUserPrompts: [Prompt] {
         if searchPrompt.isEmpty {
             return allPrompts
@@ -62,10 +64,10 @@ struct PromptMenuView: View {
     var body: some View {
         VStack(spacing: 0) {
             
-            SearchBarView(searchText: $searchPrompt)
+            SearchBarView(searchText: $searchPrompt, isFocused: $isSearchFieldFocused)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-            
+        
             Divider()
 
             if isLoading {
@@ -116,6 +118,9 @@ struct PromptMenuView: View {
         .frame(width: 320, height: 400)
         .onAppear {
             loadGalleryPrompts()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                           isSearchFieldFocused = true
+            }
         }
     }
     

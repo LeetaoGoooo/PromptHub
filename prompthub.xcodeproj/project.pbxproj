@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0E1E0AC92DE01FD100392E15 /* AlertToast in Frameworks */ = {isa = PBXBuildFile; productRef = 0E1E0AC82DE01FD100392E15 /* AlertToast */; };
 		0E32437A2DEDCFC500581488 /* WhatsNewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E3243792DEDCFC500581488 /* WhatsNewKit */; };
+		0E3387D62E8288C2001A9004 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 0E3387D52E8288C2001A9004 /* KeyboardShortcuts */; };
 		0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 0E554B372D7EEE30008DC907 /* LaunchAtLogin */; };
 		0E5749462E128445001CB54A /* GenKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E5749452E128445001CB54A /* GenKit */; };
 		0E96EE692E4310DF00F839F9 /* DifferenceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E96EE682E4310DF00F839F9 /* DifferenceKit */; };
@@ -100,6 +101,7 @@
 				0E1E0AC92DE01FD100392E15 /* AlertToast in Frameworks */,
 				0E96EE692E4310DF00F839F9 /* DifferenceKit in Frameworks */,
 				0E32437A2DEDCFC500581488 /* WhatsNewKit in Frameworks */,
+				0E3387D62E8288C2001A9004 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,6 +167,7 @@
 				0E3243792DEDCFC500581488 /* WhatsNewKit */,
 				0E5749452E128445001CB54A /* GenKit */,
 				0E96EE682E4310DF00F839F9 /* DifferenceKit */,
+				0E3387D52E8288C2001A9004 /* KeyboardShortcuts */,
 			);
 			productName = prompthub;
 			productReference = 0E6CAD342D72E6CE001FD9B3 /* prompthub.app */;
@@ -255,6 +258,7 @@
 				0E3243782DEDCFC500581488 /* XCRemoteSwiftPackageReference "WhatsNewKit" */,
 				0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */,
 				0E96EE672E4310DF00F839F9 /* XCRemoteSwiftPackageReference "DifferenceKit" */,
+				0E3387D42E8288C2001A9004 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0E6CAD352D72E6CE001FD9B3 /* Products */;
@@ -648,6 +652,14 @@
 				minimumVersion = 2.2.1;
 			};
 		};
+		0E3387D42E8288C2001A9004 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.0;
+			};
+		};
 		0E554B362D7EEE14008DC907 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
@@ -684,6 +696,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0E3243782DEDCFC500581488 /* XCRemoteSwiftPackageReference "WhatsNewKit" */;
 			productName = WhatsNewKit;
+		};
+		0E3387D52E8288C2001A9004 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0E3387D42E8288C2001A9004 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
 		};
 		0E554B372D7EEE30008DC907 /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;
