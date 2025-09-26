@@ -8,6 +8,7 @@
 import SwiftUI
 import LaunchAtLogin
 import UniformTypeIdentifiers
+import KeyboardShortcuts
 
 struct IdentifiableAlert: Identifiable {
     let id = UUID()
@@ -22,22 +23,32 @@ struct GeneralView: View {
     @State private var testResultAlert: IdentifiableAlert? = nil;
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("General Settings")
-                .font(.title)
-                .padding(.bottom)
-
-            HStack {
-                Text("Launch:")
-                Spacer()
-                LaunchAtLogin.Toggle()
-            }
-            .padding(.bottom, 5)
-
-            KeyboardShortcutSettingsView()
-                .padding(.bottom, 10)
-
-            Section(header: Text("AI")) {
+        Group {
+            VStack(alignment: .leading, spacing: 20) {
+                // General Settings
+                HStack {
+                    Text("Launch:")
+                    Spacer()
+                    LaunchAtLogin.Toggle()
+                }
+                
+                // Keyboard Shortcuts
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Quick Search:")
+                        Spacer()
+                        KeyboardShortcuts.Recorder(for: KeyboardShortcuts.Name.toggleSearch)
+                    }
+                    
+                    Text("Press the keyboard shortcut to quickly search for prompts from anywhere in the app.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 128)
+                }
+                
+                // AI Section
                 VStack(alignment: .leading) {
                     ServicesView()
                     
@@ -56,23 +67,17 @@ struct GeneralView: View {
                     }
                 }
                 .padding(.vertical, 2)
-            }
-            .padding(.bottom, 10)
 
-            HStack {
-                Spacer()
-                Button("Quit") {
-                    isQuitting = true
+                HStack {
+                    Spacer()
+                    Button("Quit") {
+                        isQuitting = true
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
             }
-            .padding(.vertical, 2)
-            .padding(.bottom, 32)
-
-
-
+            .padding()
         }
-        .padding()
         .alert(isPresented: $isQuitting) {
             Alert(
                 title: Text("Quit Application?"),

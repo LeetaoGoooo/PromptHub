@@ -45,7 +45,7 @@ struct ServiceForm: View {
                     }
             }
 
-            VStack(alignment: .center) {
+            VStack(alignment: .leading) {
                 HStack {
                     Text("Models")
                         .font(.subheadline)
