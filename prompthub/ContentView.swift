@@ -64,8 +64,10 @@ struct ContentView: View {
             switch promptSelection {
             case .allPrompts:
                 UnifiedPromptBrowserView()
+                    .navigationTitle("All Prompts")
             case .prompt(let selectedPrompt):
                 PromptDetail(prompt: selectedPrompt)
+                    .navigationTitle(selectedPrompt.name)
             }
         }
         .onKeyPress(.escape) {
@@ -86,8 +88,6 @@ struct ContentView: View {
         }
         .onAppear {
             let lastShownVersion = appSettings.lastShownWhatsNewVersion
-
-            print("lastShownVersion:\(lastShownVersion) currentAppVersion:\(currentAppVersion)")
             
             if lastShownVersion != currentAppVersion {
                 self.whatsNew = WhatsNew(
@@ -97,29 +97,29 @@ struct ContentView: View {
 
                         .init(
                             image: .init(
-                                systemName: "testtube.2",
+                                systemName: "command",
                                 foregroundColor: .blue
                             ),
-                            title: WhatsNew.Text("Multi-Model Prompt Testing"),
-                            subtitle: WhatsNew.Text("Test your prompts across multiple AI models simultaneously. Select from all configured services and compare results side-by-side to find the best performing model for your use case.")
+                            title: WhatsNew.Text("Keyboard Shortcuts"),
+                            subtitle: WhatsNew.Text("Access PromptHub quickly from anywhere with the new keyboard shortcuts. Configure your own shortcuts in Settings to trigger the quick search feature.")
                         ),
 
                         .init(
                             image: .init(
-                                systemName: "rectangle.split.3x1",
+                                systemName: "magnifyingglass",
                                 foregroundColor: .purple
                             ),
-                            title: WhatsNew.Text("Global Comparison View"),
-                            subtitle: WhatsNew.Text("View all model results in a comprehensive comparison interface. Expand, collapse, and analyze outputs from different AI models in an organized, easy-to-navigate layout.")
+                            title: WhatsNew.Text("Enhanced Search"),
+                            subtitle: WhatsNew.Text("Find your prompts faster with the new global search feature. Search across all your prompts from anywhere in the app with a convenient search window.")
                         ),
 
                         .init(
                             image: .init(
-                                systemName: "wave.3.right",
+                                systemName: "gearshape",
                                 foregroundColor: .green
                             ),
-                            title: WhatsNew.Text("Real-time Streaming Results"),
-                            subtitle: WhatsNew.Text("Watch AI responses generate in real-time as they stream. See live updates across all selected models with progress indicators and smooth animations.")
+                            title: WhatsNew.Text("Improved Settings Layout"),
+                            subtitle: WhatsNew.Text("Settings have been reorganized and improved for better usability. Keyboard shortcuts settings now have better visual distinction and consistent layout.")
                         ),
 
                         .init(
@@ -127,8 +127,8 @@ struct ContentView: View {
                                 systemName: "slider.horizontal.3",
                                 foregroundColor: .orange
                             ),
-                            title: WhatsNew.Text("Enhanced Model Management"),
-                            subtitle: WhatsNew.Text("Intuitive model selection sidebar with easy configuration management. Select all, clear all, or pick specific models with visual feedback for configured and unconfigured services.")
+                            title: WhatsNew.Text("Better Model Management"),
+                            subtitle: WhatsNew.Text("Enhanced model configuration with intuitive service management. Configure multiple AI services and switch between them seamlessly.")
                         )
                     ],
                     primaryAction: .init(

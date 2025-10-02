@@ -69,6 +69,8 @@ struct UnifiedPromptBrowserView: View {
     @State private var toastType: AlertToast.AlertType = .regular
     @State private var showIconLegend = false
     
+    @FocusState private var isSearchFieldFocused: Bool
+    
     var body: some View {
         VStack(spacing: 0) {
             // Tab Bar
@@ -119,7 +121,7 @@ struct UnifiedPromptBrowserView: View {
             
             // Search Bar
             HStack {
-                SearchBarView(searchText: $searchText)
+                SearchBarView(searchText: $searchText,isFocused: $isSearchFieldFocused)
                     .frame(maxWidth: 300)
                 
                 Spacer()
@@ -168,6 +170,9 @@ struct UnifiedPromptBrowserView: View {
         }
         .onAppear {
             loadGalleryPrompts()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                           isSearchFieldFocused = true
+            }
         }
     }
     

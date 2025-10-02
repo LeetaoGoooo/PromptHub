@@ -68,6 +68,9 @@ struct PromptDetail: View {
                             selectedHistoryVersion: $selectedHistoryVersion,
                             isPreviewingOldVersion: $isPreviewingOldVersion,
                             editablePrompt: $editablePrompt,
+                            showToast: $showToast,
+                            toastTitle: $toastTitle,
+                            toastType: $toastType,
                             copyPromptToClipboard: copyPromptToClipboard,
                             deleteHistoryItem: { historyItemToDelete in
                                 modelContext.delete(historyItemToDelete) // Delete the object from the ModelContext

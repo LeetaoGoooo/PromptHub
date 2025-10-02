@@ -43,9 +43,6 @@ struct LatestVersionView: View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 VStack(alignment: .leading) {
-                    Text(prompt.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
                     if prompt.desc != nil {
                         Text(prompt.desc!)
                             .font(.caption)

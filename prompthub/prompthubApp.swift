@@ -7,6 +7,29 @@
 
 import SwiftData
 import SwiftUI
+import KeyboardShortcuts
+
+
+@MainActor
+final class AppState: ObservableObject {
+    private var searchWindowController: SearchWindowController
+    
+    init(modelContainer: ModelContainer) {
+        self.searchWindowController = SearchWindowController(modelContainer: modelContainer)
+        
+        // Set default shortcut for search
+        KeyboardShortcuts.setShortcut(.init(.k, modifiers: [.command]), for: .toggleSearch)
+        
+        // Listen for search shortcut
+        KeyboardShortcuts.onKeyDown(for: .toggleSearch) { [weak self] in
+            self?.showSearchWindow()
+        }
+    }
+    
+    private func showSearchWindow() {
+        searchWindowController.showWindow()
+    }
+}
 
 @main
 struct prompthubApp: App {
@@ -36,18 +59,19 @@ struct prompthubApp: App {
     
     @StateObject private var appSettings = AppSettings()
     @StateObject private var deepLinkManager = DeepLinkManager()
+    @StateObject private var appState: AppState
 
+    init() {
+        let modelContainer = sharedModelContainer
+        _appState = StateObject(wrappedValue: AppState(modelContainer: modelContainer))
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(appSettings)
                 .environmentObject(deepLinkManager)
                 .environment(ServicesManager())
-            
-                .onAppear {
-                    // Perform one-time cleanup when the app starts
-                    performOneTimeCleanup()
-                }
                 .onOpenURL { url in
                     Task {
                         await deepLinkManager.handleURL(url, modelContainer: sharedModelContainer)
@@ -63,10 +87,10 @@ struct prompthubApp: App {
                 })
         }
         .modelContainer(sharedModelContainer)
-
+        
         MenuBarExtra {
             PromptMenuView()
-
+            
             Divider()
             
             Button("Quit PromptBox") {
@@ -84,21 +108,21 @@ struct prompthubApp: App {
         }
         .modelContainer(sharedModelContainer)
         .menuBarExtraStyle(.window)
-
+        
         Window("Settings", id: "settings-window") {
             SettingsView()
                 .environmentObject(appSettings)
                 .environment(ServicesManager())
                 .frame(minWidth: 550, minHeight: 450)
         }
-        #if os(macOS)
+#if os(macOS)
         .defaultSize(width: 600, height: 450)
-        #endif
+#endif
         .commands {
             CommandGroup(replacing: .newItem) {}
         }
-
-        #if os(macOS)
+        
+#if os(macOS)
         WindowGroup("Image Viewer", for: Data.self) { $data in
             if let imageData = data {
                 ImageViewerView(imageData: imageData)
@@ -109,43 +133,6 @@ struct prompthubApp: App {
             }
         }
         .windowResizability(.contentSize)
-        #endif
-    }
-    
-    // MARK: - Cleanup Functions
-    
-    /// Performs one-time cleanup of orphaned SharedCreations when the app starts
-    /// Uses UserDefaults to track if cleanup has already been performed
-    private func performOneTimeCleanup() {
-        let cleanupKey = "SharedCreationCleanupPerformed_v1"
-        
-        // Check if cleanup has already been performed
-        guard !UserDefaults.standard.bool(forKey: cleanupKey) else {
-            return
-        }
-        
-        Task {
-            do {
-                // Create a ModelContext for the cleanup operation
-                let context = ModelContext(sharedModelContainer)
-                
-                // Initialize the sync manager with the CloudKit container identifier
-                let syncManager = PublicCloudKitSyncManager(
-                    containerIdentifier: "iCloud.com.duck.leetao.promptbox",
-                    modelContext: context
-                )
-                
-                // Perform the cleanup
-                try await syncManager.cleanupOrphanedLocalSharedCreations()
-                
-                // Mark cleanup as completed
-                UserDefaults.standard.set(true, forKey: cleanupKey)
-                
-                print("One-time SharedCreation cleanup completed successfully")
-            } catch {
-                print("Failed to perform one-time SharedCreation cleanup: \(error.localizedDescription)")
-                // Don't mark as completed if it failed, so it will retry next time
-            }
-        }
+#endif
     }
 }
