@@ -33,75 +33,63 @@ struct UserPromptItemView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Image(systemName: "person.crop.circle.fill")
-                            .foregroundColor(.blue)
-                            .font(.caption)
-                        Text(prompt.name)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.crop.circle.fill")
+                    .foregroundColor(.blue)
+                    .font(.headline)
+                    .frame(width: 24, height: 24)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(6)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(prompt.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
                     
                     if let desc = prompt.desc, !desc.isEmpty {
                         Text(desc)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .lineLimit(2)
+                            .lineLimit(1)
+                    } else {
+                        Text("No description")
+                            .font(.caption)
+                            .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                            .lineLimit(1)
                     }
                 }
-                
                 Spacer()
-                
-                HStack(spacing: 8) {
-                    Button {
-                        copyPromptToClipboard(latestPromptContent)
-                    } label: {
-                        Image(systemName: "doc.on.doc")
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(8)
-                            .help("Copy")
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Button {
-                        showingDeleteAlert = true
-                    } label: {
-                        Image(systemName: "trash")
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.red.opacity(0.1))
-                            .foregroundColor(.red)
-                            .cornerRadius(8)
-                            .help("Delete Prompt")
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
             }
         }
-        .padding()
-        .cornerRadius(20)
-        .shadow(
-            color: Color.primary.opacity(isHovering ? 0.3 : 0.15),
-            radius: isHovering ? 12 : 5,
-            x: 0,
-            y: isHovering ? 6 : 3
+        .padding(12)
+        .background(isHovering ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isHovering ? Color.accentColor.opacity(0.3) : Color(nsColor: .separatorColor), lineWidth: 1)
         )
-        .offset(y: isHovering ? -4 : 0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.65), value: isHovering)
         .onHover { hovering in
-            self.isHovering = hovering
+            withAnimation(.easeInOut(duration: 0.2)) {
+                self.isHovering = hovering
+            }
         }
-        .sheet(isPresented: $showingPreviewSheet) {
-            PromptPreviewView(
-                promptName: prompt.name,
-                promptContent: latestPromptContent,
-                copyPromptToClipboard: copyPromptToClipboard
-            )
+        // Context menu remains the primary way to interact without opening
+        .contextMenu {
+            Button {
+                copyPromptToClipboard(latestPromptContent)
+            } label: {
+                Label("Copy Content", systemImage: "doc.on.doc")
+            }
+            
+            Divider()
+            
+            Button(role: .destructive) {
+                showingDeleteAlert = true
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
         }
         .alert("Delete Prompt", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
@@ -110,9 +98,6 @@ struct UserPromptItemView: View {
             }
         } message: {
             Text("Are you sure you want to delete '\(prompt.name)'? This action cannot be undone.")
-        }
-        .onTapGesture{
-            showingPreviewSheet.toggle()
         }
     }
 }

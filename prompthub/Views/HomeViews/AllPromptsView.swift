@@ -44,24 +44,25 @@ struct AllPromptsView: View {
     
     var body: some View {
         if isLoading {
-            ProgressView("Loading Prompts...")
-                .progressViewStyle(CircularProgressViewStyle())
-                .scaleEffect(1.2)
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack {
+                ProgressView()
+                    .controlSize(.large)
+                Text("Loading Prompts...")
+                    .foregroundColor(.secondary)
+                    .padding(.top)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(NSColor.windowBackgroundColor))
         } else {
             GeometryReader { geometry in
                 ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
-                        // User prompts with sharing status indication
+                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
+                        // User prompts
                         ForEach(filteredUserPrompts) { prompt in
                             PromptItemView(
                                 prompt: prompt,
                                 showToastMsg: showToastMsg,
                                 copyPromptToClipboard: copyPromptToClipboard
-                            )
-                            .background(
-                                PromptViewHelpers.promptItemBackground(borderColor: Color.blue.opacity(0.25))
                             )
                         }
                         
@@ -72,13 +73,11 @@ struct AllPromptsView: View {
                                 showToastMsg: showToastMsg,
                                 copyPromptToClipboard: copyPromptToClipboard
                             )
-                            .background(
-                                PromptViewHelpers.promptItemBackground(borderColor: Color.gray.opacity(0.25))
-                            )
                         }
                     }
-                    .padding()
+                    .padding(20)
                 }
+                .background(Color(NSColor.windowBackgroundColor))
             }
         }
     }

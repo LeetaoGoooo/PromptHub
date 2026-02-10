@@ -42,6 +42,7 @@ struct prompthubApp: App {
             )
 
             let privateConfig = ModelConfiguration(
+                "PrivateStore",
                 schema: Schema([ Prompt.self, PromptHistory.self, ExternalSource.self ]),
                 cloudKitDatabase: .automatic
             )

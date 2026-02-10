@@ -17,60 +17,57 @@ struct GalleryPromptItemView: View {
     @State private var showingPreviewSheet = false
 
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Text(galleryPromptItem.name)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "globe")
+                    .foregroundColor(.accentColor)
                     .font(.headline)
-                    .foregroundColor(.primary)
-                Spacer()
-
-                HStack(spacing: 8) {
-                    Button {
-                        copyPromptToClipboard(galleryPromptItem.prompt)
-                    } label: {
-                        Image(systemName: "doc.on.doc")
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.accentColor.opacity(0.1))
-                            .cornerRadius(8)
-                            .help("Copy")
+                    .frame(width: 24, height: 24)
+                    .background(Color.accentColor.opacity(0.1))
+                    .cornerRadius(6)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(galleryPromptItem.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    if let desc = galleryPromptItem.description, !desc.isEmpty {
+                        Text(desc)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
                     }
-                    .buttonStyle(PlainButtonStyle())
-
-                    Button {
-                        Task { @MainActor in
-                            savePrompt()
-                        }
-                    } label: {
-                        Image(systemName: "square.and.arrow.down")
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.accentColor.opacity(0.1))
-                            .cornerRadius(8)
-                            .help("Save")
-                    }
-                    .buttonStyle(PlainButtonStyle())
                 }
-            }
-            if galleryPromptItem.description != nil {
-                Text(galleryPromptItem.description!)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .help(galleryPromptItem.description!)
+                Spacer()
             }
         }
-        .padding()
-        .cornerRadius(20)
-        .shadow(
-            color: Color.primary.opacity(isHovering ? 0.3 : 0.15),
-            radius: isHovering ? 12 : 5,
-            x: 0,
-            y: isHovering ? 6 : 3
+        .padding(12)
+        .background(isHovering ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isHovering ? Color.accentColor.opacity(0.3) : Color(nsColor: .separatorColor), lineWidth: 1)
         )
-        .offset(y: isHovering ? -4 : 0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.65), value: isHovering)
         .onHover { hovering in
-            self.isHovering = hovering
+            withAnimation(.easeInOut(duration: 0.2)) {
+                self.isHovering = hovering
+            }
+        }
+        .contextMenu {
+            Button {
+                copyPromptToClipboard(galleryPromptItem.prompt)
+            } label: {
+                Label("Copy Content", systemImage: "doc.on.doc")
+            }
+            
+            Button {
+                Task { @MainActor in
+                    savePrompt()
+                }
+            } label: {
+                Label("Save to My Prompts", systemImage: "square.and.arrow.down")
+            }
         }
         .sheet(isPresented: $showingPreviewSheet) {
             PromptPreviewView(
@@ -79,7 +76,7 @@ struct GalleryPromptItemView: View {
                 copyPromptToClipboard: copyPromptToClipboard
             )
         }
-        .onTapGesture{
+        .onTapGesture {
             showingPreviewSheet.toggle()
         }
     }

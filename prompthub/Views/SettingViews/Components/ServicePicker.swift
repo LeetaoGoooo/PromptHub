@@ -5,16 +5,14 @@
 //  Created by leetao on 2025/7/7.
 //
 
-
 import SwiftUI
 
 struct ServicePicker: View {
-    
     @Environment(ServicesManager.self) var manager
     
     private var selectedServiceIDBinding: Binding<String?> {
         Binding<String?>(
-            get: { 
+            get: {
                 manager.selectedServiceID.isEmpty ? nil : manager.selectedServiceID
             },
             set: { newValue in
@@ -24,13 +22,12 @@ struct ServicePicker: View {
     }
     
     var body: some View {
-        VStack(alignment:.leading) {
+        VStack(alignment: .leading, spacing: 4) {
             Text("Service")
-                .font(.subheadline)
-                .foregroundColor(.gray)
+                .font(.subheadline.bold())
+                .foregroundColor(.secondary)
             
             Picker("", selection: selectedServiceIDBinding) {
-                
                 Text("None").tag(String?.none)
                 ForEach(manager.services) { service in
                     Text(service.name).tag(service.id as String?)
