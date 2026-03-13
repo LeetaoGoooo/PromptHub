@@ -91,8 +91,10 @@ class DeepLinkManager: ObservableObject {
         }
 
         do {
-  
-            let pubCloudKitManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox",  modelContext: context)
+            let pubCloudKitManager = try PublicCloudKitSyncManager(
+                containerIdentifier: CloudKitAccess.publicContainerIdentifier,
+                modelContext: context
+            )
             let sharedCreation = try await pubCloudKitManager.fetchSharedCreation(bySharedCreationID: sharedItemID)
             
             // Check if a similar prompt already exists locally

@@ -17,23 +17,17 @@ struct PromptViewHelpers {
     
     /// Standard styling for prompt item backgrounds
     static func promptItemBackground(borderColor: Color) -> some View {
-        promptItemBackground(borderColor: borderColor, cornerRadius: 10)
+        promptItemBackground(borderColor: borderColor, cornerRadius: 8)
     }
     
     /// Standard styling for prompt item backgrounds with custom corner radius
     static func promptItemBackground(borderColor: Color, cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(Color(NSColor.windowBackgroundColor))
+            .fill(Color(NSColor.controlBackgroundColor))
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(borderColor, lineWidth: 1)
+                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
             }
-            .shadow(
-                color: Color.black.opacity(0.12),
-                radius: 5,
-                x: 0,
-                y: 2
-            )
     }
     
     /// Standard empty state view

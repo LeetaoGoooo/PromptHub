@@ -20,92 +20,64 @@ struct SharedCreationItemView: View {
     @State private var showingDeleteConfirmation = false
     @State private var isDeleting = false
     
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "SharedCreationItemView")
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.duck.leetao.prompthub",
+        category: "SharedCreationItemView"
+    )
 
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Image(systemName: sharedCreation.isPublic ? "shared.with.you": "shared.with.you.slash" )
-                            .foregroundColor(sharedCreation.isPublic ? .green : .orange)
-                            .font(.caption)
-                        Text(sharedCreation.name)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: sharedCreation.isPublic ? "shared.with.you": "shared.with.you.slash" )
+                    .foregroundColor(sharedCreation.isPublic ? .green : .orange)
+                    .font(.headline)
+                    .frame(width: 24, height: 24)
+                    .background((sharedCreation.isPublic ? Color.green : Color.orange).opacity(0.1))
+                    .cornerRadius(6)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(sharedCreation.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
                     
                     if let desc = sharedCreation.desc, !desc.isEmpty {
                         Text(desc)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .lineLimit(2)
-                    }
-                    
-                    if let lastModified = sharedCreation.lastModified {
-                        Text("Modified: \(lastModified.formatted(date: .abbreviated, time: .omitted))")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .lineLimit(1)
                     }
                 }
-                
                 Spacer()
-                
-                HStack(spacing: 8) {
-                    Button {
-                        copyShareLink()
-                    } label: {
-                        Image(systemName: "link")
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.orange.opacity(0.1))
-                            .cornerRadius(8)
-                            .help("Copy Share Link")
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    // Show delete button only if the current user created this shared creation
-                    if canDeleteThisCreation() {
-                        Button {
-                            showingDeleteConfirmation = true
-                        } label: {
-                            if isDeleting {
-                                HStack(spacing: 4) {
-                                    ProgressView()
-                                        .scaleEffect(0.6)
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 5)
-                                .background(Color.red.opacity(0.1))
-                                .cornerRadius(8)
-                            } else {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Color.red.opacity(0.1))
-                                    .cornerRadius(8)
-                                    .help("Delete Shared Creation")
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .disabled(isDeleting)
-                    }
-                }
             }
         }
-        .padding()
-        .cornerRadius(20)
-        .shadow(
-            color: Color.primary.opacity(isHovering ? 0.3 : 0.15),
-            radius: isHovering ? 12 : 5,
-            x: 0,
-            y: isHovering ? 6 : 3
+        .padding(12)
+        .background(isHovering ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isHovering ? Color.accentColor.opacity(0.3) : Color(nsColor: .separatorColor), lineWidth: 1)
         )
-        .offset(y: isHovering ? -4 : 0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.65), value: isHovering)
         .onHover { hovering in
-            self.isHovering = hovering
+            withAnimation(.easeInOut(duration: 0.2)) {
+                self.isHovering = hovering
+            }
+        }
+        .contextMenu {
+            Button {
+                copyShareLink()
+            } label: {
+                Label("Copy Share Link", systemImage: "link")
+            }
+            
+            if canDeleteThisCreation() {
+                Divider()
+                Button(role: .destructive) {
+                    showingDeleteConfirmation = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
         }
         .sheet(isPresented: $showingPreviewSheet) {
             PromptPreviewView(
@@ -150,8 +122,8 @@ struct SharedCreationItemView: View {
     
     private func deleteSharedCreation() async {
         do {
-            let syncManager = PublicCloudKitSyncManager(
-                containerIdentifier: "iCloud.com.duck.leetao.promptbox",
+            let syncManager = try PublicCloudKitSyncManager(
+                containerIdentifier: CloudKitAccess.publicContainerIdentifier,
                 modelContext: modelContext
             )
             

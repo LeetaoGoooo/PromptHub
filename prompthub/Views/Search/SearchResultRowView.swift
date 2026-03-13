@@ -11,7 +11,8 @@ struct SearchResultRowView<Item: SearchableItem>: View {
     let item: Item
     let type: SearchResultType
     let isSelected: Bool
-    let action: () -> Void
+    let onOpen: () -> Void
+    let onCopy: () -> Void
     let index: Int
     let copiedIndex: Int?
     
@@ -19,52 +20,56 @@ struct SearchResultRowView<Item: SearchableItem>: View {
     @State private var didCopy = false
     
     var body: some View {
-        Button(action: {
-            guard !didCopy else { return }
-            
-            action()
-            
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-                didCopy = true
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-                    didCopy = false
-                    if isHovering {
-                        isHovering = !isHovering
+        HStack(spacing: 8) {
+            Button(action: onOpen) {
+                Group {
+                    if didCopy || (copiedIndex != nil && index == copiedIndex) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.title3)
+                                .foregroundColor(.green)
+                            Text("Copied!")
+                                .fontWeight(.semibold)
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                    } else {
+                        HStack(spacing: 8) {
+                            Image(systemName: type.icon)
+                                .font(.caption)
+                                .foregroundColor(getColor())
+                            Text(item.name)
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            if item.navigationTarget != nil {
+                                Image(systemName: "arrow.up.right.square")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     }
                 }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .frame(height: 38)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-        }) {
-            Group {
-                if didCopy || (copiedIndex != nil && index == copiedIndex) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(.green)
-                        Text("Copied!")
-                            .fontWeight(.semibold)
-                    }
-                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
-                } else {
-                    HStack(spacing: 8) {
-                        Image(systemName: type.icon)
-                            .font(.caption)
-                            .foregroundColor(getColor())
-                        Text(item.name)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                }
+            .buttonStyle(.plain)
+
+            Button(action: triggerCopy) {
+                Image(systemName: didCopy || (copiedIndex != nil && index == copiedIndex) ? "checkmark" : "doc.on.doc")
+                    .font(.caption)
+                    .foregroundStyle(didCopy || (copiedIndex != nil && index == copiedIndex) ? .green : .secondary)
+                    .frame(width: 28, height: 28)
+                    .background(Color.primary.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .frame(height: 38)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .help("Copy")
+            .padding(.trailing, 8)
         }
-        .buttonStyle(.plain)
         .background(
             Group {
                 if didCopy || (copiedIndex != nil && index == copiedIndex) {
@@ -87,6 +92,25 @@ struct SearchResultRowView<Item: SearchableItem>: View {
             }
         }
     }
+
+    private func triggerCopy() {
+        guard !didCopy else { return }
+
+        onCopy()
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            didCopy = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                didCopy = false
+                if isHovering {
+                    isHovering = !isHovering
+                }
+            }
+        }
+    }
     
     private func getColor() -> Color {
         switch type.color {
@@ -96,6 +120,8 @@ struct SearchResultRowView<Item: SearchableItem>: View {
             return .orange
         case "systemGray":
             return .gray
+        case "mint":
+            return .mint
         default:
             return .primary
         }

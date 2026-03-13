@@ -13,6 +13,7 @@
 		0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 0E554B372D7EEE30008DC907 /* LaunchAtLogin */; };
 		0E5749462E128445001CB54A /* GenKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E5749452E128445001CB54A /* GenKit */; };
 		0E96EE692E4310DF00F839F9 /* DifferenceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E96EE682E4310DF00F839F9 /* DifferenceKit */; };
+		8A6F4AFC2F90000100E1A001 /* PromptHubSkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = 8A6F4AFB2F90000100E1A001 /* PromptHubSkillKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,6 +98,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0E5749462E128445001CB54A /* GenKit in Frameworks */,
+				8A6F4AFC2F90000100E1A001 /* PromptHubSkillKit in Frameworks */,
 				0E554B382D7EEE30008DC907 /* LaunchAtLogin in Frameworks */,
 				0E1E0AC92DE01FD100392E15 /* AlertToast in Frameworks */,
 				0E96EE692E4310DF00F839F9 /* DifferenceKit in Frameworks */,
@@ -168,6 +170,7 @@
 				0E5749452E128445001CB54A /* GenKit */,
 				0E96EE682E4310DF00F839F9 /* DifferenceKit */,
 				0E3387D52E8288C2001A9004 /* KeyboardShortcuts */,
+				8A6F4AFB2F90000100E1A001 /* PromptHubSkillKit */,
 			);
 			productName = prompthub;
 			productReference = 0E6CAD342D72E6CE001FD9B3 /* prompthub.app */;
@@ -259,6 +262,7 @@
 				0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */,
 				0E96EE672E4310DF00F839F9 /* XCRemoteSwiftPackageReference "DifferenceKit" */,
 				0E3387D42E8288C2001A9004 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				8A6F4AFA2F90000100E1A001 /* XCLocalSwiftPackageReference "PromptHubSkillKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0E6CAD352D72E6CE001FD9B3 /* Products */;
@@ -386,7 +390,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "PromptHub uses file provider access to import and manage local prompt and skill files you choose.";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -445,7 +449,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "PromptHub uses file provider access to import and manage local prompt and skill files you choose.";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -465,7 +469,7 @@
 				CODE_SIGN_ENTITLEMENTS = prompthub/prompthub.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_ASSET_PATHS = "\"prompthub/Preview Content\"";
 				DEVELOPMENT_TEAM = H6F75GR6PJ;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -474,14 +478,14 @@
 				INFOPLIST_FILE = prompthub/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PromptBox;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "PromptHub uses file provider access to import and manage local prompt and skill files you choose.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 2.9.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.duck.leetao.prompthub;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = macosx;
@@ -498,9 +502,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = prompthub/prompthub.entitlements;
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_ASSET_PATHS = "\"prompthub/Preview Content\"";
 				DEVELOPMENT_TEAM = H6F75GR6PJ;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -509,14 +514,14 @@
 				INFOPLIST_FILE = prompthub/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PromptBox;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "PromptHub uses file provider access to import and manage local prompt and skill files you choose.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 2.9.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.duck.leetao.prompthub;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = macosx;
@@ -635,6 +640,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		8A6F4AFA2F90000100E1A001 /* XCLocalSwiftPackageReference "PromptHubSkillKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = PromptHubSkillKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		0E1E0AC72DE01FD100392E15 /* XCRemoteSwiftPackageReference "AlertToast" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -716,6 +728,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0E96EE672E4310DF00F839F9 /* XCRemoteSwiftPackageReference "DifferenceKit" */;
 			productName = DifferenceKit;
+		};
+		8A6F4AFB2F90000100E1A001 /* PromptHubSkillKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8A6F4AFA2F90000100E1A001 /* XCLocalSwiftPackageReference "PromptHubSkillKit" */;
+			productName = PromptHubSkillKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -40,13 +40,18 @@ struct SearchBarView: View {
 }
 
 #Preview {
-    @FocusState var isFocused: Bool
-    @State var searchText = ""
-    
-    return SearchBarView(searchText: $searchText, isFocused: $isFocused)
-        .padding()
-        .onAppear {
-            // Simulate the parent view's behavior in the preview
-            isFocused = true
-        }
+    SearchBarPreview()
+}
+
+private struct SearchBarPreview: View {
+    @State private var searchText = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        SearchBarView(searchText: $searchText, isFocused: $isFocused)
+            .padding()
+            .onAppear {
+                isFocused = true
+            }
+    }
 }

@@ -21,13 +21,6 @@ struct SharedCreationsView: View {
     @State private var isLoading = false
     @State private var loadError: String?
     
-    private var syncManager: PublicCloudKitSyncManager {
-        PublicCloudKitSyncManager(
-            containerIdentifier: "iCloud.com.duck.leetao.promptbox",
-            modelContext: modelContext
-        )
-    }
-    
     private func columns(for width: CGFloat) -> [GridItem] {
         return PromptViewHelpers.columns(for: width)
     }
@@ -68,22 +61,23 @@ struct SharedCreationsView: View {
         return categorized.userCreations + categorized.otherCreations
     }
     
+    @MainActor
     private func loadPublicSharedCreations() async {
         isLoading = true
         loadError = nil
         
         do {
+            let syncManager = try PublicCloudKitSyncManager(
+                containerIdentifier: CloudKitAccess.publicContainerIdentifier,
+                modelContext: modelContext
+            )
             let publicCreations = try await syncManager.fetchAllPublicSharedCreations(limit: 100)
-            await MainActor.run {
-                self.publicSharedCreations = publicCreations
-                self.isLoading = false
-            }
+            publicSharedCreations = publicCreations
+            isLoading = false
         } catch {
-            await MainActor.run {
-                self.loadError = "Failed to load public shared creations: \(error.localizedDescription)"
-                self.isLoading = false
-                self.showToastMsg("Failed to load public creations", .error(.red))
-            }
+            loadError = "Failed to load public shared creations: \(error.localizedDescription)"
+            isLoading = false
+            showToastMsg("Failed to load public creations", .error(.red))
         }
     }
     
@@ -113,44 +107,40 @@ struct SharedCreationsView: View {
             } else {
                 GeometryReader { geometry in
                     ScrollView {
-                        LazyVStack(spacing: 24) {
+                        LazyVStack(spacing: 32) {
                             // User's own shared creations section
                             if !categorized.userCreations.isEmpty {
                                 VStack(alignment: .leading, spacing: 16) {
-                                    HStack {
+                                    HStack(alignment: .firstTextBaseline) {
                                         Image(systemName: "person.circle.fill")
                                             .foregroundColor(.blue)
                                         Text("My Shared Prompts")
-                                            .font(.title2)
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(.primary)
+                                            .font(.title3)
+                                            .fontWeight(.bold)
+                                        
                                         Spacer()
+                                        
                                         Text("\(categorized.userCreations.count)")
-                                            .font(.caption)
+                                            .font(.caption.monospacedDigit())
                                             .foregroundColor(.secondary)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(Color.blue.opacity(0.1))
-                                            .cornerRadius(8)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.secondary.opacity(0.1))
+                                            .cornerRadius(4)
                                     }
                                     
-                                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
                                         ForEach(categorized.userCreations, id: \.id) { creation in
-                                            ZStack(alignment: .topTrailing) {
-                                                SharedCreationItemView(
-                                                    sharedCreation: creation,
-                                                    showToastMsg: showToastMsg,
-                                                    copyPromptToClipboard: copyPromptToClipboard,
-                                                    onDeleted: {
-                                                        Task {
-                                                            await loadPublicSharedCreations()
-                                                        }
+                                            SharedCreationItemView(
+                                                sharedCreation: creation,
+                                                showToastMsg: showToastMsg,
+                                                copyPromptToClipboard: copyPromptToClipboard,
+                                                onDeleted: {
+                                                    Task {
+                                                        await loadPublicSharedCreations()
                                                     }
-                                                )
-                                                .background(
-                                                    PromptViewHelpers.promptItemBackground(borderColor: Color.orange.opacity(0.3))
-                                                )
-                                            }
+                                                }
+                                            )
                                         }
                                     }
                                 }
@@ -159,33 +149,31 @@ struct SharedCreationsView: View {
                             // Public shared creations from others section
                             if !categorized.otherCreations.isEmpty {
                                 VStack(alignment: .leading, spacing: 16) {
-                                    HStack {
-                                        Image(systemName: "person.3")
+                                    HStack(alignment: .firstTextBaseline) {
+                                        Image(systemName: "person.3.fill")
                                             .foregroundColor(.green)
-                                        Text("Community Shared Prompts")
-                                            .font(.title2)
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(.primary)
+                                        Text("Community Gallery")
+                                            .font(.title3)
+                                            .fontWeight(.bold)
+                                        
                                         Spacer()
+                                        
                                         Text("\(categorized.otherCreations.count)")
-                                            .font(.caption)
+                                            .font(.caption.monospacedDigit())
                                             .foregroundColor(.secondary)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(Color.green.opacity(0.1))
-                                            .cornerRadius(8)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.secondary.opacity(0.1))
+                                            .cornerRadius(4)
                                     }
                                     
-                                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
                                         ForEach(categorized.otherCreations, id: \.id) { creation in
                                             SharedCreationItemView(
                                                 sharedCreation: creation,
                                                 showToastMsg: showToastMsg,
                                                 copyPromptToClipboard: copyPromptToClipboard,
                                                 onDeleted:nil
-                                            )
-                                            .background(
-                                                PromptViewHelpers.promptItemBackground(borderColor: Color.orange.opacity(0.3))
                                             )
                                         }
                                     }
@@ -196,26 +184,25 @@ struct SharedCreationsView: View {
                             if isLoading {
                                 HStack {
                                     ProgressView()
-                                        .scaleEffect(0.8)
-                                    Text("Loading public shared creations...")
+                                        .controlSize(.small)
+                                    Text("Updating gallery...")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                                 .padding()
                             }
                         }
-                        .padding()
+                        .padding(24)
                     }
+                    .background(Color(NSColor.windowBackgroundColor))
                     .refreshable {
                         await loadPublicSharedCreations()
                     }
                 }
             }
         }
-        .onAppear {
-            Task {
-                await loadPublicSharedCreations()
-            }
+        .task {
+            await loadPublicSharedCreations()
         }
     }
 }

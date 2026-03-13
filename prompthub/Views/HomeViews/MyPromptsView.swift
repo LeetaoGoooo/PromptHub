@@ -15,6 +15,11 @@ struct MyPromptsView: View {
     let searchText: String
     let showToastMsg: (String, AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (String) -> Void
+    let onSelectPrompt: (Prompt) -> Void
+    
+    private func navigateToPrompt(_ prompt: Prompt) {
+        onSelectPrompt(prompt)
+    }
     
     private func columns(for width: CGFloat) -> [GridItem] {
         return PromptViewHelpers.columns(for: width)
@@ -46,20 +51,23 @@ struct MyPromptsView: View {
         } else {
             GeometryReader { geometry in
                 ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
                         ForEach(filteredUserPrompts) { prompt in
-                            UserPromptItemView(
-                                prompt: prompt,
-                                showToastMsg: showToastMsg,
-                                copyPromptToClipboard: copyPromptToClipboard
-                            )
-                            .background(
-                                PromptViewHelpers.promptItemBackground(borderColor: Color.blue.opacity(0.3))
-                            )
+                            Button {
+                                navigateToPrompt(prompt)
+                            } label: {
+                                UserPromptItemView(
+                                    prompt: prompt,
+                                    showToastMsg: showToastMsg,
+                                    copyPromptToClipboard: copyPromptToClipboard
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .padding()
+                    .padding(20)
                 }
+                .background(Color(NSColor.windowBackgroundColor))
             }
         }
     }
@@ -69,7 +77,8 @@ struct MyPromptsView: View {
     MyPromptsView(
         searchText: "",
         showToastMsg: { _, _ in },
-        copyPromptToClipboard: { _ in }
+        copyPromptToClipboard: { _ in },
+        onSelectPrompt: { _ in }
     )
     .modelContainer(for: [Prompt.self, PromptHistory.self, SharedCreation.self])
 }

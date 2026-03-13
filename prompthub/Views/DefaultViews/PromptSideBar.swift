@@ -11,124 +11,185 @@ import SwiftUI
 struct PromptSideBar: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Prompt.name) var prompts: [Prompt]
-
-    @Binding var isEditingPromptSheetPresented: Bool
+    @AppStorage("sidebar.recentPromptsExpanded") private var isRecentPromptsExpanded = false
+    
     @State private var promptToDelete: Prompt?
     
     @Binding var promptSelection: PromptSelection
-    @Binding var isPresentingNewPromptDialog: Bool
+    let onCreateNewPrompt: () -> Void
+    let onCreateNewSkill: () -> Void
     
     @Environment(\.openWindow) var openWindow
-    
     
     var body: some View {
         VStack(spacing: 0) {
             List(selection: $promptSelection) {
-                // All Prompts section
-                Section {
-                    Label {
-                        Text("All Prompts")
-                    } icon: {
-                        Image(systemName: "square.grid.2x2")
-                    }
-                    .tag(PromptSelection.allPrompts)
-                }
-                
-                // User prompts section
-                Section("My Prompts") {
-                    ForEach(prompts) { prompt in
-                        Label {
-                            Text(prompt.name)
-                        } icon: {
-                            Image(systemName: "doc.text")
-                        }
-                        .contextMenu {
-                            Button("Edit") {
-                                  self.promptSelection = .prompt(prompt)
-                                  self.isEditingPromptSheetPresented = true
-                            }
-                            .frame(width: 100)
-
-                            Button("Delete", role: .destructive) {
-                                promptToDelete = prompt
-                            }.frame(width: 100)
-                        }
-                        .tag(PromptSelection.prompt(prompt))
-                    }
-                    .onDelete(perform: deletePrompts)
-                }
+                librarySection
+                skillsSection
+                recentPromptsSection
             }
             .listStyle(.sidebar)
-            .help("Click 'All Prompts' to browse all prompts, or select a specific prompt to view details")
-
-
-            HStack {
-                Button {
-                    isPresentingNewPromptDialog.toggle()
-                } label: {
-                    HStack(spacing: 12) { // Adjusted spacing for better balance
-                        Image(systemName: "plus.circle.fill")
-                            .resizable()
-                            .frame(width: 16, height: 16)
-                        Text("New Prompt")
-                    }
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 8) // Give the button some breathing room
-                
-                Spacer()
-                
-                Button {
-                    openWindow(id: "settings-window")
-                } label: {
-                    Image(systemName: "gear")
-                }
-                .buttonStyle(.plain)
-                .frame(width: 16, height: 16)
-                .padding(.trailing, 8)
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(.bar)
+            
+            sidebarFooter
         }
-        .confirmationDialog(
-            "Delete Prompt", // Title is more direct
-            isPresented: isDeleteConfirmationPresented,
-            titleVisibility: .visible
-        ) {
+        .alert("Delete Prompt", isPresented: Binding(
+            get: { promptToDelete != nil },
+            set: { if !$0 { promptToDelete = nil } }
+        )) {
+            Button("Cancel", role: .cancel) { promptToDelete = nil }
             Button("Delete", role: .destructive) {
                 if let prompt = promptToDelete {
                     deletePrompt(prompt)
                 }
             }
-            Button("Cancel", role: .cancel) {
-                promptToDelete = nil
-            }
         } message: {
-            if let promptName = promptToDelete?.name {
-                Text("Are you sure you want to delete '\(promptName)'? This action cannot be undone.")
+            if let prompt = promptToDelete {
+                Text("Are you sure you want to delete '\(prompt.name)'?")
             }
         }
     }
 
-    private var isDeleteConfirmationPresented: Binding<Bool> {
-        Binding<Bool>(
-            get: { promptToDelete != nil },
-            set: { newValue in
-                if !newValue {
-                    promptToDelete = nil
+    @ViewBuilder
+    private var librarySection: some View {
+        NavigationLink(value: PromptSelection.allPrompts) {
+            Label("All Prompts", systemImage: "tray.full")
+        }
+        .help("View all saved prompts in your library")
+        
+        NavigationLink(value: PromptSelection.mine) {
+            Label("My Prompts", systemImage: "person.circle")
+        }
+        .help("Prompts created by you")
+        
+        NavigationLink(value: PromptSelection.explore) {
+            Label("Explore Gallery", systemImage: "safari")
+        }
+        .help("Discover community prompts")
+        
+        NavigationLink(value: PromptSelection.shared) {
+            Label("Shared with Me", systemImage: "person.2")
+        }
+        .help("Prompts shared by others via CloudKit")
+    }
+
+    @ViewBuilder
+    private var skillsSection: some View {
+        Section("Skills") {
+            NavigationLink(value: PromptSelection.mySkills) {
+                Label("My Skills", systemImage: "wand.and.stars")
+            }
+            .help("Author and manage your own skill drafts")
+
+            NavigationLink(value: PromptSelection.skillStore) {
+                Label("Discover", systemImage: "sparkles")
+            }
+            .help("Discover and install skills from skills.sh")
+            
+            NavigationLink(value: PromptSelection.installedSkills) {
+                Label("Installed", systemImage: "square.stack.3d.up.fill")
+            }
+            .help("Manage your installed skills")
+        }
+    }
+
+    @ViewBuilder
+    private var recentPromptsSection: some View {
+        Section("Recent Prompts", isExpanded: $isRecentPromptsExpanded) {
+            ForEach(prompts) { prompt in
+                NavigationLink(value: PromptSelection.prompt(prompt)) {
+                    Label {
+                        Text(prompt.name)
+                            .font(prompt.name == "Untitled Prompt" ? .body.italic() : .body)
+                            .foregroundColor(prompt.name == "Untitled Prompt" ? .secondary : .primary)
+                    } icon: {
+                        Image(systemName: "doc.text")
+                    }
+                }
+                .contextMenu {
+                    Button("Delete", role: .destructive) {
+                        promptToDelete = prompt
+                    }
                 }
             }
-        )
+            .onDelete(perform: deletePrompts)
+        }
+    }
+
+    @ViewBuilder
+    private var sidebarFooter: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack {
+                Button {
+                    promptSelection = .settings
+                } label: {
+                    Image(systemName: "gearshape")
+                        .imageScale(.medium)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Settings")
+                
+                Spacer()
+                
+                Button {
+                    handleCreateAction()
+                } label: {
+                    Label(footerActionTitle, systemImage: footerActionSymbol)
+                        .labelStyle(.iconOnly)
+                        .imageScale(.medium)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(footerActionHelp)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+    }
+
+    private var footerActionTitle: String {
+        switch promptSelection {
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            return "New Skill"
+        default:
+            return "New Prompt"
+        }
+    }
+
+    private var footerActionSymbol: String {
+        switch promptSelection {
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            return "plus"
+        default:
+            return "plus"
+        }
+    }
+
+    private var footerActionHelp: String {
+        switch promptSelection {
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            return "New Skill Draft (Cmd+N)"
+        default:
+            return "New Prompt (Cmd+N)"
+        }
+    }
+
+    private func handleCreateAction() {
+        switch promptSelection {
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            onCreateNewSkill()
+        default:
+            onCreateNewPrompt()
+        }
     }
 
     private func deletePrompts(at offsets: IndexSet) {
         let promptsToDelete = offsets.map { prompts[$0] }
         for prompt in promptsToDelete {
-             promptToDelete = prompt
+            promptToDelete = prompt
         }
     }
-
 
     private func deletePrompt(_ prompt: Prompt) {
         // Delete the prompt - SwiftData will automatically cascade delete related history
@@ -146,18 +207,4 @@ struct PromptSideBar: View {
         }
         promptToDelete = nil
     }
-
-}
-
-#Preview {
-    @Previewable @State var promptSelection: PromptSelection = .allPrompts
-    @Previewable @State var isEditingPromptSheetPresented = false
-    @Previewable @State var isPresentingNewPromptDialog = false
-    
-    PromptSideBar(
-        isEditingPromptSheetPresented: $isEditingPromptSheetPresented,
-        promptSelection: $promptSelection,
-        isPresentingNewPromptDialog: $isPresentingNewPromptDialog
-    )
-    .modelContainer(PreviewData.previewContainer)
 }

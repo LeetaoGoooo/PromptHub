@@ -12,6 +12,7 @@ enum SearchResultType: String, CaseIterable {
     case user = "User Prompt"
     case shared = "Shared Creation"
     case gallery = "Gallery Prompt"
+    case skill = "Skill Draft"
     
     var icon: String {
         switch self {
@@ -21,6 +22,8 @@ enum SearchResultType: String, CaseIterable {
             return "square.and.arrow.up.fill"
         case .gallery:
             return "globe"
+        case .skill:
+            return "wand.and.stars"
         }
     }
     
@@ -32,6 +35,8 @@ enum SearchResultType: String, CaseIterable {
             return "orange"
         case .gallery:
             return "systemGray"
+        case .skill:
+            return "mint"
         }
     }
 }
@@ -46,6 +51,10 @@ struct SearchablePrompt: SearchableItem, Identifiable {
     var id: String {
         prompt.id.uuidString
     }
+
+    var stableID: String {
+        id
+    }
     
     var name: String {
         prompt.name
@@ -58,8 +67,16 @@ struct SearchablePrompt: SearchableItem, Identifiable {
     var content: String {
         prompt.getLatestPromptContent()
     }
+
+    var searchableContent: String {
+        content
+    }
     
     var type: SearchResultType { .user }
+
+    var navigationTarget: SearchNavigationTarget? {
+        .prompt(prompt.id)
+    }
 }
 
 struct SearchableSharedCreation: SearchableItem, Identifiable {
@@ -67,6 +84,10 @@ struct SearchableSharedCreation: SearchableItem, Identifiable {
     
     var id: String {
         creation.id.uuidString
+    }
+
+    var stableID: String {
+        id
     }
     
     var name: String {
@@ -80,8 +101,16 @@ struct SearchableSharedCreation: SearchableItem, Identifiable {
     var content: String {
         creation.prompt
     }
+
+    var searchableContent: String {
+        content
+    }
     
     var type: SearchResultType { .shared }
+
+    var navigationTarget: SearchNavigationTarget? {
+        nil
+    }
 }
 
 struct SearchableGalleryPrompt: SearchableItem, Identifiable {
@@ -89,6 +118,10 @@ struct SearchableGalleryPrompt: SearchableItem, Identifiable {
     
     var id: String {
         galleryPrompt.id
+    }
+
+    var stableID: String {
+        id
     }
     
     var name: String {
@@ -102,13 +135,78 @@ struct SearchableGalleryPrompt: SearchableItem, Identifiable {
     var content: String {
         galleryPrompt.prompt
     }
+
+    var searchableContent: String {
+        content
+    }
     
     var type: SearchResultType { .gallery }
+
+    var navigationTarget: SearchNavigationTarget? {
+        nil
+    }
+}
+
+struct SearchableSkillDraft: SearchableItem, Identifiable {
+    let skill: Skill
+
+    var id: String {
+        skill.id.uuidString
+    }
+
+    var stableID: String {
+        id
+    }
+
+    var name: String {
+        skill.displayName
+    }
+
+    var description: String? {
+        skill.desc
+    }
+
+    var content: String {
+        if let latestVersion = skill.latestVersion {
+            return latestVersion.toSkillMarkdown()
+        }
+
+        return SkillParser.generate(
+            metadata: [
+                "name": skill.displayName,
+                "description": skill.desc ?? "",
+                "category": skill.category,
+                "identifier": skill.identifier
+            ],
+            instructions: ""
+        )
+    }
+
+    var searchableContent: String {
+        [
+            skill.displayName,
+            skill.desc ?? "",
+            skill.category,
+            skill.identifier,
+            skill.tags.joined(separator: " "),
+            skill.latestVersion?.instructions ?? ""
+        ]
+        .joined(separator: "\n")
+    }
+
+    var type: SearchResultType { .skill }
+
+    var navigationTarget: SearchNavigationTarget? {
+        .skill(skill.id)
+    }
 }
 
 protocol SearchableItem: Identifiable {
+    var stableID: String { get }
     var name: String { get }
     var description: String? { get }
     var content: String { get }
+    var searchableContent: String { get }
     var type: SearchResultType { get }
+    var navigationTarget: SearchNavigationTarget? { get }
 }

@@ -61,88 +61,74 @@ struct PromptItemView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        // Icon based on sharing status
-                        Image(systemName: iconName)
-                            .foregroundColor(iconColor)
-                            .font(.caption)
-                            .help(isPublic ? "Public Shared Prompt" : isShared ? "Shared Prompt" : "Personal Prompt")
-                        
-                        Text(prompt.name)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                // Icon based on sharing status
+                Image(systemName: iconName)
+                    .foregroundColor(iconColor)
+                    .font(.headline)
+                    .frame(width: 24, height: 24)
+                    .background(iconColor.opacity(0.1))
+                    .cornerRadius(6)
+                    .help(isPublic ? "Public Shared Prompt" : isShared ? "Shared Prompt" : "Personal Prompt")
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(prompt.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
                     
                     if let desc = prompt.desc, !desc.isEmpty {
                         Text(desc)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .lineLimit(2)
+                            .lineLimit(1)
                     }
                 }
                 
                 Spacer()
-                
-                HStack(spacing: 8) {
-                    // Copy button
-                    Button {
-                        copyPromptToClipboard(promptContent)
-                    } label: {
-                        Image(systemName: "doc.on.doc")
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(8)
-                            .help("Copy")
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    // Share link button (only for shared prompts)
-                    if isShared {
-                        Button {
-                            copyShareLink()
-                        } label: {
-                            Image(systemName: "link")
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Color.orange.opacity(0.1))
-                                .cornerRadius(8)
-                                .help("Copy Share Link")
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    
-                    // Delete button
-                    Button {
-                        showingDeleteAlert = true
-                    } label: {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(8)
-                            .help("Delete")
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
             }
         }
-        .padding()
-        .cornerRadius(20)
-        .shadow(
-            color: Color.primary.opacity(isHovering ? 0.3 : 0.15),
-            radius: isHovering ? 12 : 5,
-            x: 0,
-            y: isHovering ? 6 : 3
+        .padding(12)
+        .background(isHovering ? Color.accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isHovering ? Color.accentColor.opacity(0.3) : Color(NSColor.separatorColor), lineWidth: 1)
         )
-        .offset(y: isHovering ? -4 : 0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.65), value: isHovering)
         .onHover { hovering in
-            self.isHovering = hovering
+            withAnimation(.easeInOut(duration: 0.2)) {
+                self.isHovering = hovering
+            }
+        }
+        .onTapGesture {
+            // In a Master-Detail view, we might want to select it.
+            // But PromptItemView is currently a card in a grid.
+            showingPreviewSheet.toggle()
+        }
+        // Context menu remains the primary way to interact for quick actions
+        .contextMenu {
+            Button {
+                copyPromptToClipboard(promptContent)
+            } label: {
+                Label("Copy Content", systemImage: "doc.on.doc")
+            }
+            
+            if isShared {
+                Button {
+                    copyShareLink()
+                } label: {
+                    Label("Copy Share Link", systemImage: "link")
+                }
+            }
+            
+            Divider()
+            
+            Button(role: .destructive) {
+                showingDeleteAlert = true
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
         }
         .sheet(isPresented: $showingPreviewSheet) {
             PromptPreviewView(
@@ -150,9 +136,6 @@ struct PromptItemView: View {
                 promptContent: promptContent,
                 copyPromptToClipboard: copyPromptToClipboard
             )
-        }
-        .onTapGesture {
-            showingPreviewSheet.toggle()
         }
         .alert("Delete Prompt", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }

@@ -42,13 +42,14 @@ struct prompthubApp: App {
             )
 
             let privateConfig = ModelConfiguration(
-                schema: Schema([ Prompt.self, PromptHistory.self, ExternalSource.self ]),
+                "PrivateStore",
+                schema: Schema([Prompt.self, PromptHistory.self, ExternalSource.self, Skill.self, SkillVersion.self]),
                 cloudKitDatabase: .automatic
             )
             
             do {
                 return try ModelContainer(
-                    for: Schema([SharedCreation.self, DataSource.self, Prompt.self, PromptHistory.self, ExternalSource.self]),
+                    for: Schema([SharedCreation.self, DataSource.self, Prompt.self, PromptHistory.self, ExternalSource.self, Skill.self, SkillVersion.self]),
                     migrationPlan: PromptHubMigrationPlan.self,
                     configurations: [publicConfig, privateConfig]
                 )
@@ -87,6 +88,9 @@ struct prompthubApp: App {
                 })
         }
         .modelContainer(sharedModelContainer)
+#if os(macOS)
+        .defaultSize(width: 1120, height: 760)
+#endif
         
         MenuBarExtra {
             PromptMenuView()

@@ -14,54 +14,71 @@ struct ServiceForm: View {
     @Environment(ServicesManager.self) private var servicesManager
 
     @State private var isLoadingModels = false
+    @State private var showToken = false
 
     var body: some View {
-        VStack {
-            VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 14) {
+            // Host
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Host")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                TextField("", text: $service.host)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.secondary)
+                TextField("https://api.openai.com/v1", text: $service.host)
                     .autocorrectionDisabled()
                     .textContentType(.URL)
-                    .padding(.leading, 6)
                     .textFieldStyle(.roundedBorder)
-                    .onChange(of: service.host) { _ in
+                    .onChange(of: service.host) { _, _ in
                         servicesManager.update(service: service)
                     }
             }
 
-            VStack(alignment: .leading) {
+            // Token
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Token")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-
-                TextField("", text: $service.token)
-                    .autocorrectionDisabled()
-                    .padding(.leading, 6)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: service.token) { _ in
-                        servicesManager.update(service: service)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.secondary)
+                HStack(spacing: 6) {
+                    if showToken {
+                        TextField("sk-...", text: $service.token)
+                            .autocorrectionDisabled()
+                            .textFieldStyle(.roundedBorder)
+                    } else {
+                        SecureField("sk-...", text: $service.token)
+                            .textFieldStyle(.roundedBorder)
                     }
+                    Button {
+                        showToken.toggle()
+                    } label: {
+                        Image(systemName: showToken ? "eye.slash" : "eye")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(showToken ? "Hide token" : "Show token")
+                }
+                .onChange(of: service.token) { _, _ in
+                    servicesManager.update(service: service)
+                }
             }
 
-            VStack(alignment: .leading) {
+            // Models
+            VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("Models")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    Text("Model")
+                        .font(.subheadline.bold())
+                        .foregroundColor(.secondary)
                     Spacer()
                     if isLoadingModels {
                         ProgressView()
                             .scaleEffect(0.5)
                     } else {
-                        Spacer()
                         Button {
                             handleLoadModels()
                         } label: {
                             Image(systemName: "arrow.clockwise")
+                                .font(.caption)
                         }
                         .buttonStyle(.plain)
+                        .help("Refresh models")
                     }
                 }
                 ServiceModelPicker(service.models, selection: $service.preferredChatModel, onSelectionChange: {
@@ -69,7 +86,6 @@ struct ServiceForm: View {
                 })
             }
         }
-        .navigationTitle(service.name)
         .onAppear(perform: handleLoadModels)
     }
 
@@ -109,7 +125,7 @@ struct ServiceModelPicker: View {
                 Text(model.name ?? model.id).tag(model.id as String?)
             }
         }
-        .onChange(of: selection) { _ in
+        .onChange(of: selection) { _, _ in
             onSelectionChange()
         }
     }

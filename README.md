@@ -37,6 +37,18 @@ PromptHub helps you better organize your prompts with comprehensive features inc
 - 🆕 **Model Comparison** - Compare results from different AI models side-by-side
 - 🆕 **Real-time Streaming** - Watch AI responses generate in real-time
 - 🆕 **Global Results View** - View all model results in a comprehensive comparison interface
+- 🆕 **CLI Agent Skills** - Install, configure, and manage skills for popular CLI agents (Claude Code, Cursor, Codex, Gemini CLI, etc.)
+- 🆕 **Granular Sandbox Access** - Securely grant access only to specific CLI hidden folders (e.g. `~/.claude`) without exposing your entire Home directory
+
+## 🤖 CLI Agent Skills Management
+
+PromptHub introduces a unified interface to manage context and skills for various AI CLI tools:
+
+- **Unified Skill Store**: Discover and install open-source skills from `skills.sh`
+- **Multi-Agent Support**: Compatible with Claude Code, Cursor, Codex, Gemini CLI, iFlow, Qwen Code, and Qoder
+- **Secure Sandbox Access**: Granular control over which CLI configuration folders PromptHub can access, fully compliant with macOS App Store Sandbox restrictions
+- **Drafts & Previews**: Edit skills securely in local drafts before publishing them to the CLI folders
+- **Project Scope**: Install skills globally or restrict them to a specific project folder
 
 ## 🧪 Prompt Testing Features
 

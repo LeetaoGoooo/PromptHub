@@ -126,12 +126,19 @@ enum SchemaV3: VersionedSchema {
     static var models: [any PersistentModel.Type] { [Prompt.self, PromptHistory.self, ExternalSource.self, SharedCreation.self, DataSource.self] }
 }
 
+enum SchemaV4: VersionedSchema {
+    static var versionIdentifier = Schema.Version(4, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [Prompt.self, PromptHistory.self, ExternalSource.self, SharedCreation.self, DataSource.self, Skill.self, SkillVersion.self]
+    }
+}
+
 
 let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "PromptHubMigrationPlan")
 
 enum PromptHubMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self]
     }
 
     private static var tempLegacySources: [UUID: [Data]] = [:]
@@ -140,12 +147,17 @@ enum PromptHubMigrationPlan: SchemaMigrationPlan {
     private static var tempShareCreationLegacySources: [UUID: [Data]] = [:]
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4]
     }
     
     static let migrateV2toV3 = MigrationStage.lightweight(
         fromVersion: SchemaV2.self,
         toVersion: SchemaV3.self
+    )
+
+    static let migrateV3toV4 = MigrationStage.lightweight(
+        fromVersion: SchemaV3.self,
+        toVersion: SchemaV4.self
     )
 
 

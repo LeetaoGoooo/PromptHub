@@ -11,6 +11,9 @@
         }
       }
     },
+    "· Build %@" : {
+
+    },
     "(Build %@)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23,6 +26,7 @@
       }
     },
     "%@:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -58,6 +62,12 @@
         }
       }
     },
+    "© 2025 Leetao. All rights reserved." : {
+
+    },
+    "~/%@" : {
+
+    },
     "About" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -68,6 +78,18 @@
           }
         }
       }
+    },
+    "Add %@" : {
+
+    },
+    "Add a description..." : {
+
+    },
+    "Add All Missing CLIs" : {
+
+    },
+    "Add CLI" : {
+
     },
     "Add context, notes, and personal insights directly to your prompts for better organization." : {
       "extractionState" : "manual",
@@ -81,6 +103,7 @@
       }
     },
     "AI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -107,6 +130,19 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所有提示词"
+          }
+        }
+      }
+    },
+    "All supported CLIs already have this skill in %@ scope." : {
+
+    },
+    "Already installed in %@: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Already installed in %1$@: %2$@."
           }
         }
       }
@@ -206,6 +242,7 @@
       }
     },
     "Attachment" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -245,6 +282,9 @@
           }
         }
       }
+    },
+    "Author and manage your own skill drafts" : {
+
     },
     "Base URL (OpenAI API)" : {
       "extractionState" : "stale",
@@ -290,6 +330,12 @@
         }
       }
     },
+    "Category" : {
+
+    },
+    "Choose a writable project folder before installing in project scope." : {
+
+    },
     "Choose one or more models to test" : {
       "localizations" : {
         "zh-Hans" : {
@@ -299,6 +345,18 @@
           }
         }
       }
+    },
+    "Choose Project…" : {
+
+    },
+    "Choose where this skill should live first, then select the CLI environments that should receive it." : {
+
+    },
+    "Choose…" : {
+
+    },
+    "Clear" : {
+
     },
     "Clear All" : {
       "localizations" : {
@@ -310,7 +368,20 @@
         }
       }
     },
+    "Clear Project" : {
+
+    },
+    "CLI Access" : {
+
+    },
+    "CLI File Access" : {
+
+    },
+    "CLI Targets" : {
+
+    },
     "Click 'All Prompts' to browse all prompts, or select a specific prompt to view details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -351,7 +422,11 @@
         }
       }
     },
+    "Community Gallery" : {
+
+    },
     "Community Shared Prompts" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -362,6 +437,7 @@
       }
     },
     "Compare" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -392,6 +468,7 @@
       }
     },
     "Compare Results" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -411,6 +488,9 @@
         }
       }
     },
+    "Configuration" : {
+
+    },
     "Configure" : {
       "localizations" : {
         "zh-Hans" : {
@@ -420,6 +500,12 @@
           }
         }
       }
+    },
+    "Configure Access…" : {
+
+    },
+    "Configure Install…" : {
+
     },
     "Confirm Delete" : {
       "localizations" : {
@@ -539,6 +625,12 @@
         }
       }
     },
+    "Copy SKILL.md" : {
+
+    },
+    "Copy the exported SKILL.md to the clipboard" : {
+
+    },
     "Copyright @ 2025 leetao " : {
       "extractionState" : "manual",
       "localizations" : {
@@ -583,6 +675,12 @@
         }
       }
     },
+    "Create a new prompt (Cmd+N)" : {
+
+    },
+    "Create a new skill draft (Cmd+N)" : {
+
+    },
     "Create Share Link Failed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -593,6 +691,12 @@
           }
         }
       }
+    },
+    "Create Skill Draft" : {
+
+    },
+    "Created" : {
+
     },
     "Created: %@" : {
       "extractionState" : "manual",
@@ -637,6 +741,12 @@
         }
       }
     },
+    "Delete %@? This will also remove its saved versions." : {
+
+    },
+    "Delete Draft" : {
+
+    },
     "Delete Prompt" : {
       "comment" : "Tooltip for delete button",
       "localizations" : {
@@ -659,6 +769,9 @@
         }
       }
     },
+    "Delete Skill Draft" : {
+
+    },
     "Description" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -669,6 +782,21 @@
           }
         }
       }
+    },
+    "Diff" : {
+
+    },
+    "Discard" : {
+
+    },
+    "Discover" : {
+
+    },
+    "Discover and install skills from skills.sh" : {
+
+    },
+    "Discover community prompts" : {
+
     },
     "Dismiss" : {
       "extractionState" : "manual",
@@ -702,6 +830,12 @@
         }
       }
     },
+    "Duplicate Into Latest" : {
+
+    },
+    "Duplicate to Draft" : {
+
+    },
     "Easily remember and reference where your valuable prompts came from." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -725,6 +859,7 @@
       }
     },
     "Edit Prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -733,6 +868,12 @@
           }
         }
       }
+    },
+    "Edit System Prompt" : {
+
+    },
+    "Edit Template" : {
+
     },
     "Effortless Prompt Sharing" : {
       "extractionState" : "manual",
@@ -950,6 +1091,9 @@
         }
       }
     },
+    "Explore Gallery" : {
+
+    },
     "Failed to delete prompt" : {
       "comment" : "Error message for prompt deletion",
       "extractionState" : "stale",
@@ -996,6 +1140,7 @@
       }
     },
     "General Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1026,6 +1171,12 @@
         }
       }
     },
+    "Global" : {
+
+    },
+    "Global Scope" : {
+
+    },
     "Got It!" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1037,6 +1188,9 @@
         }
       }
     },
+    "Grant Access" : {
+
+    },
     "Hide" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1046,6 +1200,12 @@
           }
         }
       }
+    },
+    "Hide token" : {
+
+    },
+    "History" : {
+
     },
     "History Versions" : {
       "localizations" : {
@@ -1067,7 +1227,11 @@
         }
       }
     },
+    "https://api.openai.com/v1" : {
+
+    },
     "Icon Meanings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1076,6 +1240,9 @@
           }
         }
       }
+    },
+    "Identifier" : {
+
     },
     "Image Viewer" : {
       "localizations" : {
@@ -1087,6 +1254,9 @@
         }
       }
     },
+    "Import" : {
+
+    },
     "Import Status" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1096,6 +1266,27 @@
           }
         }
       }
+    },
+    "Information" : {
+
+    },
+    "Input Schema" : {
+
+    },
+    "Install Current Draft" : {
+
+    },
+    "Install Local Skill" : {
+
+    },
+    "Install…" : {
+
+    },
+    "Installed" : {
+
+    },
+    "Installing…" : {
+
     },
     "Invalid URL: %@" : {
       "extractionState" : "stale",
@@ -1119,6 +1310,12 @@
         }
       }
     },
+    "Join Telegram" : {
+
+    },
+    "Join WeChat" : {
+
+    },
     "Join:" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1131,6 +1328,7 @@
       }
     },
     "Keep" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1164,6 +1362,15 @@
     "Keyboard Shortcuts" : {
 
     },
+    "Last installed %@" : {
+
+    },
+    "Latest Instructions" : {
+
+    },
+    "Launch at login" : {
+
+    },
     "Launch:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1184,6 +1391,12 @@
           }
         }
       }
+    },
+    "Loading Gallery..." : {
+
+    },
+    "Loading installed skills..." : {
+
     },
     "Loading Prompts..." : {
       "extractionState" : "manual",
@@ -1206,6 +1419,9 @@
         }
       }
     },
+    "Loading skills catalog..." : {
+
+    },
     "Loading..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1217,6 +1433,7 @@
       }
     },
     "Make Private" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1227,6 +1444,7 @@
       }
     },
     "Make Public" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1235,6 +1453,12 @@
           }
         }
       }
+    },
+    "Manage CLIs" : {
+
+    },
+    "Manage your installed skills" : {
+
     },
     "Mine" : {
       "extractionState" : "manual",
@@ -1248,6 +1472,19 @@
       }
     },
     "Model" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型"
+          }
+        }
+      }
+    },
+    "Model: GPT-4o" : {
+
+    },
+    "Models" : {
       "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
@@ -1258,17 +1495,8 @@
         }
       }
     },
-    "Models" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型"
-          }
-        }
-      }
-    },
     "Modified: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1297,6 +1525,9 @@
           }
         }
       }
+    },
+    "My Skills" : {
+
     },
     "Name" : {
       "extractionState" : "manual",
@@ -1331,6 +1562,9 @@
         }
       }
     },
+    "New Skill Draft" : {
+
+    },
     "No bookmark data received." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1352,6 +1586,9 @@
         }
       }
     },
+    "No Content" : {
+
+    },
     "No custom prompts yet" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1362,6 +1599,9 @@
           }
         }
       }
+    },
+    "No data available" : {
+
     },
     "No data received for bookmark." : {
       "extractionState" : "manual",
@@ -1374,6 +1614,9 @@
         }
       }
     },
+    "No description" : {
+
+    },
     "No history available for this prompt except the latest version." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1384,6 +1627,9 @@
           }
         }
       }
+    },
+    "No history yet" : {
+
     },
     "No image data provided to window." : {
       "localizations" : {
@@ -1427,6 +1673,9 @@
         }
       }
     },
+    "No saved versions yet." : {
+
+    },
     "No Service Selected" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1468,6 +1717,9 @@
         }
       }
     },
+    "Not shared yet" : {
+
+    },
     "Note: Dropped item is an alias or symbolic link. URL should be to the target if resolved from a bookmark." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1479,6 +1731,9 @@
         }
       }
     },
+    "Nothing to Add" : {
+
+    },
     "OK" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1489,6 +1744,12 @@
           }
         }
       }
+    },
+    "Open Draft" : {
+
+    },
+    "Open Source Page" : {
+
     },
     "OpenAI Configuration" : {
       "extractionState" : "stale",
@@ -1511,6 +1772,9 @@
         }
       }
     },
+    "Output Schema" : {
+
+    },
     "Personal Prompt" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1532,6 +1796,9 @@
       }
     },
     "Press the keyboard shortcut to quickly search for prompts from anywhere in the app." : {
+
+    },
+    "Preview" : {
 
     },
     "Preview in Editor" : {
@@ -1558,6 +1825,7 @@
       }
     },
     "Previewing older version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1566,6 +1834,21 @@
           }
         }
       }
+    },
+    "Private link only" : {
+
+    },
+    "Project" : {
+
+    },
+    "Project Scope" : {
+
+    },
+    "Project scope installs into the selected project's CLI skill roots." : {
+
+    },
+    "Promote this prompt into a skill draft" : {
+
     },
     "Prompt" : {
       "extractionState" : "manual",
@@ -1681,7 +1964,17 @@
         }
       }
     },
+    "Prompts created by you" : {
+
+    },
+    "Prompts shared by others via CloudKit" : {
+
+    },
+    "Provider" : {
+
+    },
     "Public prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1701,6 +1994,9 @@
         }
       }
     },
+    "Public Status" : {
+
+    },
     "Publish" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1711,6 +2007,9 @@
           }
         }
       }
+    },
+    "Quick Search" : {
+
     },
     "Quick Search:" : {
 
@@ -1757,6 +2056,9 @@
         }
       }
     },
+    "Recent Prompts" : {
+
+    },
     "Refactor" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1766,6 +2068,36 @@
           }
         }
       }
+    },
+    "Refresh" : {
+
+    },
+    "Refresh models" : {
+
+    },
+    "Refreshing catalog…" : {
+
+    },
+    "Refreshing installations…" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove %@" : {
+
+    },
+    "Remove from All CLIs" : {
+
+    },
+    "Remove from CLI" : {
+
+    },
+    "Remove Skill" : {
+
+    },
+    "Removing…" : {
+
     },
     "Reset Images" : {
       "localizations" : {
@@ -1777,7 +2109,14 @@
         }
       }
     },
+    "Reset to Default" : {
+
+    },
+    "Retry" : {
+
+    },
     "Return to latest" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1796,6 +2135,9 @@
           }
         }
       }
+    },
+    "Revoke" : {
+
     },
     "Run" : {
       "localizations" : {
@@ -1817,7 +2159,11 @@
         }
       }
     },
+    "Safety Policy" : {
+
+    },
     "Save" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1826,6 +2172,18 @@
           }
         }
       }
+    },
+    "Save the current draft as a new version snapshot" : {
+
+    },
+    "Save to My Prompts" : {
+
+    },
+    "Save Version" : {
+
+    },
+    "Scope" : {
+
     },
     "Search prompt..." : {
       "extractionState" : "manual",
@@ -1848,6 +2206,9 @@
           }
         }
       }
+    },
+    "Search prompts from anywhere in the app" : {
+
     },
     "Select All" : {
       "localizations" : {
@@ -1921,6 +2282,9 @@
         }
       }
     },
+    "Share to Community" : {
+
+    },
     "Share your favorite prompts with colleagues or friends in just one tap." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1953,6 +2317,7 @@
       }
     },
     "Shared prompt (private)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1961,6 +2326,9 @@
           }
         }
       }
+    },
+    "Shared with Me" : {
+
     },
     "Shared: %@" : {
       "localizations" : {
@@ -1972,6 +2340,9 @@
         }
       }
     },
+    "Sharing" : {
+
+    },
     "Show" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1982,6 +2353,9 @@
         }
       }
     },
+    "Show token" : {
+
+    },
     "Single Prompt Test" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1991,6 +2365,27 @@
           }
         }
       }
+    },
+    "sk-..." : {
+
+    },
+    "Skill Error" : {
+
+    },
+    "Skill Name" : {
+
+    },
+    "Skill Store" : {
+
+    },
+    "SKILL.md Preview" : {
+
+    },
+    "Skills" : {
+
+    },
+    "Slug" : {
+
     },
     "Source" : {
       "extractionState" : "manual",
@@ -2003,6 +2398,9 @@
         }
       }
     },
+    "Startup" : {
+
+    },
     "Streaming..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2012,6 +2410,18 @@
           }
         }
       }
+    },
+    "System Prompt" : {
+
+    },
+    "Tags (comma separated)" : {
+
+    },
+    "Target Agents" : {
+
+    },
+    "Temperature: 0.7" : {
+
     },
     "Template" : {
       "localizations" : {
@@ -2024,7 +2434,6 @@
       }
     },
     "Test" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2056,6 +2465,7 @@
       }
     },
     "Test Prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2087,6 +2497,9 @@
         }
       }
     },
+    "Test this prompt" : {
+
+    },
     "Test your prompt across multiple models" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2106,6 +2519,15 @@
           }
         }
       }
+    },
+    "To manage agent skills, PromptHub needs your permission to read and write to specific hidden configuration folders in your Home directory." : {
+
+    },
+    "Toggle Diff View" : {
+
+    },
+    "Toggle Inspector" : {
+
     },
     "Token" : {
       "localizations" : {
@@ -2150,6 +2572,7 @@
       }
     },
     "Undo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2160,6 +2583,7 @@
       }
     },
     "Undo Changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2170,6 +2594,7 @@
       }
     },
     "Unshared prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2178,6 +2603,15 @@
           }
         }
       }
+    },
+    "Update Share" : {
+
+    },
+    "Updated" : {
+
+    },
+    "Updated %@" : {
+
     },
     "Updated: %@" : {
       "extractionState" : "manual",
@@ -2190,6 +2624,12 @@
         }
       }
     },
+    "Updating CLIs…" : {
+
+    },
+    "Updating gallery..." : {
+
+    },
     "v%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2200,6 +2640,12 @@
           }
         }
       }
+    },
+    "v%lld" : {
+
+    },
+    "Version" : {
+
     },
     "Version %@ Details" : {
       "extractionState" : "manual",
@@ -2232,6 +2678,9 @@
         }
       }
     },
+    "View all saved prompts in your library" : {
+
+    },
     "View in full screen" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2241,6 +2690,9 @@
           }
         }
       }
+    },
+    "Visible to community" : {
+
     },
     "Visual Prompt Previews" : {
       "extractionState" : "manual",
@@ -2252,6 +2704,9 @@
           }
         }
       }
+    },
+    "Website" : {
+
     },
     "Welcome to PromptBox Version %@!" : {
       "extractionState" : "manual",

@@ -32,27 +32,33 @@ struct ExploreView: View {
     
     var body: some View {
         if isLoading {
-            ProgressView("Loading Prompts...")
-                .progressViewStyle(CircularProgressViewStyle())
-                .scaleEffect(1.2)
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack {
+                ProgressView()
+                    .controlSize(.large)
+                Text("Loading Gallery...")
+                    .foregroundColor(.secondary)
+                    .padding(.top)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(NSColor.windowBackgroundColor))
         } else if filteredGalleryPrompts.isEmpty && !searchText.isEmpty {
             PromptViewHelpers.emptyStateView(
                 iconName: "magnifyingglass",
                 title: "No matching content found",
                 subtitle: "Try using different keywords"
             )
+            .background(Color(NSColor.windowBackgroundColor))
         } else if filteredGalleryPrompts.isEmpty {
             PromptViewHelpers.emptyStateView(
                 iconName: "globe",
                 title: "No content available",
                 subtitle: "Gallery prompts will appear here"
             )
+            .background(Color(NSColor.windowBackgroundColor))
         } else {
             GeometryReader { geometry in
                 ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
                         // Gallery prompts
                         ForEach(filteredGalleryPrompts) { prompt in
                             GalleryPromptItemView(
@@ -60,13 +66,11 @@ struct ExploreView: View {
                                 showToastMsg: showToastMsg,
                                 copyPromptToClipboard: copyPromptToClipboard
                             )
-                            .background(
-                                PromptViewHelpers.promptItemBackground(borderColor: Color.gray.opacity(0.25))
-                            )
                         }
                     }
-                    .padding()
+                    .padding(20)
                 }
+                .background(Color(NSColor.windowBackgroundColor))
             }
         }
     }
