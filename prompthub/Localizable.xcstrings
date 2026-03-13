@@ -65,6 +65,9 @@
     "© 2025 Leetao. All rights reserved." : {
 
     },
+    "~/%@" : {
+
+    },
     "About" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -76,7 +79,16 @@
         }
       }
     },
+    "Add %@" : {
+
+    },
     "Add a description..." : {
+
+    },
+    "Add All Missing CLIs" : {
+
+    },
+    "Add CLI" : {
 
     },
     "Add context, notes, and personal insights directly to your prompts for better organization." : {
@@ -118,6 +130,19 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所有提示词"
+          }
+        }
+      }
+    },
+    "All supported CLIs already have this skill in %@ scope." : {
+
+    },
+    "Already installed in %@: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Already installed in %1$@: %2$@."
           }
         }
       }
@@ -258,6 +283,9 @@
         }
       }
     },
+    "Author and manage your own skill drafts" : {
+
+    },
     "Base URL (OpenAI API)" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -302,6 +330,12 @@
         }
       }
     },
+    "Category" : {
+
+    },
+    "Choose a writable project folder before installing in project scope." : {
+
+    },
     "Choose one or more models to test" : {
       "localizations" : {
         "zh-Hans" : {
@@ -312,6 +346,18 @@
         }
       }
     },
+    "Choose Project…" : {
+
+    },
+    "Choose where this skill should live first, then select the CLI environments that should receive it." : {
+
+    },
+    "Choose…" : {
+
+    },
+    "Clear" : {
+
+    },
     "Clear All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -321,6 +367,18 @@
           }
         }
       }
+    },
+    "Clear Project" : {
+
+    },
+    "CLI Access" : {
+
+    },
+    "CLI File Access" : {
+
+    },
+    "CLI Targets" : {
+
     },
     "Click 'All Prompts' to browse all prompts, or select a specific prompt to view details" : {
       "extractionState" : "stale",
@@ -343,9 +401,6 @@
           }
         }
       }
-    },
-    "CLIs: %@" : {
-
     },
     "Close" : {
       "localizations" : {
@@ -446,6 +501,12 @@
         }
       }
     },
+    "Configure Access…" : {
+
+    },
+    "Configure Install…" : {
+
+    },
     "Confirm Delete" : {
       "localizations" : {
         "zh-Hans" : {
@@ -455,9 +516,6 @@
           }
         }
       }
-    },
-    "Connection Error" : {
-
     },
     "Copied to clipboard" : {
       "extractionState" : "manual",
@@ -567,6 +625,12 @@
         }
       }
     },
+    "Copy SKILL.md" : {
+
+    },
+    "Copy the exported SKILL.md to the clipboard" : {
+
+    },
     "Copyright @ 2025 leetao " : {
       "extractionState" : "manual",
       "localizations" : {
@@ -614,6 +678,9 @@
     "Create a new prompt (Cmd+N)" : {
 
     },
+    "Create a new skill draft (Cmd+N)" : {
+
+    },
     "Create Share Link Failed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -624,6 +691,9 @@
           }
         }
       }
+    },
+    "Create Skill Draft" : {
+
     },
     "Created" : {
 
@@ -671,6 +741,12 @@
         }
       }
     },
+    "Delete %@? This will also remove its saved versions." : {
+
+    },
+    "Delete Draft" : {
+
+    },
     "Delete Prompt" : {
       "comment" : "Tooltip for delete button",
       "localizations" : {
@@ -693,6 +769,9 @@
         }
       }
     },
+    "Delete Skill Draft" : {
+
+    },
     "Description" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -704,13 +783,13 @@
         }
       }
     },
-    "Details" : {
-
-    },
     "Diff" : {
 
     },
     "Discard" : {
+
+    },
+    "Discover" : {
 
     },
     "Discover and install skills from skills.sh" : {
@@ -750,6 +829,12 @@
           }
         }
       }
+    },
+    "Duplicate Into Latest" : {
+
+    },
+    "Duplicate to Draft" : {
+
     },
     "Easily remember and reference where your valuable prompts came from." : {
       "extractionState" : "manual",
@@ -888,9 +973,6 @@
         }
       }
     },
-    "Error Loading Skills" : {
-
-    },
     "Error occurred" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1012,12 +1094,6 @@
     "Explore Gallery" : {
 
     },
-    "External skill (managed outside PromptHub)" : {
-
-    },
-    "External skill (read-only)" : {
-
-    },
     "Failed to delete prompt" : {
       "comment" : "Error message for prompt deletion",
       "extractionState" : "stale",
@@ -1051,9 +1127,6 @@
           }
         }
       }
-    },
-    "From Local" : {
-
     },
     "General" : {
       "extractionState" : "manual",
@@ -1115,6 +1188,9 @@
         }
       }
     },
+    "Grant Access" : {
+
+    },
     "Hide" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1165,6 +1241,9 @@
         }
       }
     },
+    "Identifier" : {
+
+    },
     "Image Viewer" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1174,6 +1253,9 @@
           }
         }
       }
+    },
+    "Import" : {
+
     },
     "Import Status" : {
       "localizations" : {
@@ -1188,22 +1270,22 @@
     "Information" : {
 
     },
-    "Install" : {
+    "Input Schema" : {
 
     },
-    "Install skills from the Skill Store to extend your agents' capabilities." : {
+    "Install Current Draft" : {
 
     },
-    "Install to %@" : {
+    "Install Local Skill" : {
 
     },
-    "Install to All CLIs" : {
+    "Install…" : {
 
     },
-    "Installed Skills" : {
+    "Installed" : {
 
     },
-    "Installing..." : {
+    "Installing…" : {
 
     },
     "Invalid URL: %@" : {
@@ -1278,6 +1360,12 @@
       }
     },
     "Keyboard Shortcuts" : {
+
+    },
+    "Last installed %@" : {
+
+    },
+    "Latest Instructions" : {
 
     },
     "Launch at login" : {
@@ -1366,7 +1454,7 @@
         }
       }
     },
-    "Manage" : {
+    "Manage CLIs" : {
 
     },
     "Manage your installed skills" : {
@@ -1438,6 +1526,9 @@
         }
       }
     },
+    "My Skills" : {
+
+    },
     "Name" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1471,7 +1562,7 @@
         }
       }
     },
-    "New Prompt (Cmd+N)" : {
+    "New Skill Draft" : {
 
     },
     "No bookmark data received." : {
@@ -1550,9 +1641,6 @@
         }
       }
     },
-    "No Matches" : {
-
-    },
     "No matching prompts found" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1585,6 +1673,9 @@
         }
       }
     },
+    "No saved versions yet." : {
+
+    },
     "No Service Selected" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1594,15 +1685,6 @@
           }
         }
       }
-    },
-    "No Skills Found" : {
-
-    },
-    "No Skills Installed" : {
-
-    },
-    "No skills match \"%@\". Try a different search term." : {
-
     },
     "No URL selected or multiple URLs" : {
       "extractionState" : "manual",
@@ -1649,6 +1731,9 @@
         }
       }
     },
+    "Nothing to Add" : {
+
+    },
     "OK" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1659,6 +1744,12 @@
           }
         }
       }
+    },
+    "Open Draft" : {
+
+    },
+    "Open Source Page" : {
+
     },
     "OpenAI Configuration" : {
       "extractionState" : "stale",
@@ -1680,6 +1771,9 @@
           }
         }
       }
+    },
+    "Output Schema" : {
+
     },
     "Personal Prompt" : {
       "localizations" : {
@@ -1748,6 +1842,12 @@
 
     },
     "Project Scope" : {
+
+    },
+    "Project scope installs into the selected project's CLI skill roots." : {
+
+    },
+    "Promote this prompt into a skill draft" : {
 
     },
     "Prompt" : {
@@ -1945,9 +2045,6 @@
         }
       }
     },
-    "Read-only" : {
-
-    },
     "Received image data directly. Implement loading from Data." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1978,16 +2075,16 @@
     "Refresh models" : {
 
     },
-    "Refresh Skills" : {
+    "Refreshing catalog…" : {
+
+    },
+    "Refreshing installations…" : {
 
     },
     "Remove" : {
 
     },
     "Remove %@" : {
-
-    },
-    "Remove from %@" : {
 
     },
     "Remove from All CLIs" : {
@@ -1999,7 +2096,7 @@
     "Remove Skill" : {
 
     },
-    "Removing..." : {
+    "Removing…" : {
 
     },
     "Reset Images" : {
@@ -2039,6 +2136,9 @@
         }
       }
     },
+    "Revoke" : {
+
+    },
     "Run" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2059,6 +2159,9 @@
         }
       }
     },
+    "Safety Policy" : {
+
+    },
     "Save" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2070,10 +2173,16 @@
         }
       }
     },
+    "Save the current draft as a new version snapshot" : {
+
+    },
     "Save to My Prompts" : {
 
     },
-    "Search installed skills..." : {
+    "Save Version" : {
+
+    },
+    "Scope" : {
 
     },
     "Search prompt..." : {
@@ -2099,15 +2208,6 @@
       }
     },
     "Search prompts from anywhere in the app" : {
-
-    },
-    "Search skills..." : {
-
-    },
-    "Search..." : {
-
-    },
-    "Searching..." : {
 
     },
     "Select All" : {
@@ -2269,13 +2369,22 @@
     "sk-..." : {
 
     },
-    "Skill Catalog" : {
+    "Skill Error" : {
+
+    },
+    "Skill Name" : {
 
     },
     "Skill Store" : {
 
     },
-    "Skills (skills.sh)" : {
+    "SKILL.md Preview" : {
+
+    },
+    "Skills" : {
+
+    },
+    "Slug" : {
 
     },
     "Source" : {
@@ -2303,6 +2412,12 @@
       }
     },
     "System Prompt" : {
+
+    },
+    "Tags (comma separated)" : {
+
+    },
+    "Target Agents" : {
 
     },
     "Temperature: 0.7" : {
@@ -2405,6 +2520,9 @@
         }
       }
     },
+    "To manage agent skills, PromptHub needs your permission to read and write to specific hidden configuration folders in your Home directory." : {
+
+    },
     "Toggle Diff View" : {
 
     },
@@ -2431,9 +2549,6 @@
           }
         }
       }
-    },
-    "Try a different search term." : {
-
     },
     "Try using different keywords" : {
       "extractionState" : "manual",
@@ -2495,6 +2610,9 @@
     "Updated" : {
 
     },
+    "Updated %@" : {
+
+    },
     "Updated: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2505,6 +2623,9 @@
           }
         }
       }
+    },
+    "Updating CLIs…" : {
+
     },
     "Updating gallery..." : {
 

@@ -23,6 +23,8 @@ struct SkillStoreView: View {
     @State private var errorMessage: String?
     @State private var selectedSkillID: String?
     @State private var isInstallingLocalSkill = false
+    @ObservedObject private var cliAccessManager = CLIDirectoryAccessManager.shared
+    @State private var showingCLIAccessManager = false
     
     // Per-card install state
     @State private var installingSkillIDs: Set<String> = []
@@ -131,6 +133,11 @@ struct SkillStoreView: View {
                     Label("Import", systemImage: "plus.circle")
                 }
                 .menuStyle(.borderedButton)
+
+                Button(action: { showingCLIAccessManager = true }) {
+                    Label("CLI Access", systemImage: "lock.shield")
+                }
+                .buttonStyle(.bordered)
             }
         } content: {
             if isLoading && availableSkills.isEmpty {
@@ -159,12 +166,28 @@ struct SkillStoreView: View {
                     systemImage: "magnifyingglass",
                     description: "No skills match \"\(searchText)\". Try a different search term."
                 )
+            } else if !cliAccessManager.anyAccessGranted {
+                SkillLibraryEmptyState(
+                    title: "CLI Access Required",
+                    systemImage: "lock.shield",
+                    description: "PromptHub needs access to CLI agent folders (like ~/.claude, ~/.cursor) to manage their skills."
+                ) {
+                    Button("Configure Access\u{2026}") {
+                        showingCLIAccessManager = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             } else {
                 skillBrowser
             }
         }
         .onChange(of: searchText) { _, newValue in
             debouncedSearch(query: newValue)
+        }
+        .sheet(isPresented: $showingCLIAccessManager, onDismiss: {
+            fetchSkills(query: searchText)
+        }) {
+            CLIAccessManagerView()
         }
         .onAppear {
             fetchSkills()
@@ -314,6 +337,7 @@ struct SkillStoreView: View {
     // MARK: - Fetch Skills
     
     private func fetchSkills(query: String = "") {
+        guard cliAccessManager.anyAccessGranted else { return }
         isLoading = true
         errorMessage = nil
         Task {

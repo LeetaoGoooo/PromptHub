@@ -51,6 +51,7 @@ final class SkillCLIService {
     private let fileManager: FileManager
     private let apiBaseURL: URL?
     private let installRootURL: URL?
+    private var cliAccessManager: CLIDirectoryAccessManager { .shared }
 
     init(
         session: URLSession = .shared,
@@ -65,7 +66,7 @@ final class SkillCLIService {
     }
 
     private func makeCatalog(projectRootURL: URL? = nil) -> SkillCatalogService {
-        SkillCatalogService(
+        cliAccessManager.makeCatalog(
             session: session,
             fileManager: fileManager,
             apiBaseURL: apiBaseURL,
@@ -76,7 +77,9 @@ final class SkillCLIService {
 
     func findSkills(query: String = "", projectRootURL: URL? = nil) async throws -> [SkillInfo] {
         do {
-            let skills = try await makeCatalog(projectRootURL: projectRootURL).findSkills(query: query)
+            let skills = try await cliAccessManager.withAccess {
+                try await self.makeCatalog(projectRootURL: projectRootURL).findSkills(query: query)
+            }
             return skills.map(Self.convert)
         } catch {
             throw mapError(error)
@@ -85,7 +88,9 @@ final class SkillCLIService {
 
     func listInstalledSkills(projectRootURL: URL? = nil) async throws -> [SkillInfo] {
         do {
-            let skills = try await makeCatalog(projectRootURL: projectRootURL).listInstalledSkills()
+            let skills = try await cliAccessManager.withAccess {
+                try await self.makeCatalog(projectRootURL: projectRootURL).listInstalledSkills()
+            }
             return skills.map(Self.convert)
         } catch {
             throw mapError(error)
@@ -109,7 +114,9 @@ final class SkillCLIService {
                 targetAgents: targetAgents,
                 isGlobal: isGlobal
             )
-            try await makeCatalog(projectRootURL: projectRootURL).install(request: request)
+            try await cliAccessManager.withAccess {
+                try await self.makeCatalog(projectRootURL: projectRootURL).install(request: request)
+            }
         } catch {
             throw mapError(error)
         }
@@ -129,7 +136,9 @@ final class SkillCLIService {
                 targetAgents: targetAgents,
                 isGlobal: isGlobal
             )
-            try await makeCatalog(projectRootURL: projectRootURL).install(request: request)
+            try await cliAccessManager.withAccess {
+                try await self.makeCatalog(projectRootURL: projectRootURL).install(request: request)
+            }
         } catch {
             throw mapError(error)
         }
@@ -143,12 +152,14 @@ final class SkillCLIService {
         projectRootURL: URL? = nil
     ) async throws {
         do {
-            try await makeCatalog(projectRootURL: projectRootURL).installLocal(
-                name: name,
-                markdown: markdown,
-                isGlobal: isGlobal,
-                targetAgents: targetAgents
-            )
+            try await cliAccessManager.withAccess {
+                try await self.makeCatalog(projectRootURL: projectRootURL).installLocal(
+                    name: name,
+                    markdown: markdown,
+                    isGlobal: isGlobal,
+                    targetAgents: targetAgents
+                )
+            }
         } catch {
             throw mapError(error)
         }
@@ -161,11 +172,13 @@ final class SkillCLIService {
         projectRootURL: URL? = nil
     ) async throws {
         do {
-            try await makeCatalog(projectRootURL: projectRootURL).installExisting(
-                name: name,
-                isGlobal: isGlobal,
-                targetAgents: targetAgents
-            )
+            try await cliAccessManager.withAccess {
+                try await self.makeCatalog(projectRootURL: projectRootURL).installExisting(
+                    name: name,
+                    isGlobal: isGlobal,
+                    targetAgents: targetAgents
+                )
+            }
         } catch {
             throw mapError(error)
         }
@@ -178,11 +191,13 @@ final class SkillCLIService {
         projectRootURL: URL? = nil
     ) async throws {
         do {
-            try await makeCatalog(projectRootURL: projectRootURL).remove(
-                name: name,
-                isGlobal: isGlobal,
-                targetAgents: targetAgents
-            )
+            try await cliAccessManager.withAccess {
+                try await self.makeCatalog(projectRootURL: projectRootURL).remove(
+                    name: name,
+                    isGlobal: isGlobal,
+                    targetAgents: targetAgents
+                )
+            }
         } catch {
             throw mapError(error)
         }
@@ -194,10 +209,12 @@ final class SkillCLIService {
         projectRootURL: URL? = nil
     ) async throws -> String? {
         do {
-            return try await makeCatalog(projectRootURL: projectRootURL).loadInstalledMarkdown(
-                name: name,
-                isGlobal: isGlobal
-            )
+            return try await cliAccessManager.withAccess {
+                try await self.makeCatalog(projectRootURL: projectRootURL).loadInstalledMarkdown(
+                    name: name,
+                    isGlobal: isGlobal
+                )
+            }
         } catch {
             throw mapError(error)
         }

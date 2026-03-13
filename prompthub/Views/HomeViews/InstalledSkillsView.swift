@@ -24,6 +24,8 @@ struct InstalledSkillsView: View {
     @State private var pendingRemoval: PendingRemoval?
     @State private var removingSkillIDs: Set<String> = []
     @State private var addingSkillIDs: Set<String> = []
+    @ObservedObject private var cliAccessManager = CLIDirectoryAccessManager.shared
+    @State private var showingCLIAccessManager = false
 
     private var installedSkills: [InstalledSkillSnapshot] {
         workspaceSnapshot.installedSkills
@@ -111,13 +113,23 @@ struct InstalledSkillsView: View {
                 Button(action: fetchInstalledSkills) {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
+                .buttonStyle(.bordered)
+                
+                Button(action: { showingCLIAccessManager = true }) {
+                    Label("CLI Access", systemImage: "lock.shield")
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.bordered)
         } content: {
             VStack(spacing: 0) {
                 mainContentView
                 nonFatalErrorBanner
             }
+        }
+        .sheet(isPresented: $showingCLIAccessManager, onDismiss: {
+            fetchInstalledSkills()
+        }) {
+            CLIAccessManagerView()
         }
         .onAppear {
             fetchInstalledSkills()
@@ -150,7 +162,18 @@ struct InstalledSkillsView: View {
 
     @ViewBuilder
     private var mainContentView: some View {
-        if isLoading && installedSkills.isEmpty {
+        if !cliAccessManager.anyAccessGranted {
+            SkillLibraryEmptyState(
+                title: "CLI Access Required",
+                systemImage: "lock.shield",
+                description: "PromptHub needs access to CLI agent folders (like ~/.claude, ~/.cursor) to manage their skills."
+            ) {
+                Button("Configure Access\u{2026}") {
+                    showingCLIAccessManager = true
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        } else if isLoading && installedSkills.isEmpty {
             ProgressView("Loading installed skills...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = errorMessage, installedSkills.isEmpty {
@@ -305,6 +328,7 @@ struct InstalledSkillsView: View {
     }
 
     private func fetchInstalledSkills() {
+        guard cliAccessManager.anyAccessGranted else { return }
         isLoading = true
         errorMessage = nil
         Task {
