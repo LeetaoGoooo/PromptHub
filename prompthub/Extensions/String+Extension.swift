@@ -7,6 +7,6 @@
 
 import DifferenceKit
 
-extension String: Differentiable {
+extension String: @retroactive Differentiable {
     
 }

@@ -20,7 +20,10 @@ struct SharedCreationItemView: View {
     @State private var showingDeleteConfirmation = false
     @State private var isDeleting = false
     
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "SharedCreationItemView")
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.duck.leetao.prompthub",
+        category: "SharedCreationItemView"
+    )
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -119,8 +122,8 @@ struct SharedCreationItemView: View {
     
     private func deleteSharedCreation() async {
         do {
-            let syncManager = PublicCloudKitSyncManager(
-                containerIdentifier: "iCloud.com.duck.leetao.promptbox",
+            let syncManager = try PublicCloudKitSyncManager(
+                containerIdentifier: CloudKitAccess.publicContainerIdentifier,
                 modelContext: modelContext
             )
             

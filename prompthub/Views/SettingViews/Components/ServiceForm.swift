@@ -27,7 +27,7 @@ struct ServiceForm: View {
                     .autocorrectionDisabled()
                     .textContentType(.URL)
                     .textFieldStyle(.roundedBorder)
-                    .onChange(of: service.host) { _ in
+                    .onChange(of: service.host) { _, _ in
                         servicesManager.update(service: service)
                     }
             }
@@ -55,7 +55,7 @@ struct ServiceForm: View {
                     .buttonStyle(.plain)
                     .help(showToken ? "Hide token" : "Show token")
                 }
-                .onChange(of: service.token) { _ in
+                .onChange(of: service.token) { _, _ in
                     servicesManager.update(service: service)
                 }
             }
@@ -125,7 +125,7 @@ struct ServiceModelPicker: View {
                 Text(model.name ?? model.id).tag(model.id as String?)
             }
         }
-        .onChange(of: selection) { _ in
+        .onChange(of: selection) { _, _ in
             onSelectionChange()
         }
     }

@@ -21,13 +21,6 @@ struct SharedCreationsView: View {
     @State private var isLoading = false
     @State private var loadError: String?
     
-    private var syncManager: PublicCloudKitSyncManager {
-        PublicCloudKitSyncManager(
-            containerIdentifier: "iCloud.com.duck.leetao.promptbox",
-            modelContext: modelContext
-        )
-    }
-    
     private func columns(for width: CGFloat) -> [GridItem] {
         return PromptViewHelpers.columns(for: width)
     }
@@ -68,22 +61,23 @@ struct SharedCreationsView: View {
         return categorized.userCreations + categorized.otherCreations
     }
     
+    @MainActor
     private func loadPublicSharedCreations() async {
         isLoading = true
         loadError = nil
         
         do {
+            let syncManager = try PublicCloudKitSyncManager(
+                containerIdentifier: CloudKitAccess.publicContainerIdentifier,
+                modelContext: modelContext
+            )
             let publicCreations = try await syncManager.fetchAllPublicSharedCreations(limit: 100)
-            await MainActor.run {
-                self.publicSharedCreations = publicCreations
-                self.isLoading = false
-            }
+            publicSharedCreations = publicCreations
+            isLoading = false
         } catch {
-            await MainActor.run {
-                self.loadError = "Failed to load public shared creations: \(error.localizedDescription)"
-                self.isLoading = false
-                self.showToastMsg("Failed to load public creations", .error(.red))
-            }
+            loadError = "Failed to load public shared creations: \(error.localizedDescription)"
+            isLoading = false
+            showToastMsg("Failed to load public creations", .error(.red))
         }
     }
     
@@ -207,10 +201,8 @@ struct SharedCreationsView: View {
                 }
             }
         }
-        .onAppear {
-            Task {
-                await loadPublicSharedCreations()
-            }
+        .task {
+            await loadPublicSharedCreations()
         }
     }
 }

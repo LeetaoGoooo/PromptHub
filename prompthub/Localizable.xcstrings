@@ -205,16 +205,6 @@
         }
       }
     },
-    "Are you sure you want to remove \"%@\"? This will uninstall it from your %@ configuration." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Are you sure you want to remove \"%1$@\"? This will uninstall it from your %2$@ configuration."
-          }
-        }
-      }
-    },
     "Attach example outputs to your prompts to instantly visualize their results." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -267,9 +257,6 @@
           }
         }
       }
-    },
-    "Available" : {
-
     },
     "Base URL (OpenAI API)" : {
       "extractionState" : "stale",
@@ -356,6 +343,9 @@
           }
         }
       }
+    },
+    "CLIs: %@" : {
+
     },
     "Close" : {
       "localizations" : {
@@ -465,9 +455,6 @@
           }
         }
       }
-    },
-    "Connecting to skills.sh..." : {
-
     },
     "Connection Error" : {
 
@@ -1025,6 +1012,12 @@
     "Explore Gallery" : {
 
     },
+    "External skill (managed outside PromptHub)" : {
+
+    },
+    "External skill (read-only)" : {
+
+    },
     "Failed to delete prompt" : {
       "comment" : "Error message for prompt deletion",
       "extractionState" : "stale",
@@ -1059,6 +1052,9 @@
         }
       }
     },
+    "From Local" : {
+
+    },
     "General" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1091,9 +1087,6 @@
         }
       }
     },
-    "Get" : {
-
-    },
     "GitHub" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1105,7 +1098,10 @@
         }
       }
     },
-    "Global Skills" : {
+    "Global" : {
+
+    },
+    "Global Scope" : {
 
     },
     "Got It!" : {
@@ -1192,16 +1188,16 @@
     "Information" : {
 
     },
-    "Install Globally" : {
+    "Install" : {
 
     },
     "Install skills from the Skill Store to extend your agents' capabilities." : {
 
     },
-    "Install to Project" : {
+    "Install to %@" : {
 
     },
-    "Installed" : {
+    "Install to All CLIs" : {
 
     },
     "Installed Skills" : {
@@ -1248,9 +1244,6 @@
           }
         }
       }
-    },
-    "Just Installed!" : {
-
     },
     "Keep" : {
       "extractionState" : "stale",
@@ -1338,6 +1331,9 @@
         }
       }
     },
+    "Loading skills catalog..." : {
+
+    },
     "Loading..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1369,6 +1365,9 @@
           }
         }
       }
+    },
+    "Manage" : {
+
     },
     "Manage your installed skills" : {
 
@@ -1745,7 +1744,10 @@
     "Private link only" : {
 
     },
-    "Project Skills" : {
+    "Project" : {
+
+    },
+    "Project Scope" : {
 
     },
     "Prompt" : {
@@ -1943,6 +1945,9 @@
         }
       }
     },
+    "Read-only" : {
+
+    },
     "Received image data directly. Implement loading from Data." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1973,7 +1978,22 @@
     "Refresh models" : {
 
     },
+    "Refresh Skills" : {
+
+    },
     "Remove" : {
+
+    },
+    "Remove %@" : {
+
+    },
+    "Remove from %@" : {
+
+    },
+    "Remove from All CLIs" : {
+
+    },
+    "Remove from CLI" : {
 
     },
     "Remove Skill" : {
@@ -2081,7 +2101,7 @@
     "Search prompts from anywhere in the app" : {
 
     },
-    "Search skills.sh..." : {
+    "Search skills..." : {
 
     },
     "Search..." : {
@@ -2249,13 +2269,13 @@
     "sk-..." : {
 
     },
+    "Skill Catalog" : {
+
+    },
     "Skill Store" : {
 
     },
     "Skills (skills.sh)" : {
-
-    },
-    "skills.sh" : {
 
     },
     "Source" : {

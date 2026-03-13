@@ -17,6 +17,8 @@ struct PromptDetail: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ServicesManager.self) private var servicesManager
     @Query private var sharedCreations: [SharedCreation]
+    private let draftService = SkillDraftService.shared
+    let onPromoteToSkill: (Skill) -> Void
     @State private var isCreateShareLink = false
     @State private var isTogglingPublic = false
     
@@ -103,7 +105,10 @@ struct PromptDetail: View {
 
         do {
             try modelContext.save()
-            let publicCloudKitSyncManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox", modelContext: modelContext)
+            let publicCloudKitSyncManager = try PublicCloudKitSyncManager(
+                containerIdentifier: CloudKitAccess.publicContainerIdentifier,
+                modelContext: modelContext
+            )
             try await publicCloudKitSyncManager.pushItemToPublicCloud(sharedItem)
             try modelContext.save()
         } catch {
@@ -140,7 +145,10 @@ struct PromptDetail: View {
 
         do {
             try modelContext.save()
-            let publicCloudKitSyncManager = PublicCloudKitSyncManager(containerIdentifier: "iCloud.com.duck.leetao.promptbox", modelContext: modelContext)
+            let publicCloudKitSyncManager = try PublicCloudKitSyncManager(
+                containerIdentifier: CloudKitAccess.publicContainerIdentifier,
+                modelContext: modelContext
+            )
             try await publicCloudKitSyncManager.pushItemToPublicCloud(sharedCreation)
 
             let statusMessage = sharedCreation.isPublic ? "Prompt Made Public" : "Prompt Made Private"
@@ -155,6 +163,16 @@ struct PromptDetail: View {
     }
 
     @State private var showInspector: Bool = true // Default to visible for Pro feel
+
+    private func promotePromptToSkill() {
+        do {
+            let draft = try draftService.createDraft(from: prompt, in: modelContext)
+            showToastMsg(msg: "Skill draft created", alertType: .complete(Color.green))
+            onPromoteToSkill(draft)
+        } catch {
+            showToastMsg(msg: "Failed to create skill draft: \(error.localizedDescription)")
+        }
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -235,6 +253,13 @@ struct PromptDetail: View {
             try? modelContext.save()
         }
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: promotePromptToSkill) {
+                    Image(systemName: "wand.and.stars.inverse")
+                }
+                .help("Promote this prompt into a skill draft")
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -482,7 +507,10 @@ struct PromptDetail: View {
 }
 
 #Preview {
-    PromptDetail(prompt: PreviewData.samplePrompt)
+    PromptDetail(
+        prompt: PreviewData.samplePrompt,
+        onPromoteToSkill: { _ in }
+    )
         .modelContainer(PreviewData.previewContainer)
         .environmentObject(AppSettings())
         .environment(ServicesManager())

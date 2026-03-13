@@ -21,9 +21,13 @@ class PublicCloudKitSyncManager {
     private let container: CKContainer
     let publicDB: CKDatabase
     private let modelContext: ModelContext
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "PublicCloudKitSyncManager")
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.duck.leetao.prompthub",
+        category: "PublicCloudKitSyncManager"
+    )
     
-    init(containerIdentifier: String, modelContext: ModelContext) {
+    init(containerIdentifier: String, modelContext: ModelContext) throws {
+        try CloudKitAccess.ensureContainerAccess(identifier: containerIdentifier)
         self.container = CKContainer(identifier: containerIdentifier)
         self.publicDB = container.publicCloudDatabase
         self.modelContext = modelContext

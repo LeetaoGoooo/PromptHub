@@ -11,11 +11,13 @@ import SwiftUI
 struct PromptSideBar: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Prompt.name) var prompts: [Prompt]
+    @AppStorage("sidebar.recentPromptsExpanded") private var isRecentPromptsExpanded = false
     
     @State private var promptToDelete: Prompt?
     
     @Binding var promptSelection: PromptSelection
     let onCreateNewPrompt: () -> Void
+    let onCreateNewSkill: () -> Void
     
     @Environment(\.openWindow) var openWindow
     
@@ -72,14 +74,19 @@ struct PromptSideBar: View {
 
     @ViewBuilder
     private var skillsSection: some View {
-        Section("Skills (skills.sh)") {
+        Section("Skills") {
+            NavigationLink(value: PromptSelection.mySkills) {
+                Label("My Skills", systemImage: "wand.and.stars")
+            }
+            .help("Author and manage your own skill drafts")
+
             NavigationLink(value: PromptSelection.skillStore) {
-                Label("Skill Store", systemImage: "bag.fill")
+                Label("Discover", systemImage: "sparkles")
             }
             .help("Discover and install skills from skills.sh")
             
             NavigationLink(value: PromptSelection.installedSkills) {
-                Label("Installed Skills", systemImage: "square.stack.3d.up.fill")
+                Label("Installed", systemImage: "square.stack.3d.up.fill")
             }
             .help("Manage your installed skills")
         }
@@ -87,7 +94,7 @@ struct PromptSideBar: View {
 
     @ViewBuilder
     private var recentPromptsSection: some View {
-        Section("Recent Prompts") {
+        Section("Recent Prompts", isExpanded: $isRecentPromptsExpanded) {
             ForEach(prompts) { prompt in
                 NavigationLink(value: PromptSelection.prompt(prompt)) {
                     Label {
@@ -126,17 +133,54 @@ struct PromptSideBar: View {
                 Spacer()
                 
                 Button {
-                    onCreateNewPrompt()
+                    handleCreateAction()
                 } label: {
-                    Image(systemName: "plus")
+                    Label(footerActionTitle, systemImage: footerActionSymbol)
+                        .labelStyle(.iconOnly)
                         .imageScale(.medium)
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help("New Prompt (Cmd+N)")
+                .help(footerActionHelp)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
+        }
+    }
+
+    private var footerActionTitle: String {
+        switch promptSelection {
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            return "New Skill"
+        default:
+            return "New Prompt"
+        }
+    }
+
+    private var footerActionSymbol: String {
+        switch promptSelection {
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            return "plus"
+        default:
+            return "plus"
+        }
+    }
+
+    private var footerActionHelp: String {
+        switch promptSelection {
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            return "New Skill Draft (Cmd+N)"
+        default:
+            return "New Prompt (Cmd+N)"
+        }
+    }
+
+    private func handleCreateAction() {
+        switch promptSelection {
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            onCreateNewSkill()
+        default:
+            onCreateNewPrompt()
         }
     }
 

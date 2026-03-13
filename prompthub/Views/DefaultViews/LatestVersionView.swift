@@ -72,7 +72,7 @@ struct LatestVersionView: View {
                                     .stroke(borderColor, lineWidth: 1)
                                     .opacity(0.1)
                             )
-                            .onChange(of: editablePrompt) { newValue in
+                            .onChange(of: editablePrompt) { _, newValue in
                                 if !isPreviewingOldVersion && !isShowingDiff {
                                     latestHistory.promptText = newValue
                                     latestHistory.updatedAt = Date()

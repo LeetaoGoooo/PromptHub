@@ -13,11 +13,11 @@ struct SearchView: View {
     
     @Query(sort: \Prompt.name, order: .forward) private var allPrompts: [Prompt]
     @Query private var sharedCreations: [SharedCreation]
+    @Query(sort: \Skill.updatedAt, order: .reverse) private var skillDrafts: [Skill]
     
     @State private var searchText: String = ""
     @State private var galleryPrompts: [GalleryPrompt] = []
     @State private var isLoading = true
-    @State private var selectedResult: (any SearchableItem)?
     @State private var selectedIndex: Int = 0
     @State private var copiedIndex: Int? = nil
     
@@ -32,7 +32,7 @@ struct SearchView: View {
             return allPrompts.filter { prompt in
                 prompt.name.localizedCaseInsensitiveContains(searchText) ||
                 (prompt.desc?.localizedCaseInsensitiveContains(searchText) ?? false) ||
-                (prompt.getLatestPromptContent().localizedCaseInsensitiveContains(searchText))
+                prompt.getLatestPromptContent().localizedCaseInsensitiveContains(searchText)
             }.map { SearchablePrompt(prompt: $0) }
         }
     }
@@ -58,21 +58,35 @@ struct SearchView: View {
             prompt.prompt.localizedCaseInsensitiveContains(searchText)
         }.map { SearchableGalleryPrompt(galleryPrompt: $0) }
     }
+
+    private var filteredSkillDrafts: [SearchableSkillDraft] {
+        let drafts = skillDrafts.map { SearchableSkillDraft(skill: $0) }
+        guard !searchText.isEmpty else {
+            return drafts
+        }
+
+        return drafts.filter { draft in
+            draft.name.localizedCaseInsensitiveContains(searchText) ||
+            (draft.description?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+            draft.searchableContent.localizedCaseInsensitiveContains(searchText)
+        }
+    }
     
     private var allFilteredResults: [any SearchableItem] {
         var results: [any SearchableItem] = []
         results.append(contentsOf: filteredUserPrompts)
         results.append(contentsOf: filteredSharedCreations)
         results.append(contentsOf: filteredGalleryPrompts)
+        results.append(contentsOf: filteredSkillDrafts)
         return results
     }
     
     private var hasAnyPrompts: Bool {
-        !allPrompts.isEmpty || !sharedCreations.isEmpty || !galleryPrompts.isEmpty
+        !allPrompts.isEmpty || !sharedCreations.isEmpty || !galleryPrompts.isEmpty || !skillDrafts.isEmpty
     }
     
     private var hasFilteredResults: Bool {
-        !filteredUserPrompts.isEmpty || !filteredSharedCreations.isEmpty || !filteredGalleryPrompts.isEmpty
+        !filteredUserPrompts.isEmpty || !filteredSharedCreations.isEmpty || !filteredGalleryPrompts.isEmpty || !filteredSkillDrafts.isEmpty
     }
     
     var body: some View {
@@ -98,54 +112,87 @@ struct SearchView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 2) {
-                            // User prompts section
-                            ForEach(filteredUserPrompts.indices, id: \.self) { index in
-                                SearchResultRowView(
+                            if !filteredUserPrompts.isEmpty {
+                                searchSectionHeader("My Prompts")
+                                ForEach(filteredUserPrompts.indices, id: \.self) { index in
+                                    SearchResultRowView(
                                     item: filteredUserPrompts[index],
                                     type: .user,
                                     isSelected: index == selectedIndex,
-                                    action: { 
-                                        copyToClipboard(filteredUserPrompts[index].content)
-                                        // 不关闭窗口，只显示复制成功动画
+                                    onOpen: {
+                                        openItem(filteredUserPrompts[index])
+                                    },
+                                    onCopy: {
+                                        copyItem(filteredUserPrompts[index])
                                     },
                                     index: index,
                                     copiedIndex: copiedIndex
-                                )
-                                .id("user_\(index)")
+                                    )
+                                    .id("user_\(index)")
+                                }
                             }
-                            
-                            // Shared creations section
-                            ForEach(filteredSharedCreations.indices, id: \.self) { index in
-                                let actualIndex = index + filteredUserPrompts.count
-                                SearchResultRowView(
+
+                            if !filteredSharedCreations.isEmpty {
+                                searchSectionHeader("Shared With Me")
+                                ForEach(filteredSharedCreations.indices, id: \.self) { index in
+                                    let actualIndex = index + filteredUserPrompts.count
+                                    SearchResultRowView(
                                     item: filteredSharedCreations[index],
                                     type: .shared,
                                     isSelected: actualIndex == selectedIndex,
-                                    action: { 
-                                        copyToClipboard(filteredSharedCreations[index].content)
-                                        // 不关闭窗口，只显示复制成功动画
+                                    onOpen: {
+                                        openItem(filteredSharedCreations[index])
+                                    },
+                                    onCopy: {
+                                        copyItem(filteredSharedCreations[index])
                                     },
                                     index: actualIndex,
                                     copiedIndex: copiedIndex
-                                )
-                                .id("shared_\(index)")
+                                    )
+                                    .id("shared_\(index)")
+                                }
                             }
-                            
-                            // Gallery prompts section
-                            ForEach(filteredGalleryPrompts.indices, id: \.self) { index in
-                                let actualIndex = index + filteredUserPrompts.count + filteredSharedCreations.count
-                                SearchResultRowView(
+
+                            if !filteredGalleryPrompts.isEmpty {
+                                searchSectionHeader("Gallery")
+                                ForEach(filteredGalleryPrompts.indices, id: \.self) { index in
+                                    let actualIndex = index + filteredUserPrompts.count + filteredSharedCreations.count
+                                    SearchResultRowView(
                                     item: filteredGalleryPrompts[index],
                                     type: .gallery,
                                     isSelected: actualIndex == selectedIndex,
-                                    action: { 
-                                        copyToClipboard(filteredGalleryPrompts[index].content)
-                                        // 不关闭窗口，只显示复制成功动画
+                                    onOpen: {
+                                        openItem(filteredGalleryPrompts[index])
+                                    },
+                                    onCopy: {
+                                        copyItem(filteredGalleryPrompts[index])
                                     },
                                     index: actualIndex,
                                     copiedIndex: copiedIndex
-                                )
-                                .id("gallery_\(index)")
+                                    )
+                                    .id("gallery_\(index)")
+                                }
+                            }
+
+                            if !filteredSkillDrafts.isEmpty {
+                                searchSectionHeader("Skill Drafts")
+                                ForEach(filteredSkillDrafts.indices, id: \.self) { index in
+                                    let actualIndex = index + filteredUserPrompts.count + filteredSharedCreations.count + filteredGalleryPrompts.count
+                                    SearchResultRowView(
+                                    item: filteredSkillDrafts[index],
+                                    type: .skill,
+                                    isSelected: actualIndex == selectedIndex,
+                                    onOpen: {
+                                        openItem(filteredSkillDrafts[index])
+                                    },
+                                    onCopy: {
+                                        copyItem(filteredSkillDrafts[index])
+                                    },
+                                    index: actualIndex,
+                                    copiedIndex: copiedIndex
+                                    )
+                                    .id("skill_\(index)")
+                                }
                             }
                         }
                         .padding(6)
@@ -181,13 +228,7 @@ struct SearchView: View {
         .onKeyPress(.return) {
             if selectedIndex < allFilteredResults.count {
                 let selectedItem = allFilteredResults[selectedIndex]
-                copyToClipboard(selectedItem.content)
-                // 标记当前选中的项目为已复制，触发动画
-                copiedIndex = selectedIndex
-                // 2秒后重置复制状态
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    copiedIndex = nil
-                }
+                openItem(selectedItem)
             }
             return .handled
         }
@@ -197,6 +238,17 @@ struct SearchView: View {
         // 滚动到选中的项目
         // 可以根据 selectedIndex 计算应该滚动到哪个项目
         /// TODO
+    }
+
+    @ViewBuilder
+    private func searchSectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.caption.bold())
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
     }
     
     @ViewBuilder
@@ -224,7 +276,24 @@ struct SearchView: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(promptText, forType: .string)
-        print("Copied prompt to clipboard")
+    }
+
+    private func copyItem(_ item: any SearchableItem) {
+        copyToClipboard(item.content)
+        copiedIndex = allFilteredResults.firstIndex(where: { $0.stableID == item.stableID })
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            copiedIndex = nil
+        }
+    }
+
+    private func openItem(_ item: any SearchableItem) {
+        if let target = item.navigationTarget {
+            SearchNavigationRequest.post(target)
+            onClose()
+            return
+        }
+
+        copyItem(item)
     }
 }
 

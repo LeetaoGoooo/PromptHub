@@ -1,193 +1,267 @@
 import Foundation
-import Observation
+import PromptHubSkillKit
 
-@Observable
-class SkillCLIService {
+final class SkillCLIService {
     static let shared = SkillCLIService()
-    
+
     enum CLIError: LocalizedError, Equatable {
         case commandFailed(String)
         case decodingError
         case envNotFound
-        
+        case invalidResponse
+        case invalidSkillPackage
+        case fileIOError(String)
+        case networkError(String)
+
         var errorDescription: String? {
             switch self {
-            case .commandFailed(let msg): return msg.isEmpty ? "Command execution failed" : msg
-            case .decodingError: return "Failed to decode CLI output"
-            case .envNotFound: return "Node environment not found"
+            case .commandFailed(let msg):
+                return msg.isEmpty ? "Command execution failed" : msg
+            case .decodingError:
+                return "Failed to decode skills data"
+            case .envNotFound:
+                return "Required environment is not available"
+            case .invalidResponse:
+                return "Unexpected response from skills API"
+            case .invalidSkillPackage:
+                return "Invalid skill package, expected owner/repo@skill-name"
+            case .fileIOError(let msg):
+                return msg.isEmpty ? "Failed to read or write skill files" : msg
+            case .networkError(let msg):
+                return msg.isEmpty ? "Network request failed" : msg
             }
         }
     }
-    
+
+    typealias AgentWorkflow = PromptHubSkillKit.AgentWorkflow
+
     struct SkillInfo: Codable, Identifiable, Equatable {
         var id: String { "\(name)-\(isGlobal)" }
         let name: String
         let description: String
         var isInstalled: Bool = false
         var isGlobal: Bool = false
-        var url: String? // Added property
+        var url: String?
+        var installedAgents: [AgentWorkflow] = []
+        var installedScopes: [SkillInstallScope] = []
+        var isManagedByPromptHub: Bool = true
     }
-    
-    private let executor: CommandLineExecutor
-    
-    init(executor: CommandLineExecutor = RealCommandLineExecutor()) {
-        self.executor = executor
+
+    private let session: URLSession
+    private let fileManager: FileManager
+    private let apiBaseURL: URL?
+    private let installRootURL: URL?
+
+    init(
+        session: URLSession = .shared,
+        fileManager: FileManager = .default,
+        apiBaseURL: URL? = nil,
+        installRootURL: URL? = nil
+    ) {
+        self.session = session
+        self.fileManager = fileManager
+        self.apiBaseURL = apiBaseURL
+        self.installRootURL = installRootURL
     }
-    
-    /// Executes `npx skills find [query]` and parses the output
-    func findSkills(query: String = "") async throws -> [SkillInfo] {
-        let effectiveQuery = query.isEmpty ? "." : query
-        let args = ["skills", "find", effectiveQuery, "--list"]
-        let output = try await runCommand(args: args)
-        return parseFindOutput(output)
+
+    private func makeCatalog(projectRootURL: URL? = nil) -> SkillCatalogService {
+        SkillCatalogService(
+            session: session,
+            fileManager: fileManager,
+            apiBaseURL: apiBaseURL,
+            installRootURL: installRootURL,
+            projectRootURL: projectRootURL
+        )
     }
-    
-    /// Executes `npx skills list` and `npx skills list -g` and merges them
-    func listInstalledSkills() async throws -> [SkillInfo] {
-        // Fetch project skills
-        let projectOutput = try await runCommand(args: ["skills", "list"])
-        let projectSkills = parseListOutput(projectOutput, isGlobal: false)
-        
-        // Fetch global skills
-        let globalOutput = try await runCommand(args: ["skills", "list", "-g"])
-        let globalSkills = parseListOutput(globalOutput, isGlobal: true)
-        
-        var merged = projectSkills
-        // Add global skills, avoiding duplicates if any overlap occurs (though unlikely for same name in different scopes)
-        for gSkill in globalSkills {
-            if !merged.contains(where: { $0.name == gSkill.name && $0.isGlobal == gSkill.isGlobal }) {
-                merged.append(gSkill)
-            }
-        }
-        
-        return merged
-    }
-    
-    /// Executes `npx skills add [package]`
-    func addSkill(package: String, isGlobal: Bool = true) async throws {
-        var args = ["skills", "add", package, "--yes"]
-        if isGlobal {
-            args.append("-g")
-        }
-        _ = try await runCommand(args: args)
-    }
-    
-    /// Executes `npx skills remove [name]`
-    func removeSkill(name: String, isGlobal: Bool = true) async throws {
-        var args = ["skills", "remove", name, "--yes"]
-        if isGlobal {
-            args.append("-g")
-        }
-        _ = try await runCommand(args: args)
-    }
-    
-    // MARK: - Private Helpers
-    
-    private func runCommand(args: [String]) async throws -> String {
+
+    func findSkills(query: String = "", projectRootURL: URL? = nil) async throws -> [SkillInfo] {
         do {
-            let output = try await executor.execute(args: args)
-            return stripAnsiCodes(output)
-        } catch let error as RealCommandLineExecutor.ExecutorError {
-            switch error {
-            case .decodingError:
-                throw CLIError.decodingError
-            case .commandFailed(let msg):
-                throw CLIError.commandFailed(stripAnsiCodes(msg))
-            }
+            let skills = try await makeCatalog(projectRootURL: projectRootURL).findSkills(query: query)
+            return skills.map(Self.convert)
         } catch {
-            throw error
+            throw mapError(error)
         }
     }
-    
-    private func stripAnsiCodes(_ input: String) -> String {
-        // More robust ANSI escape sequence regex
-        // Matches ESC [ ... m/K/G/etc
-        let pattern = "\\u001B\\[[0-9;]*[a-zA-Z]"
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return input }
-        let range = NSRange(location: 0, length: input.utf16.count)
-        return regex.stringByReplacingMatches(in: input, options: [], range: range, withTemplate: "")
+
+    func listInstalledSkills(projectRootURL: URL? = nil) async throws -> [SkillInfo] {
+        do {
+            let skills = try await makeCatalog(projectRootURL: projectRootURL).listInstalledSkills()
+            return skills.map(Self.convert)
+        } catch {
+            throw mapError(error)
+        }
     }
-    
-    private func parseFindOutput(_ output: String) -> [SkillInfo] {
-        let lines = output.components(separatedBy: .newlines)
-        var skills: [SkillInfo] = []
-        
-        for i in 0..<lines.count {
-            let line = lines[i].trimmingCharacters(in: .whitespaces)
-            if line.isEmpty || line.hasPrefix("█") || line.contains("skills.sh") || line.contains("Skills") {
-                continue
+
+    func addSkill(
+        package: String,
+        isGlobal: Bool = true,
+        targetAgents: [AgentWorkflow] = AgentWorkflow.defaultTargets,
+        projectRootURL: URL? = nil
+    ) async throws {
+        do {
+            let parsed = SkillPackageReference(rawValue: package).remoteInstallDescriptor
+            guard let parsed else {
+                throw CLIError.invalidSkillPackage
             }
-            
-            // Format: package@skill
-            //         └ https://skills.sh/...
-            if (line.contains("@") || (line.contains("/") && line.contains("skills.sh"))) && !line.hasPrefix("└") {
-                let name = line
-                var description = "No description available"
-                var skillUrl: String? = nil
-                
-                if i + 1 < lines.count {
-                    let nextLine = lines[i+1].trimmingCharacters(in: .whitespaces)
-                    if nextLine.hasPrefix("└") {
-                        let potentialUrl = nextLine.replacingOccurrences(of: "└ ", with: "")
-                        if potentialUrl.starts(with: "http") {
-                            skillUrl = potentialUrl
-                        }
-                    }
-                }
-                skills.append(SkillInfo(name: name, description: description, isInstalled: false, isGlobal: false, url: skillUrl))
+            let request = SkillInstallRequest(
+                source: parsed.source,
+                skillNames: [parsed.skillName],
+                targetAgents: targetAgents,
+                isGlobal: isGlobal
+            )
+            try await makeCatalog(projectRootURL: projectRootURL).install(request: request)
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func addSkills(
+        source: String,
+        skillNames: [String],
+        targetAgents: [AgentWorkflow] = AgentWorkflow.defaultTargets,
+        isGlobal: Bool = true,
+        projectRootURL: URL? = nil
+    ) async throws {
+        do {
+            let request = SkillInstallRequest(
+                source: source,
+                skillNames: skillNames,
+                targetAgents: targetAgents,
+                isGlobal: isGlobal
+            )
+            try await makeCatalog(projectRootURL: projectRootURL).install(request: request)
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func addLocalSkill(
+        name: String,
+        markdown: String,
+        isGlobal: Bool = true,
+        targetAgents: [AgentWorkflow] = AgentWorkflow.defaultTargets,
+        projectRootURL: URL? = nil
+    ) async throws {
+        do {
+            try await makeCatalog(projectRootURL: projectRootURL).installLocal(
+                name: name,
+                markdown: markdown,
+                isGlobal: isGlobal,
+                targetAgents: targetAgents
+            )
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func addInstalledSkill(
+        name: String,
+        isGlobal: Bool = true,
+        targetAgents: [AgentWorkflow] = AgentWorkflow.defaultTargets,
+        projectRootURL: URL? = nil
+    ) async throws {
+        do {
+            try await makeCatalog(projectRootURL: projectRootURL).installExisting(
+                name: name,
+                isGlobal: isGlobal,
+                targetAgents: targetAgents
+            )
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func removeSkill(
+        name: String,
+        isGlobal: Bool = true,
+        targetAgents: [AgentWorkflow]? = nil,
+        projectRootURL: URL? = nil
+    ) async throws {
+        do {
+            try await makeCatalog(projectRootURL: projectRootURL).remove(
+                name: name,
+                isGlobal: isGlobal,
+                targetAgents: targetAgents
+            )
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func loadInstalledMarkdown(
+        name: String,
+        isGlobal: Bool = true,
+        projectRootURL: URL? = nil
+    ) async throws -> String? {
+        do {
+            return try await makeCatalog(projectRootURL: projectRootURL).loadInstalledMarkdown(
+                name: name,
+                isGlobal: isGlobal
+            )
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func userFacingErrorMessage(for error: Error) -> String {
+        if let cliError = error as? CLIError,
+           let description = cliError.errorDescription {
+            return sanitizeErrorMessage(description)
+        }
+        return sanitizeErrorMessage(error.localizedDescription)
+    }
+
+    private static func convert(_ item: PromptHubSkillKit.SkillInfo) -> SkillInfo {
+        SkillInfo(
+            name: item.name,
+            description: item.description,
+            isInstalled: item.isInstalled,
+            isGlobal: item.isGlobal,
+            url: item.url,
+            installedAgents: item.installedAgents,
+            installedScopes: item.installedScopes,
+            isManagedByPromptHub: item.isManagedByPromptHub
+        )
+    }
+
+
+    private func mapError(_ error: Error) -> CLIError {
+        if let cliError = error as? CLIError {
+            return cliError
+        }
+
+        if let skillError = error as? SkillKitError {
+            switch skillError {
+            case .invalidResponse:
+                return .invalidResponse
+            case .invalidSkillPackage:
+                return .invalidSkillPackage
+            case .networkError(let message):
+                return .networkError(sanitizeErrorMessage(message))
+            case .fileIOError(let message):
+                return .fileIOError(sanitizeErrorMessage(message))
+            case .requestFailed(let code, let message):
+                return .networkError("skills-api \(code): \(sanitizeErrorMessage(message))")
             }
         }
-        return skills
+
+        return .commandFailed(sanitizeErrorMessage(error.localizedDescription))
     }
-    
-    private func parseListOutput(_ output: String, isGlobal: Bool) -> [SkillInfo] {
-        let lines = output.components(separatedBy: .newlines)
-        var skills: [SkillInfo] = []
-        var currentName: String?
-        
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            
-            // Stronger exclusion for headers, tips, and ASCII art
-            let low = trimmed.lowercased()
-            if trimmed.isEmpty || 
-               low.contains("global skills") || 
-               low.contains("no project") ||
-               low.contains("try listing") ||
-               low.contains("skills.sh") ||
-               low.contains("install with npx") ||
-               trimmed.contains("█") ||
-               trimmed.contains("╚") ||
-               trimmed.contains("╔") ||
-               trimmed.contains("║") ||
-               trimmed.contains("╝") ||
-               trimmed.contains("═") {
-                continue
-            }
-            
-            if line.hasPrefix("  ") {
-                // This is likely a detail line (e.g., "Agents: ...")
-                if let name = currentName, let index = skills.firstIndex(where: { $0.name == name }) {
-                    let detail = trimmed
-                    // If it's a path line, can be part of description or just skipped if redundant
-                    if !detail.starts(with: "/") && !detail.starts(with: "~") {
-                        let currentDesc = skills[index].description
-                        let newDesc = currentDesc.isEmpty ? detail : "\(currentDesc) (\(detail))"
-                        skills[index] = SkillInfo(name: name, description: newDesc, isInstalled: true, isGlobal: isGlobal)
-                    }
-                }
-            } else {
-                // Skill name line usually looks like: "name /path/to/skill" or just "name"
-                let parts = trimmed.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-                if let name = parts.first {
-                    // Ignore lines starting with drawing characters
-                    if !name.hasPrefix("└") && !name.hasPrefix("─") && !name.contains(":") && !name.hasPrefix("[") {
-                        currentName = name
-                        skills.append(SkillInfo(name: name, description: "", isInstalled: true, isGlobal: isGlobal))
-                    }
-                }
-            }
+
+    private func sanitizeErrorMessage(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return "Unknown error"
         }
-        return skills
+
+        let lower = trimmed.lowercased()
+        if lower.contains("<!doctype html") || lower.contains("<html") {
+            return "Received HTML from endpoint; please verify the skills catalog source"
+        }
+
+        if trimmed.count > 280 {
+            return String(trimmed.prefix(280)) + "..."
+        }
+        return trimmed
     }
 }
