@@ -142,7 +142,8 @@ final class CLIDirectoryAccessManager: ObservableObject, @unchecked Sendable {
         fileManager: FileManager,
         apiBaseURL: URL?,
         installRootURL: URL?,
-        projectRootURL: URL?
+        projectRootURL: URL?,
+        githubToken: String? = nil
     ) -> SkillCatalogService {
         
         let sandboxHome = fileManager.homeDirectoryForCurrentUser
@@ -197,6 +198,7 @@ final class CLIDirectoryAccessManager: ObservableObject, @unchecked Sendable {
             session: session,
             fileManager: fileManager,
             apiBaseURL: apiBaseURL,
+            githubToken: githubToken,
             installRootURL: installRootURL,
             projectRootURL: projectRootURL,
             agentSkillRoots: customRoots,

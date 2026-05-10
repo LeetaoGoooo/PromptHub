@@ -15,6 +15,7 @@ enum SettingsTab: String, CaseIterable {
     case general = "General"
     case aiService = "AI Service"
     case shortcuts = "Shortcuts"
+    case privateSources = "Private Sources"
 }
 
 // MARK: - SettingsView
@@ -47,6 +48,8 @@ struct SettingsView: View {
                         AIServiceTab()
                     case .shortcuts:
                         ShortcutsTab()
+                    case .privateSources:
+                        PrivateSkillSourcesView()
                     }
                 }
                 .padding(24)

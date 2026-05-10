@@ -25,6 +25,7 @@ struct SkillStoreView: View {
     @State private var isInstallingLocalSkill = false
     @ObservedObject private var cliAccessManager = CLIDirectoryAccessManager.shared
     @State private var showingCLIAccessManager = false
+    @State private var showingPrivateSourceInstall = false
     
     // Per-card install state
     @State private var installingSkillIDs: Set<String> = []
@@ -129,6 +130,14 @@ struct SkillStoreView: View {
                             Label("Global Scope", systemImage: "globe")
                         }
                     }
+
+                    Section("Private Sources") {
+                        Button {
+                            showingPrivateSourceInstall = true
+                        } label: {
+                            Label("Install from Private Source…", systemImage: "lock.shield")
+                        }
+                    }
                 } label: {
                     Label("Import", systemImage: "plus.circle")
                 }
@@ -188,6 +197,11 @@ struct SkillStoreView: View {
             fetchSkills(query: searchText)
         }) {
             CLIAccessManagerView()
+        }
+        .sheet(isPresented: $showingPrivateSourceInstall, onDismiss: {
+            fetchSkills(query: searchText)
+        }) {
+            PrivateSourceInstallSheet()
         }
         .onAppear {
             fetchSkills()
