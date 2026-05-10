@@ -120,6 +120,35 @@ final class SkillWorkspaceService {
         )
     }
 
+    /// Fetches remote SKILL.md and builds a line diff against the local installation.
+    func previewUpdate(for skill: InstalledSkillSnapshot) async -> SkillUpdatePreview {
+        await cliService.previewUpdate(
+            skillName: skill.package.rawValue,
+            isGlobal: skill.isGlobal,
+            projectRootURL: selectedProjectRootURL
+        )
+    }
+
+    /// Applies a confirmed update (backs up the previous file as `.bak`).
+    func applyUpdate(preview: SkillUpdatePreview) async throws {
+        try await cliService.applyUpdate(preview: preview, projectRootURL: selectedProjectRootURL)
+    }
+
+    /// Rolls back to the `.bak` backup left by `applyUpdate`.
+    @discardableResult
+    func rollbackUpdate(preview: SkillUpdatePreview) async throws -> Int {
+        try await cliService.rollbackUpdate(preview: preview, projectRootURL: selectedProjectRootURL)
+    }
+
+    /// True if a rollback backup exists for this skill.
+    func hasRollbackBackup(for skill: InstalledSkillSnapshot) async -> Bool {
+        await cliService.hasRollbackBackup(
+            skillName: skill.package.rawValue,
+            isGlobal: skill.isGlobal,
+            projectRootURL: selectedProjectRootURL
+        )
+    }
+
     func installationState(
         for skill: CatalogSkill,
         registry: [String: CatalogSkillInstallationState]

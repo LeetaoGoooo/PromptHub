@@ -282,6 +282,84 @@ public struct SkillEffectivenessReport: Sendable, Equatable {
     )
 }
 
+// MARK: - Skill Update / Rollback
+
+/// A single line in a diff between two SKILL.md versions.
+public enum SkillDiffLine: Sendable, Equatable {
+    case added(String)
+    case removed(String)
+    case context(String)
+
+    public var text: String {
+        switch self {
+        case .added(let t), .removed(let t), .context(let t): return t
+        }
+    }
+
+    public var prefix: String {
+        switch self {
+        case .added: return "+"
+        case .removed: return "-"
+        case .context: return " "
+        }
+    }
+
+    public var isChange: Bool {
+        switch self {
+        case .added, .removed: return true
+        case .context: return false
+        }
+    }
+}
+
+/// Status describing whether a skill update is available.
+public enum SkillUpdateStatus: Sendable, Equatable {
+    /// Remote content matches local — skill is up to date.
+    case upToDate
+    /// Remote content differs — an update is available.
+    case updateAvailable
+    /// Remote content could not be fetched.
+    case remoteUnavailable
+    /// Skill has no remote source.
+    case noRemoteSource
+    /// Local SKILL.md not found.
+    case notInstalled
+}
+
+/// Preview of a pending skill update including the computed diff.
+public struct SkillUpdatePreview: Sendable, Equatable {
+    public let skillName: String
+    public let isGlobal: Bool
+    public let localContent: String?
+    public let remoteContent: String?
+    public let diffLines: [SkillDiffLine]
+    public let status: SkillUpdateStatus
+    /// Path(s) that will be written on apply.
+    public let localPaths: [String]
+
+    public init(
+        skillName: String,
+        isGlobal: Bool,
+        localContent: String?,
+        remoteContent: String?,
+        diffLines: [SkillDiffLine],
+        status: SkillUpdateStatus,
+        localPaths: [String]
+    ) {
+        self.skillName = skillName
+        self.isGlobal = isGlobal
+        self.localContent = localContent
+        self.remoteContent = remoteContent
+        self.diffLines = diffLines
+        self.status = status
+        self.localPaths = localPaths
+    }
+
+    public var hasChanges: Bool { !diffLines.filter(\.isChange).isEmpty }
+    public var addedLines: Int { diffLines.filter { if case .added = $0 { return true }; return false }.count }
+    public var removedLines: Int { diffLines.filter { if case .removed = $0 { return true }; return false }.count }
+}
+
 public struct AgentSkillRoots: Sendable {
     public let global: URL
     public let project: URL
@@ -1031,6 +1109,203 @@ public actor SkillCatalogService {
                 hint: hasToolRefs ? nil : "Mention specific tools, files, or commands this skill relies on."
             ),
         ]
+    }
+
+    // MARK: - Update Preview / Apply / Rollback
+
+    /// Fetches the remote SKILL.md and computes the diff against the local installation.
+    /// This is a read-only operation — nothing is written to disk.
+    ///
+    /// - Parameters:
+    ///   - skillName: Full package name (e.g. `"owner/repo@skill"`).
+    ///   - isGlobal: Whether to check global or project scope.
+    /// - Returns: A `SkillUpdatePreview` with diff lines and status.
+    public func previewUpdate(
+        skillName: String,
+        isGlobal: Bool = true
+    ) async -> SkillUpdatePreview {
+        let short = sanitizePathComponent(shortSkillName(fromPackage: skillName))
+
+        // Collect all local paths for this skill (one per agent).
+        var localContent: String?
+        var localPaths: [String] = []
+        for workflow in AgentWorkflow.allCases {
+            guard let roots = agentSkillRoots[workflow] else { continue }
+            let base = isGlobal ? roots.global : roots.project
+            let skillFile = base
+                .appendingPathComponent(short, isDirectory: true)
+                .appendingPathComponent("SKILL.md")
+            if fileManager.fileExists(atPath: skillFile.path) {
+                localPaths.append(skillFile.path)
+                if localContent == nil {
+                    localContent = try? String(contentsOf: skillFile, encoding: .utf8)
+                }
+            }
+        }
+
+        guard let local = localContent else {
+            return SkillUpdatePreview(
+                skillName: skillName,
+                isGlobal: isGlobal,
+                localContent: nil,
+                remoteContent: nil,
+                diffLines: [],
+                status: .notInstalled,
+                localPaths: localPaths
+            )
+        }
+
+        // Need owner/repo/skill to fetch from GitHub.
+        guard let parsed = try? parsePackage(skillName) else {
+            return SkillUpdatePreview(
+                skillName: skillName,
+                isGlobal: isGlobal,
+                localContent: local,
+                remoteContent: nil,
+                diffLines: [],
+                status: .noRemoteSource,
+                localPaths: localPaths
+            )
+        }
+
+        let remoteText: String
+        do {
+            remoteText = try await fetchSkillMarkdownFromGitHub(
+                owner: parsed.owner,
+                repo: parsed.repo,
+                skillName: parsed.skill
+            )
+        } catch {
+            return SkillUpdatePreview(
+                skillName: skillName,
+                isGlobal: isGlobal,
+                localContent: local,
+                remoteContent: nil,
+                diffLines: [],
+                status: .remoteUnavailable,
+                localPaths: localPaths
+            )
+        }
+
+        let normalLocal = local.replacingOccurrences(of: "\r\n", with: "\n")
+        let normalRemote = remoteText.replacingOccurrences(of: "\r\n", with: "\n")
+
+        if normalLocal == normalRemote {
+            return SkillUpdatePreview(
+                skillName: skillName,
+                isGlobal: isGlobal,
+                localContent: local,
+                remoteContent: remoteText,
+                diffLines: [],
+                status: .upToDate,
+                localPaths: localPaths
+            )
+        }
+
+        let diffLines = computeDiff(old: normalLocal, new: normalRemote)
+        return SkillUpdatePreview(
+            skillName: skillName,
+            isGlobal: isGlobal,
+            localContent: local,
+            remoteContent: remoteText,
+            diffLines: diffLines,
+            status: .updateAvailable,
+            localPaths: localPaths
+        )
+    }
+
+    /// Writes the remote content from `preview` to all agent skill directories.
+    ///
+    /// Before overwriting, a `.bak` backup of the existing file is written alongside it
+    /// so the user can roll back with `rollbackUpdate(preview:)`.
+    ///
+    /// - Parameter preview: A preview that was returned by `previewUpdate` and has status `.updateAvailable`.
+    /// - Throws: `SkillKitError.fileIOError` if writing fails.
+    public func applyUpdate(preview: SkillUpdatePreview) throws {
+        guard let remoteContent = preview.remoteContent else {
+            throw SkillKitError.fileIOError("No remote content to apply for \(preview.skillName)")
+        }
+        for path in preview.localPaths {
+            let url = URL(fileURLWithPath: path)
+            let backupURL = url.deletingLastPathComponent()
+                .appendingPathComponent("SKILL.md.bak")
+            // Back up existing content before overwriting.
+            if let existing = try? Data(contentsOf: url) {
+                try existing.write(to: backupURL)
+            }
+            try remoteContent.write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
+
+    /// Restores the `.bak` backup written by `applyUpdate(preview:)`.
+    ///
+    /// - Parameter preview: The same preview that was passed to `applyUpdate`.
+    /// - Returns: Number of paths successfully restored.
+    @discardableResult
+    public func rollbackUpdate(preview: SkillUpdatePreview) throws -> Int {
+        var restored = 0
+        for path in preview.localPaths {
+            let url = URL(fileURLWithPath: path)
+            let backupURL = url.deletingLastPathComponent()
+                .appendingPathComponent("SKILL.md.bak")
+            guard fileManager.fileExists(atPath: backupURL.path) else { continue }
+            let backupData = try Data(contentsOf: backupURL)
+            try backupData.write(to: url)
+            try? fileManager.removeItem(at: backupURL)
+            restored += 1
+        }
+        return restored
+    }
+
+    /// Checks whether a backup file exists for the given skill/scope.
+    public func hasRollbackBackup(skillName: String, isGlobal: Bool) -> Bool {
+        let short = sanitizePathComponent(shortSkillName(fromPackage: skillName))
+        for workflow in AgentWorkflow.allCases {
+            guard let roots = agentSkillRoots[workflow] else { continue }
+            let base = isGlobal ? roots.global : roots.project
+            let backupFile = base
+                .appendingPathComponent(short, isDirectory: true)
+                .appendingPathComponent("SKILL.md.bak")
+            if fileManager.fileExists(atPath: backupFile.path) { return true }
+        }
+        return false
+    }
+
+    /// Simple LCS-based line diff producing `SkillDiffLine` output.
+    private func computeDiff(old: String, new: String) -> [SkillDiffLine] {
+        let oldLines = old.components(separatedBy: "\n")
+        let newLines = new.components(separatedBy: "\n")
+
+        // Build LCS table.
+        let m = oldLines.count
+        let n = newLines.count
+        var dp = Array(repeating: Array(repeating: 0, count: n + 1), count: m + 1)
+        for i in 1...m {
+            for j in 1...n {
+                if oldLines[i - 1] == newLines[j - 1] {
+                    dp[i][j] = dp[i - 1][j - 1] + 1
+                } else {
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+                }
+            }
+        }
+
+        // Backtrack.
+        var result: [SkillDiffLine] = []
+        var i = m, j = n
+        while i > 0 || j > 0 {
+            if i > 0 && j > 0 && oldLines[i - 1] == newLines[j - 1] {
+                result.append(.context(oldLines[i - 1]))
+                i -= 1; j -= 1
+            } else if j > 0 && (i == 0 || dp[i][j - 1] >= dp[i - 1][j]) {
+                result.append(.added(newLines[j - 1]))
+                j -= 1
+            } else {
+                result.append(.removed(oldLines[i - 1]))
+                i -= 1
+            }
+        }
+        return result.reversed()
     }
 
     private func sha256Hex(_ text: String) -> String {

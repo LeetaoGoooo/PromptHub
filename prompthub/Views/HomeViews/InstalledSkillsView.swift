@@ -639,6 +639,8 @@ private struct InstalledSkillDetailPane: View {
     let onRemoveAgent: (AgentWorkflow) -> Void
     let onOpenSourcePage: () -> Void
 
+    @State private var showingUpdateDiff = false
+
     private let iconSymbols = [
         "shippingbox.fill",
         "terminal.fill",
@@ -1161,9 +1163,23 @@ private struct InstalledSkillDetailPane: View {
                         Button("Open Source Page", action: onOpenSourcePage)
                             .buttonStyle(.bordered)
                     }
+
+                    if skill.package.remoteInstallDescriptor != nil {
+                        Button {
+                            showingUpdateDiff = true
+                        } label: {
+                            Label("Check for Update…", systemImage: "arrow.down.circle")
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 }
 
                 Spacer(minLength: 0)
+            }
+        }
+        .sheet(isPresented: $showingUpdateDiff) {
+            SkillUpdateDiffSheet(skill: skill) {
+                showingUpdateDiff = false
             }
         }
     }

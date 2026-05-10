@@ -264,6 +264,45 @@ final class SkillCLIService {
         }
     }
 
+    /// Fetches the remote SKILL.md and computes a line diff against the local installation.
+    func previewUpdate(
+        skillName: String,
+        isGlobal: Bool,
+        projectRootURL: URL? = nil
+    ) async -> SkillUpdatePreview {
+        await cliAccessManager.withAccess {
+            await self.makeCatalog(projectRootURL: projectRootURL).previewUpdate(
+                skillName: skillName,
+                isGlobal: isGlobal
+            )
+        }
+    }
+
+    /// Applies a confirmed update, backing up the previous SKILL.md as `.bak`.
+    func applyUpdate(preview: SkillUpdatePreview, projectRootURL: URL? = nil) async throws {
+        try await cliAccessManager.withAccess {
+            try self.makeCatalog(projectRootURL: projectRootURL).applyUpdate(preview: preview)
+        }
+    }
+
+    /// Restores the `.bak` backup written by `applyUpdate`.
+    @discardableResult
+    func rollbackUpdate(preview: SkillUpdatePreview, projectRootURL: URL? = nil) async throws -> Int {
+        try await cliAccessManager.withAccess {
+            try self.makeCatalog(projectRootURL: projectRootURL).rollbackUpdate(preview: preview)
+        }
+    }
+
+    /// Returns true if a rollback backup file exists for the given skill.
+    func hasRollbackBackup(skillName: String, isGlobal: Bool, projectRootURL: URL? = nil) async -> Bool {
+        await cliAccessManager.withAccess {
+            self.makeCatalog(projectRootURL: projectRootURL).hasRollbackBackup(
+                skillName: skillName,
+                isGlobal: isGlobal
+            )
+        }
+    }
+
     /// Installs a skill from a private GitHub repo (using an optional PAT) or from a
     /// team-shared local directory.
     ///
