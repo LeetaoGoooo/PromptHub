@@ -3,6 +3,9 @@ import SwiftUI
 
 // MARK: - Row Card Style Modifier
 
+/// Glass-tinted selection style that reacts to hover and selection state.
+/// Uses accent colour for selection (with glass-like low-opacity fill) and
+/// a subtle material shift on hover — consistent with macOS Liquid Glass idiom.
 struct SkillLibraryRowCardStyle: ViewModifier {
     let isSelected: Bool
     let isHovered: Bool
@@ -10,42 +13,66 @@ struct SkillLibraryRowCardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(borderColor, lineWidth: isSelected ? 1.5 : 1)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(borderColor, lineWidth: isSelected ? 1.0 : 0.5)
             }
-            .shadow(color: .clear, radius: 0, x: 0, y: 0)
-            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(
+                color: isSelected ? Color(nsColor: .controlAccentColor).opacity(0.10) : Color.black.opacity(0.04),
+                radius: isSelected ? 4 : 2,
+                x: 0, y: isSelected ? 2 : 1
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private var backgroundColor: Color {
-        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.12) }
-        if isHovered  { return Color.primary.opacity(0.035) }
-        return Color(NSColor.textBackgroundColor)
+        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.10) }
+        if isHovered  { return Color.primary.opacity(0.04) }
+        return Color(NSColor.textBackgroundColor).opacity(0.7)
     }
 
     private var borderColor: Color {
-        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.32) }
-        if isHovered  { return Color.primary.opacity(0.08) }
-        return Color(NSColor.separatorColor).opacity(0.45)
+        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.35) }
+        if isHovered  { return Color.primary.opacity(0.10) }
+        return Color(NSColor.separatorColor).opacity(0.35)
     }
 }
 
 // MARK: - Metadata Block
 
+/// Aligned key-value metadata grid used in detail and inspector panels.
 struct SkillLibraryMetadataBlock: View {
     let title: String
     let rows: [(String, String)]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title).font(.headline)
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                HStack(alignment: .top, spacing: 12) {
-                    Text(row.0).font(.subheadline.weight(.medium)).foregroundStyle(.secondary).frame(width: 88, alignment: .leading)
-                    Text(row.1).font(.subheadline).textSelection(.enabled)
-                    Spacer()
+        VStack(alignment: .leading, spacing: 10) {
+            if !title.isEmpty {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                    .tracking(0.4)
+            }
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                    HStack(alignment: .top, spacing: 12) {
+                        Text(row.0)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 96, alignment: .leading)
+                        Text(row.1)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                            .textSelection(.enabled)
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 2)
+                    if index < rows.count - 1 {
+                        Divider().padding(.leading, 110)
+                    }
                 }
             }
         }
@@ -54,45 +81,89 @@ struct SkillLibraryMetadataBlock: View {
 
 // MARK: - Empty State
 
+/// Full-panel empty / zero-data state with a glassy icon well and optional actions.
 struct SkillLibraryEmptyState<Actions: View>: View {
     let title: String
     let systemImage: String
     let description: String
     @ViewBuilder let actions: () -> Actions
 
-    init(title: String, systemImage: String, description: String, @ViewBuilder actions: @escaping () -> Actions = { EmptyView() }) {
-        self.title = title; self.systemImage = systemImage; self.description = description; self.actions = actions
+    init(title: String, systemImage: String, description: String,
+         @ViewBuilder actions: @escaping () -> Actions = { EmptyView() }) {
+        self.title = title
+        self.systemImage = systemImage
+        self.description = description
+        self.actions = actions
     }
 
     var body: some View {
-        ContentUnavailableView {
-            Label(title, systemImage: systemImage)
-        } description: {
-            Text(description)
-        } actions: {
+        VStack(spacing: 20) {
+            // Icon well — glassy circle
+            ZStack {
+                Circle()
+                    .fill(.regularMaterial)
+                    .frame(width: 68, height: 68)
+                    .overlay {
+                        Circle()
+                            .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+                    }
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                Image(systemName: systemImage)
+                    .font(.system(size: 26, weight: .light))
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(spacing: 6) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 360)
+            }
+
             actions()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity).padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(40)
     }
 }
 
 // MARK: - Inspector Card
 
+/// Glass-surfaced card for inspector / detail sections.
+/// Rounded rect with material background and a subtle stroke border.
 struct SkillLibraryInspectorCard<Content: View>: View {
     let title: String?
     @ViewBuilder let content: () -> Content
 
     init(title: String? = nil, @ViewBuilder content: @escaping () -> Content) {
-        self.title = title; self.content = content
+        self.title = title
+        self.content = content
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if let title, !title.isEmpty { Text(title).font(.headline) }
+        VStack(alignment: .leading, spacing: 14) {
+            if let title, !title.isEmpty {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                    .tracking(0.4)
+            }
             content()
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(28)
-        .background(Color(NSColor.controlBackgroundColor)).clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color(NSColor.separatorColor), lineWidth: 1) }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+        }
+        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
     }
 }
+
