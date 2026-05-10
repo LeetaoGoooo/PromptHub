@@ -32,7 +32,7 @@ public final class AssetStore: Sendable {
     public func findPrompt(named query: String) -> PromptAsset? {
         let q = query.lowercased()
         return listPrompts().first {
-            $0.name.lowercased() == q || $0.slug == q
+            $0.name.lowercased() == q || $0.slug.lowercased() == q
         }
     }
 
@@ -41,7 +41,7 @@ public final class AssetStore: Sendable {
         let q = query.lowercased()
         return listPrompts().filter {
             $0.name.lowercased().contains(q) ||
-            $0.slug.contains(q) ||
+            $0.slug.lowercased().contains(q) ||
             ($0.description?.lowercased().contains(q) ?? false) ||
             $0.body.lowercased().contains(q)
         }
@@ -60,7 +60,7 @@ public final class AssetStore: Sendable {
     public func findSkill(named query: String) -> SkillAsset? {
         let q = query.lowercased()
         return listSkills().first {
-            $0.name.lowercased() == q || $0.slug == q
+            $0.name.lowercased() == q || $0.slug.lowercased() == q
         }
     }
 
@@ -69,7 +69,7 @@ public final class AssetStore: Sendable {
         let q = query.lowercased()
         return listSkills().filter {
             $0.name.lowercased().contains(q) ||
-            $0.slug.contains(q) ||
+            $0.slug.lowercased().contains(q) ||
             ($0.description?.lowercased().contains(q) ?? false) ||
             $0.body.lowercased().contains(q)
         }
@@ -80,10 +80,16 @@ public final class AssetStore: Sendable {
     private func markdownFiles(in directory: URL) -> [URL] {
         guard let contents = try? FileManager.default.contentsOfDirectory(
             at: directory,
-            includingPropertiesForKeys: [.isRegularFileKey],
+            includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey],
             options: [.skipsHiddenFiles]
         ) else { return [] }
-        return contents.filter { $0.pathExtension == "md" }
+        return contents.filter { url in
+            guard url.pathExtension == "md" else { return false }
+            // Reject symlinks to prevent directory traversal via ~/.prompthub/
+            let isSymlink = (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) ?? false
+            let isRegular = (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) ?? false
+            return isRegular && !isSymlink
+        }
     }
 
     private func parsePrompt(at url: URL) -> PromptAsset? {

@@ -64,13 +64,29 @@ struct GetPrompt: ParsableCommand {
             throw ExitCode.failure
         }
         if withFrontMatter {
-            print("name: \(prompt.name)")
-            if let desc = prompt.description { print("description: \(desc)") }
-            if let link = prompt.link        { print("link: \(link)") }
+            print("---")
+            print("id: \(prompt.id.uuidString)")
+            print("name: \(yamlScalar(prompt.name))")
+            print("slug: \(prompt.slug)")
+            if let desc = prompt.description { print("description: \(yamlScalar(desc))") }
+            if let link = prompt.link        { print("link: \(yamlScalar(link))") }
+            if let at = prompt.exportedAt    { print("exported_at: \(at)") }
             print("---")
             print()
         }
         print(prompt.body)
+    }
+
+    /// Quotes a YAML scalar value if it contains characters that would break bare scalars.
+    private func yamlScalar(_ value: String) -> String {
+        let needsQuoting = value.contains(":") || value.contains("#") || value.contains("\n")
+            || value.contains("\"") || value.hasPrefix(" ") || value.hasSuffix(" ")
+            || value.hasPrefix("---")
+        guard needsQuoting else { return value }
+        let escaped = value.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+        return "\"\(escaped)\""
     }
 }
 

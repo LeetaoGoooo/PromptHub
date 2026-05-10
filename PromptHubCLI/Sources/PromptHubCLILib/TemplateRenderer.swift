@@ -6,12 +6,39 @@ import Foundation
 public enum TemplateRenderer {
 
     /// Replaces `{{variable}}` placeholders in `template` with values from `variables`.
+    /// Uses a single-pass regex scan to avoid substituting inside replacement values.
     /// Unmatched placeholders are left unchanged.
     public static func render(_ template: String, variables: [String: String]) -> String {
-        var result = template
-        for (key, value) in variables {
-            result = result.replacingOccurrences(of: "{{\(key)}}", with: value)
+        guard !variables.isEmpty else { return template }
+        guard let regex = try? NSRegularExpression(pattern: "\\{\\{([^}]+)\\}\\}") else {
+            return template
         }
+
+        var result = ""
+        var lastEnd = template.startIndex
+        let nsTemplate = template as NSString
+        let fullRange = NSRange(template.startIndex..., in: template)
+
+        regex.enumerateMatches(in: template, range: fullRange) { match, _, _ in
+            guard let match else { return }
+            // Append literal text before this match
+            if let matchRange = Range(match.range, in: template) {
+                result += template[lastEnd ..< matchRange.lowerBound]
+                lastEnd = matchRange.upperBound
+            }
+            // Resolve the placeholder name
+            if let captureRange = Range(match.range(at: 1), in: template) {
+                let key = String(template[captureRange]).trimmingCharacters(in: .whitespaces)
+                if let value = variables[key] {
+                    result += value
+                } else {
+                    // Leave unresolved placeholder as-is
+                    result += nsTemplate.substring(with: match.range)
+                }
+            }
+        }
+        // Append remaining text after last match
+        result += template[lastEnd...]
         return result
     }
 

@@ -42,21 +42,27 @@ struct AgentDoctor: ParsableCommand {
         ))
 
         // 2. prompts/ directory
-        let promptsPath = store.baseURL.appendingPathComponent("prompts").path
-        let promptsDirOk = FileManager.default.fileExists(atPath: promptsPath)
+        let promptsURL = store.baseURL.appendingPathComponent("prompts")
+        var isPromptsDir: ObjCBool = false
+        let promptsDirOk = FileManager.default.fileExists(atPath: promptsURL.path, isDirectory: &isPromptsDir)
+            && isPromptsDir.boolValue
+            && FileManager.default.isReadableFile(atPath: promptsURL.path)
         checks.append((
             name: "prompts/ directory",
             ok: promptsDirOk,
-            detail: promptsDirOk ? promptsPath : "Missing. No prompts exported yet."
+            detail: promptsDirOk ? promptsURL.path : "Missing or not readable. No prompts exported yet."
         ))
 
         // 3. skills/ directory
-        let skillsPath = store.baseURL.appendingPathComponent("skills").path
-        let skillsDirOk = FileManager.default.fileExists(atPath: skillsPath)
+        let skillsURL = store.baseURL.appendingPathComponent("skills")
+        var isSkillsDir: ObjCBool = false
+        let skillsDirOk = FileManager.default.fileExists(atPath: skillsURL.path, isDirectory: &isSkillsDir)
+            && isSkillsDir.boolValue
+            && FileManager.default.isReadableFile(atPath: skillsURL.path)
         checks.append((
             name: "skills/ directory",
             ok: skillsDirOk,
-            detail: skillsDirOk ? skillsPath : "Missing. No skills exported yet."
+            detail: skillsDirOk ? skillsURL.path : "Missing or not readable. No skills exported yet."
         ))
 
         // 4. At least one prompt
@@ -75,13 +81,13 @@ struct AgentDoctor: ParsableCommand {
             detail: skills.isEmpty ? "0 skills found." : "\(skills.count) skill(s)"
         ))
 
-        // 6. CLI binary location
+        // 6. CLI binary location — resolve against actual PATH
         let cliBinaryPath = findCLIBinary()
         let cliOk = cliBinaryPath != nil
         checks.append((
-            name: "prompthub binary on PATH",
+            name: "prompthub binary accessible",
             ok: cliOk,
-            detail: cliBinaryPath ?? "Not found. Install via: brew install LeetaoGoooo/tap/prompthub"
+            detail: cliBinaryPath ?? "Not found in PATH or common install locations. Install via: brew install LeetaoGoooo/tap/prompthub"
         ))
 
         let allPassed = checks.allSatisfy { $0.ok }
@@ -112,13 +118,21 @@ struct AgentDoctor: ParsableCommand {
     }
 
     private func findCLIBinary() -> String? {
-        let candidates = [
+        // First, try resolving via PATH (same as shell `which`)
+        let pathEnv = ProcessInfo.processInfo.environment["PATH"] ?? ""
+        let dirs = pathEnv.components(separatedBy: ":")
+        for dir in dirs {
+            let candidate = (dir as NSString).appendingPathComponent("prompthub")
+            if FileManager.default.isExecutableFile(atPath: candidate) {
+                return candidate
+            }
+        }
+        // Fall back to common install locations not always on PATH in GUI contexts
+        let fallbacks = [
             "/opt/homebrew/bin/prompthub",
             "/usr/local/bin/prompthub",
             "\(NSHomeDirectory())/.local/bin/prompthub",
         ]
-        return candidates.first {
-            FileManager.default.isExecutableFile(atPath: $0)
-        }
+        return fallbacks.first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 }

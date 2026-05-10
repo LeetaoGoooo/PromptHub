@@ -30,14 +30,15 @@ struct ListSkills: ParsableCommand {
             return
         }
         if json {
-            let items = skills.map {
-                [
+            let items: [[String: Any]] = skills.map {
+                var obj: [String: Any] = [
                     "name": $0.name,
                     "slug": $0.slug,
-                    "description": $0.description ?? "",
-                    "category": $0.category ?? "",
-                    "tags": $0.tags.joined(separator: ","),
+                    "tags": $0.tags,
                 ]
+                if let desc = $0.description { obj["description"] = desc }
+                if let cat = $0.category     { obj["category"] = cat }
+                return obj
             }
             if let data = try? JSONSerialization.data(withJSONObject: items, options: [.prettyPrinted]),
                let str = String(data: data, encoding: .utf8) { print(str) }

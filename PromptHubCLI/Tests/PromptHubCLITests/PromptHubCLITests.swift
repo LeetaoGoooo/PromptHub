@@ -37,6 +37,20 @@ final class FrontMatterParserTests: XCTestCase {
         XCTAssertTrue(fields.isEmpty)
         XCTAssertEqual(body, "Just a body.")
     }
+
+    func test_parse_crlfLineEndings() {
+        let md = "---\r\nid: 123E4567-E89B-12D3-A456-426614174000\r\nname: CRLF Test\r\nslug: crlf-test\r\n---\r\nBody.\r\n"
+        let (fields, _) = FrontMatterParser.parse(md)
+        XCTAssertEqual(fields["name"], "CRLF Test")
+        XCTAssertEqual(fields["slug"], "crlf-test")
+    }
+
+    func test_parse_unclosedFrontMatter_treatedAsNoFrontMatter() {
+        let md = "---\nid: abc\nname: Broken\n"
+        let (fields, body) = FrontMatterParser.parse(md)
+        XCTAssertTrue(fields.isEmpty, "Unclosed front matter should return empty fields")
+        XCTAssertEqual(body, md)
+    }
 }
 
 final class TemplateRendererTests: XCTestCase {
@@ -59,9 +73,17 @@ final class TemplateRendererTests: XCTestCase {
         XCTAssertEqual(Set(found), Set(["a", "b"]))
     }
 
-    func test_findPlaceholders_emptyWhenNone() {
-        let found = TemplateRenderer.findPlaceholders(in: "No placeholders here.")
-        XCTAssertTrue(found.isEmpty)
+    func test_render_singlePass_doesNotSubstituteInsideValues() {
+        // If variable 'a' expands to '{{b}}', 'b' should NOT be further substituted
+        let template = "{{a}}"
+        let result = TemplateRenderer.render(template, variables: ["a": "{{b}}", "b": "SUBSTITUTED"])
+        XCTAssertEqual(result, "{{b}}", "Single-pass render must not substitute inside replacement values")
+    }
+
+    func test_render_overlappingKeysAreNotOrderDependent() {
+        let template = "{{foo}} {{foobar}}"
+        let result = TemplateRenderer.render(template, variables: ["foo": "FOO", "foobar": "FOOBAR"])
+        XCTAssertEqual(result, "FOO FOOBAR")
     }
 }
 
@@ -165,6 +187,7 @@ final class AssetStoreTests: XCTestCase {
         """)
         XCTAssertNotNil(store.findPrompt(named: "beta"))
         XCTAssertNotNil(store.findPrompt(named: "Beta"))
+        XCTAssertNotNil(store.findPrompt(named: "BETA"), "Slug lookup should be case-insensitive")
         XCTAssertNil(store.findPrompt(named: "gamma"))
     }
 

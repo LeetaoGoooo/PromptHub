@@ -22,9 +22,11 @@ public enum SkillAuditor {
             warnings.append("Body is very short (\(wordCount) words). Consider expanding the instructions.")
         }
 
-        // 2. Required sections (look for markdown headings)
-        let requiredHeadings = ["## ", "# "]
-        let hasHeadings = requiredHeadings.contains { body.contains($0) }
+        // 2. Required sections — headings must be at line starts
+        let lines = body.components(separatedBy: "\n")
+        let hasHeadings = lines.contains { line in
+            line.hasPrefix("# ") || line.hasPrefix("## ") || line.hasPrefix("### ")
+        }
         if !hasHeadings {
             warnings.append("No markdown headings found. Structure the skill with ## sections for clarity.")
         }
