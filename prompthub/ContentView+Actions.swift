@@ -34,7 +34,6 @@ extension ContentView {
         modelContext.insert(initialHistory)
         do {
             try modelContext.save()
-            PromptHubBridge.shared.exportPrompt(newPrompt)
             promptSelection = .prompt(newPrompt)
         } catch {
             showToastMessage("Failed to create new prompt", .error(.red))
@@ -44,7 +43,6 @@ extension ContentView {
     func createNewSkillDraft() {
         do {
             let draft = try skillDraftService.createDraft(in: modelContext)
-            PromptHubBridge.shared.exportSkill(draft)
             promptSelection = .skill(draft)
         } catch {
             showToastMessage("Failed to create new skill draft", .error(.red))

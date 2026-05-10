@@ -195,7 +195,6 @@ struct PromptSideBar: View {
 
     private func deletePrompt(_ prompt: Prompt) {
         // Delete the prompt - SwiftData will automatically cascade delete related history
-        PromptHubBridge.shared.removePrompt(prompt)
         modelContext.delete(prompt)
         
         do {

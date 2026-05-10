@@ -80,15 +80,6 @@ private struct GeneralTab: View {
             Label("Startup", systemImage: "power")
                 .font(.headline)
         }
-
-        // PromptHub CLI
-        GroupBox {
-            CLIInstallGuideView(isDismissed: .constant(false), showDismissButton: false)
-                .padding(.vertical, 4)
-        } label: {
-            Label("CLI Integration", systemImage: "terminal")
-                .font(.headline)
-        }
         
         // About
         GroupBox {

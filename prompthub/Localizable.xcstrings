@@ -432,6 +432,9 @@
     "Category" : {
 
     },
+    "Check again" : {
+
+    },
     "Check for Update…" : {
 
     },
@@ -480,6 +483,9 @@
 
     },
     "CLI File Access" : {
+
+    },
+    "CLI Integration" : {
 
     },
     "CLI Targets" : {
@@ -739,6 +745,9 @@
     "Copy the exported SKILL.md to the clipboard" : {
 
     },
+    "Copy to clipboard" : {
+
+    },
     "Copyright @ 2025 leetao " : {
       "extractionState" : "manual",
       "localizations" : {
@@ -922,6 +931,9 @@
           }
         }
       }
+    },
+    "Don't show again for this version" : {
+
     },
     "Done" : {
       "localizations" : {
@@ -1312,6 +1324,9 @@
     "GitHub Personal Access Token" : {
 
     },
+    "Give agents, scripts, and CI pipelines direct access to your prompts and skills — without opening the app." : {
+
+    },
     "Global" : {
 
     },
@@ -1427,6 +1442,9 @@
 
     },
     "Install Local Skill" : {
+
+    },
+    "Install PromptHub CLI" : {
 
     },
     "Install Selected" : {
@@ -2173,6 +2191,9 @@
           }
         }
       }
+    },
+    "PromptHub CLI is installed" : {
+
     },
     "Prompts created by you" : {
 

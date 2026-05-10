@@ -18,7 +18,6 @@ struct ContentView: View {
     @State var toastType: AlertToast.AlertType = .regular
     @State private var showingPromptRender = false
     @State var whatsNew: WhatsNew? = nil
-    @State private var hasSyncedBridge = false
     @EnvironmentObject var appSettings: AppSettings
 
     var currentAppVersion: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown" }
@@ -86,24 +85,13 @@ struct ContentView: View {
                 return .ignored
             }
             .toast(isPresenting: $showToast) { AlertToast(type: toastType, title: toastMessage) }
-            .onAppear {
-                loadGalleryPrompts()
-                checkForWhatsNew()
-                if !hasSyncedBridge {
-                    hasSyncedBridge = true
-                    PromptHubBridge.shared.syncAll(prompts: prompts, skills: skillDrafts)
-                }
-            }
+            .onAppear { loadGalleryPrompts(); checkForWhatsNew() }
             .onReceive(NotificationCenter.default.publisher(for: .searchNavigationRequested)) { notification in
                 guard let target = SearchNavigationRequest.from(notification) else { return }
                 handleSearchNavigation(target)
             }
             .sheet(whatsNew: self.$whatsNew, onDismiss: { appSettings.lastShownWhatsNewVersion = self.currentAppVersion })
             .sheet(isPresented: $showingPromptRender) { PromptRenderSheet { showingPromptRender = false } }
-            .safeAreaInset(edge: .bottom, alignment: .leading) {
-                CLIStartupBanner()
-                    .frame(maxWidth: 420)
-            }
         }
     }
 
