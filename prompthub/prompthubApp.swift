@@ -34,7 +34,7 @@ final class AppState: ObservableObject {
 @main
 struct prompthubApp: App {
     var sharedModelContainer: ModelContainer = {
-            
+
             let publicConfig = ModelConfiguration(
                 "PublicStore",
                 schema: Schema([SharedCreation.self, DataSource.self]),
@@ -43,15 +43,25 @@ struct prompthubApp: App {
 
             let privateConfig = ModelConfiguration(
                 "PrivateStore",
-                schema: Schema([Prompt.self, PromptHistory.self, ExternalSource.self, Skill.self, SkillVersion.self]),
+                schema: Schema([Prompt.self, PromptHistory.self, ExternalSource.self]),
                 cloudKitDatabase: .automatic
             )
-            
+
+            // Skills are local-only drafts — never synced to CloudKit.
+            // Putting them in a CloudKit-enabled config would require deploying
+            // CD_Skill / CD_SkillVersion to the production schema first, which
+            // would break sync with "Cannot create new type in production schema".
+            let skillsConfig = ModelConfiguration(
+                "SkillsStore",
+                schema: Schema([Skill.self, SkillVersion.self]),
+                cloudKitDatabase: .none
+            )
+
             do {
                 return try ModelContainer(
                     for: Schema([SharedCreation.self, DataSource.self, Prompt.self, PromptHistory.self, ExternalSource.self, Skill.self, SkillVersion.self]),
                     migrationPlan: PromptHubMigrationPlan.self,
-                    configurations: [publicConfig, privateConfig]
+                    configurations: [publicConfig, privateConfig, skillsConfig]
                 )
             } catch {
                 fatalError("Could not create ModelContainer: \(error)")

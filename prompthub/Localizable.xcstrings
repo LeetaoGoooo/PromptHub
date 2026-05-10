@@ -14,6 +14,9 @@
     "—" : {
 
     },
+    "·" : {
+
+    },
     "(%lld)" : {
 
     },
@@ -479,9 +482,6 @@
     "CLI" : {
 
     },
-    "CLI Access" : {
-
-    },
     "CLI File Access" : {
 
     },
@@ -627,6 +627,9 @@
           }
         }
       }
+    },
+    "Connect a **private GitHub repo** (e.g. `owner/repo` → `SKILL.md` files inside) to install your team's internal skills." : {
+
     },
     "Copied to clipboard" : {
       "extractionState" : "manual",
@@ -1312,6 +1315,9 @@
     "GitHub Personal Access Token" : {
 
     },
+    "GitHub Private repos require a **Personal Access Token** with `repo` (read) scope. Tokens are stored in the macOS Keychain." : {
+
+    },
     "Global" : {
 
     },
@@ -1371,6 +1377,9 @@
         }
       }
     },
+    "How Skills Work" : {
+
+    },
     "https://api.openai.com/v1" : {
 
     },
@@ -1398,7 +1407,7 @@
         }
       }
     },
-    "Import" : {
+    "Import a local or private skill" : {
 
     },
     "Import Status" : {
@@ -1417,7 +1426,13 @@
     "Input Schema" : {
 
     },
+    "Install a skill from a private GitHub repo or local directory (Settings → Sources to configure)" : {
+
+    },
     "Install Current Draft" : {
+
+    },
+    "Install from a private source…" : {
 
     },
     "Install from Private Source" : {
@@ -1872,6 +1887,9 @@
         }
       }
     },
+    "No Skill Drafts Yet" : {
+
+    },
     "No SKILL.md folders found at the configured path." : {
 
     },
@@ -1943,6 +1961,9 @@
         }
       }
     },
+    "Once added, install skills from private sources via **Skill Store → ↓ → Install from Private Source…**" : {
+
+    },
     "Open Draft" : {
 
     },
@@ -1962,6 +1983,9 @@
           }
         }
       }
+    },
+    "Or point to a **local directory** on disk that contains `SKILL.md` files — great for monorepos." : {
+
     },
     "Origin" : {
       "localizations" : {
@@ -2282,7 +2306,7 @@
         }
       }
     },
-    "Refresh" : {
+    "Refresh catalog" : {
 
     },
     "Refresh installed skills" : {
@@ -2642,6 +2666,9 @@
 
     },
     "Skills" : {
+
+    },
+    "Skills are reusable, versioned instruction sets that extend AI agents. Create one from scratch or promote an existing prompt." : {
 
     },
     "Skills in %@" : {
@@ -3005,6 +3032,9 @@
           }
         }
       }
+    },
+    "What are Private Sources?" : {
+
     }
   },
   "version" : "1.0"
