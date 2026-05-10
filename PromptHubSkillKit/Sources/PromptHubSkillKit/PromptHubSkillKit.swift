@@ -648,6 +648,16 @@ public actor SkillCatalogService {
                 )
             }
             let base = isGlobal ? roots.global : roots.project
+            // If the agent's root directory itself doesn't exist, we can't distinguish
+            // "never configured" from "installed but file missing". Treat as unknownPath.
+            guard fileManager.fileExists(atPath: base.path) else {
+                return SkillAgentVisibility(
+                    agent: workflow,
+                    status: .unknownPath,
+                    checkedPath: base.path,
+                    isGlobal: isGlobal
+                )
+            }
             let skillDir = base.appendingPathComponent(short, isDirectory: true)
             let skillFile = skillDir.appendingPathComponent("SKILL.md")
             let status: AgentVisibilityStatus = fileManager.fileExists(atPath: skillFile.path) ? .visible : .missing

@@ -145,8 +145,20 @@ struct InstalledSkillsView: View {
         .onChange(of: searchText) { _, _ in
             syncSelection()
         }
-        .onChange(of: selectedSkillID) { _, _ in
-            loadVisibilityForSelectedSkill()
+        .task(id: selectedSkillID) {
+            // task(id:) is automatically cancelled and restarted when selectedSkillID changes,
+            // which prevents stale results from an older selection overwriting the current one.
+            guard let skill = selectedSkill else {
+                agentVisibility = []
+                return
+            }
+            isLoadingVisibility = true
+            agentVisibility = []
+            let result = await workspaceService.auditAgentVisibility(for: skill)
+            // Guard against cancellation delivering results after selection changed.
+            guard !Task.isCancelled else { return }
+            agentVisibility = result
+            isLoadingVisibility = false
         }
         .alert("Remove Skill", isPresented: Binding(
             get: { pendingRemoval != nil },
@@ -338,6 +350,7 @@ struct InstalledSkillsView: View {
         guard cliAccessManager.anyAccessGranted else { return }
         isLoading = true
         agentVisibility = []
+        isLoadingVisibility = true
         errorMessage = nil
         Task {
             do {
@@ -346,9 +359,18 @@ struct InstalledSkillsView: View {
                 )
                 syncSelection()
                 isLoading = false
+                // Reload visibility after the list refreshes. This covers the case where the
+                // same skill stays selected (selectedSkillID unchanged) and task(id:) would
+                // not fire automatically.
+                if let skill = selectedSkill {
+                    let result = await workspaceService.auditAgentVisibility(for: skill)
+                    agentVisibility = result
+                }
+                isLoadingVisibility = false
             } catch {
                 errorMessage = workspaceService.userFacingErrorMessage(for: error)
                 isLoading = false
+                isLoadingVisibility = false
             }
         }
     }
@@ -433,20 +455,6 @@ struct InstalledSkillsView: View {
             } catch {
                 errorMessage = draftServiceErrorMessage(for: error, skill: installedSkill)
             }
-        }
-    }
-
-    private func loadVisibilityForSelectedSkill() {
-        guard let skill = selectedSkill else {
-            agentVisibility = []
-            return
-        }
-        isLoadingVisibility = true
-        agentVisibility = []
-        Task {
-            let result = await workspaceService.auditAgentVisibility(for: skill)
-            agentVisibility = result
-            isLoadingVisibility = false
         }
     }
 
