@@ -28,6 +28,7 @@ struct InstalledSkillsView: View {
     @State private var isLoadingVisibility = false
     @State private var sourceIntegrity: SkillSourceIntegrity?
     @State private var isLoadingIntegrity = false
+    @State private var fetchTask: Task<Void, Never>?
     @ObservedObject private var cliAccessManager = CLIDirectoryAccessManager.shared
     @State private var showingCLIAccessManager = false
 
@@ -365,17 +366,20 @@ struct InstalledSkillsView: View {
 
     private func fetchInstalledSkills() {
         guard cliAccessManager.anyAccessGranted else { return }
+        fetchTask?.cancel()
         isLoading = true
         agentVisibility = []
         sourceIntegrity = nil
         isLoadingVisibility = true
         isLoadingIntegrity = true
         errorMessage = nil
-        Task {
+        fetchTask = Task {
             do {
-                workspaceSnapshot = try await workspaceService.loadInstalledWorkspace(
+                let snapshot = try await workspaceService.loadInstalledWorkspace(
                     authoredDraftCount: skillDrafts.count
                 )
+                guard !Task.isCancelled else { return }
+                workspaceSnapshot = snapshot
                 syncSelection()
                 isLoading = false
                 // Reload security audits after the list refreshes. This covers the case where the
@@ -384,15 +388,20 @@ struct InstalledSkillsView: View {
                 if let skill = selectedSkill {
                     async let visTask = workspaceService.auditAgentVisibility(for: skill)
                     async let intTask = workspaceService.auditSourceIntegrity(for: skill)
-                    agentVisibility = await visTask
+                    let vis = await visTask
+                    guard !Task.isCancelled else { return }
+                    agentVisibility = vis
                     isLoadingVisibility = false
-                    sourceIntegrity = await intTask
+                    let int = await intTask
+                    guard !Task.isCancelled else { return }
+                    sourceIntegrity = int
                     isLoadingIntegrity = false
                 } else {
                     isLoadingVisibility = false
                     isLoadingIntegrity = false
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 errorMessage = workspaceService.userFacingErrorMessage(for: error)
                 isLoading = false
                 isLoadingVisibility = false
@@ -705,11 +714,11 @@ private struct InstalledSkillDetailPane: View {
                     integrityStatusRow(integrity)
                     Divider()
                     if let hash = integrity.localHash {
-                        integrityInfoRow(label: "Local SHA-256", value: String(hash.prefix(16)) + "…")
+                        integrityInfoRow(label: "Local SHA-256", value: String(hash.prefix(16)) + "…", fullValue: hash)
                     }
                     if let remoteHash = integrity.remoteHash {
                         Divider()
-                        integrityInfoRow(label: "Remote SHA-256", value: String(remoteHash.prefix(16)) + "…")
+                        integrityInfoRow(label: "Remote SHA-256", value: String(remoteHash.prefix(16)) + "…", fullValue: remoteHash)
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -755,7 +764,7 @@ private struct InstalledSkillDetailPane: View {
     }
 
     @ViewBuilder
-    private func integrityInfoRow(label: String, value: String) -> some View {
+    private func integrityInfoRow(label: String, value: String, fullValue: String? = nil) -> some View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.caption)
@@ -764,6 +773,7 @@ private struct InstalledSkillDetailPane: View {
             Text(value)
                 .font(.caption.monospaced())
                 .foregroundStyle(.primary)
+                .help(fullValue ?? value)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)

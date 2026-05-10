@@ -819,7 +819,11 @@ public actor SkillCatalogService {
     }
 
     private func sha256Hex(_ text: String) -> String {
-        let data = Data(text.utf8)
+        // Normalize line endings to LF before hashing so CRLF vs LF differences
+        // (common between Windows-authored remotes and local macOS copies) do not
+        // produce false "modified" results.
+        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
+        let data = Data(normalized.utf8)
         let digest = SHA256.hash(data: data)
         return digest.map { String(format: "%02x", $0) }.joined()
     }
