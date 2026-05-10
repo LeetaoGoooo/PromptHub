@@ -24,32 +24,53 @@ struct SkillLibraryHeaderCard<Accessory: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.title3.weight(.semibold))
-                if !subtitle.isEmpty {
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
-                }
-            }
-            Spacer(minLength: 8)
-            if !metrics.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(metrics) { metric in
-                        HStack(spacing: 4) {
-                            Image(systemName: metric.systemImage).font(.caption2).foregroundStyle(.secondary)
-                            Text(metric.value).font(.caption.weight(.semibold)).foregroundStyle(.primary)
-                            Text(metric.title).font(.caption).foregroundStyle(.secondary)
-                        }
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(Color(NSColor.controlBackgroundColor)).clipShape(Capsule())
-                        .overlay(Capsule().stroke(Color(NSColor.separatorColor), lineWidth: 0.5))
+        VStack(spacing: 0) {
+            // Row 1: title + toolbar accessory
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title).font(.title3.weight(.semibold))
+                    if !subtitle.isEmpty {
+                        Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.tail)
                     }
                 }
+                Spacer(minLength: 16)
+                accessory()
             }
-            accessory()
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, metrics.isEmpty ? 10 : 4)
+
+            // Row 2: metrics as compact inline text
+            if !metrics.isEmpty {
+                HStack(spacing: 0) {
+                    ForEach(Array(metrics.enumerated()), id: \.element.id) { index, metric in
+                        HStack(spacing: 4) {
+                            Image(systemName: metric.systemImage)
+                                .font(.system(size: 10))
+                                .foregroundStyle(.tertiary)
+                            Text(metric.value)
+                                .font(.caption.weight(.semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                            Text(metric.title)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        if index < metrics.count - 1 {
+                            Text("·")
+                                .font(.caption)
+                                .foregroundStyle(.quaternary)
+                                .padding(.horizontal, 6)
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20).padding(.vertical, 10)
         .background(Color(NSColor.windowBackgroundColor))
         Divider()
     }

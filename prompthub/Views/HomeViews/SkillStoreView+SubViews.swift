@@ -8,12 +8,8 @@ extension SkillStoreView {
 
     @ViewBuilder
     var accessoryBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             if isInstallingLocalSkill { ProgressView().controlSize(.small) }
-
-            Button { fetchSkills(query: searchText) }
-            label: { Label("Refresh", systemImage: "arrow.clockwise") }
-            .buttonStyle(.bordered)
 
             Menu {
                 Button { chooseProjectRoot() }
@@ -28,6 +24,10 @@ extension SkillStoreView {
             }
             .menuStyle(.borderedButton)
 
+            Button { fetchSkills(query: searchText) } label: { Image(systemName: "arrow.clockwise") }
+                .buttonStyle(.bordered)
+                .help("Refresh catalog")
+
             Menu {
                 Section("Install Local Skill") {
                     Button { installLocalSkill(isGlobal: false) }
@@ -40,13 +40,15 @@ extension SkillStoreView {
                     Button { showingPrivateSourceInstall = true }
                     label: { Label("Install from Private Source…", systemImage: "lock.shield") }
                 }
-            } label: { Label("Import", systemImage: "plus.circle") }
+            } label: { Image(systemName: "square.and.arrow.down") }
             .menuStyle(.borderedButton)
+            .help("Import a local or private skill")
 
-            Button(action: { showingCLIAccessManager = true }) {
-                Label("CLI Access", systemImage: "lock.shield")
+            Divider().frame(height: 16)
+
+            CLIStatusIndicator(manager: cliAccessManager) {
+                showingCLIAccessManager = true
             }
-            .buttonStyle(.bordered)
         }
     }
 
@@ -121,6 +123,24 @@ extension SkillStoreView {
             }
             .listStyle(.inset(alternatesRowBackgrounds: false))
             .scrollContentBackground(.hidden)
+
+            // Private sources tip
+            Button {
+                showingPrivateSourceInstall = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.shield.fill").foregroundStyle(Color.purple).font(.caption)
+                    Text("Install from a private source…")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 9)).foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 9)
+            }
+            .buttonStyle(.plain)
+            .background(Color(NSColor.controlBackgroundColor))
+            .overlay(Divider(), alignment: .top)
+            .help("Install a skill from a private GitHub repo or local directory (Settings → Sources to configure)")
         }
         .background(Color(NSColor.controlBackgroundColor))
     }

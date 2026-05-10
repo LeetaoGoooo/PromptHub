@@ -34,12 +34,73 @@ extension MySkillsView {
         if filteredSkills.isEmpty && !searchText.isEmpty {
             SkillLibraryEmptyState(title: "No Matching Skills", systemImage: "magnifyingglass", description: "Try a different name, tag, or identifier.")
         } else if filteredSkills.isEmpty {
-            SkillLibraryEmptyState(title: "No Skill Drafts Yet", systemImage: "wand.and.stars.inverse", description: "Create your first skill draft here, or promote an existing prompt into a skill.") {
-                Button("Create Skill Draft", action: createSkillDraft)
-            }
+            mySkillsOnboarding
         } else {
             skillBrowser
         }
+    }
+
+    var mySkillsOnboarding: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Header
+                VStack(spacing: 8) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 40))
+                        .foregroundStyle(Color.accentColor.opacity(0.8))
+                    Text("No Skill Drafts Yet").font(.title3.weight(.semibold))
+                    Text("Skills are reusable, versioned instruction sets that extend AI agents. Create one from scratch or promote an existing prompt.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center).frame(maxWidth: 400)
+                    Button("Create Skill Draft", action: createSkillDraft)
+                        .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity)
+
+                // How it works
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "lightbulb.fill").foregroundStyle(.yellow).font(.caption)
+                        Text("How Skills Work").font(.subheadline.weight(.semibold))
+                    }
+                    .padding(.bottom, 10)
+
+                    ForEach(Array(skillWorkflowSteps.enumerated()), id: \.offset) { index, step in
+                        HStack(alignment: .top, spacing: 12) {
+                            ZStack {
+                                Circle().fill(Color.accentColor.opacity(0.12)).frame(width: 24, height: 24)
+                                Text("\(index + 1)").font(.caption.weight(.bold)).foregroundStyle(Color.accentColor)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(step.title).font(.callout.weight(.medium))
+                                Text(step.detail).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 6)
+                        if index < skillWorkflowSteps.count - 1 {
+                            Divider().padding(.leading, 36)
+                        }
+                    }
+                }
+                .padding(14)
+                .background(Color(NSColor.controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(NSColor.separatorColor).opacity(0.5), lineWidth: 0.5))
+                .frame(maxWidth: 460)
+            }
+            .padding(32)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var skillWorkflowSteps: [(title: String, detail: String)] {
+        [
+            ("Write", "Compose a SKILL.md with a clear description, input/output schema, and instructions for the agent."),
+            ("Version", "Snapshot versions as you refine — roll back anytime if a change breaks your workflow."),
+            ("Install", "Push the skill into a specific agent (Claude Code, Cursor, Codex…) at project or global scope."),
+            ("Audit", "Use Installed Skills → Audit to verify the skill is visible to the right agents and hasn't been modified.")
+        ]
     }
 
     var skillBrowser: some View {

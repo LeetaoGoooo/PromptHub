@@ -14,9 +14,6 @@
     "—" : {
 
     },
-    "· Build %@" : {
-
-    },
     "(%lld)" : {
 
     },
@@ -373,7 +370,7 @@
         }
       }
     },
-    "Audit All…" : {
+    "Audit all installed skills" : {
 
     },
     "Auditing %@…" : {
@@ -407,6 +404,9 @@
     "Browse…" : {
 
     },
+    "Build %@" : {
+
+    },
     "Can't open: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -430,9 +430,6 @@
       }
     },
     "Category" : {
-
-    },
-    "Check again" : {
 
     },
     "Check for Update…" : {
@@ -479,13 +476,13 @@
     "Clear Project" : {
 
     },
+    "CLI" : {
+
+    },
     "CLI Access" : {
 
     },
     "CLI File Access" : {
-
-    },
-    "CLI Integration" : {
 
     },
     "CLI Targets" : {
@@ -745,9 +742,6 @@
     "Copy the exported SKILL.md to the clipboard" : {
 
     },
-    "Copy to clipboard" : {
-
-    },
     "Copyright @ 2025 leetao " : {
       "extractionState" : "manual",
       "localizations" : {
@@ -932,9 +926,6 @@
         }
       }
     },
-    "Don't show again for this version" : {
-
-    },
     "Done" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1002,9 +993,6 @@
       }
     },
     "Edit System Prompt" : {
-
-    },
-    "Edit Template" : {
 
     },
     "Edit…" : {
@@ -1324,9 +1312,6 @@
     "GitHub Personal Access Token" : {
 
     },
-    "Give agents, scripts, and CI pipelines direct access to your prompts and skills — without opening the app." : {
-
-    },
     "Global" : {
 
     },
@@ -1444,9 +1429,6 @@
     "Install Local Skill" : {
 
     },
-    "Install PromptHub CLI" : {
-
-    },
     "Install Selected" : {
 
     },
@@ -1545,10 +1527,10 @@
     "Last installed %@" : {
 
     },
-    "Latest Instructions" : {
+    "Last run %@" : {
 
     },
-    "Launch at login" : {
+    "Latest Instructions" : {
 
     },
     "Launch:" : {
@@ -2192,16 +2174,10 @@
         }
       }
     },
-    "PromptHub CLI is installed" : {
-
-    },
     "Prompts created by you" : {
 
     },
     "Prompts shared by others via CloudKit" : {
-
-    },
-    "Provider" : {
 
     },
     "Public prompt" : {
@@ -2243,9 +2219,6 @@
 
     },
     "Quality analysis not available." : {
-
-    },
-    "Quick Search" : {
 
     },
     "Quick Search:" : {
@@ -2310,6 +2283,9 @@
       }
     },
     "Refresh" : {
+
+    },
+    "Refresh installed skills" : {
 
     },
     "Refresh models" : {
@@ -2472,9 +2448,6 @@
           }
         }
       }
-    },
-    "Search prompts from anywhere in the app" : {
-
     },
     "Search prompts…" : {
 
@@ -2694,9 +2667,6 @@
     "Source Type" : {
 
     },
-    "Startup" : {
-
-    },
     "Streaming..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2706,9 +2676,6 @@
           }
         }
       }
-    },
-    "System Prompt" : {
-
     },
     "Tags (comma separated)" : {
 
