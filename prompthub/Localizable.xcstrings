@@ -11,7 +11,13 @@
         }
       }
     },
+    "—" : {
+
+    },
     "· Build %@" : {
+
+    },
+    "(%lld)" : {
 
     },
     "(Build %@)" : {
@@ -24,6 +30,9 @@
           }
         }
       }
+    },
+    "/Volumes/teamshare/skills" : {
+
     },
     "%@:" : {
       "extractionState" : "stale",
@@ -46,6 +55,19 @@
         }
       }
     },
+    "%lld added" : {
+
+    },
+    "%lld of %lld checks passed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld checks passed"
+          }
+        }
+      }
+    },
     "%lld of %lld models selected" : {
       "localizations" : {
         "en" : {
@@ -62,7 +84,36 @@
         }
       }
     },
+    "%lld removed" : {
+
+    },
+    "%lld skill%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld skill%2$@"
+          }
+        }
+      }
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld%% complete" : {
+
+    },
     "© 2025 Leetao. All rights reserved." : {
+
+    },
+    "+%lld" : {
 
     },
     "~/%@" : {
@@ -79,10 +130,19 @@
         }
       }
     },
+    "Absolute path to the shared skills directory (e.g. an NFS mount)." : {
+
+    },
+    "Add" : {
+
+    },
     "Add %@" : {
 
     },
     "Add a description..." : {
+
+    },
+    "Add a private GitHub repo or team-shared directory to install skills that aren't in the public registry." : {
 
     },
     "Add All Missing CLIs" : {
@@ -101,6 +161,24 @@
           }
         }
       }
+    },
+    "Add Private Source" : {
+
+    },
+    "Add Private Source…" : {
+
+    },
+    "Add private sources in Settings → Private Sources." : {
+
+    },
+    "Agent" : {
+
+    },
+    "Agent Visibility" : {
+
+    },
+    "Agents" : {
+
     },
     "AI" : {
       "extractionState" : "stale",
@@ -147,6 +225,12 @@
         }
       }
     },
+    "Already up to date" : {
+
+    },
+    "Analyzing SKILL.md…" : {
+
+    },
     "API Key" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -167,6 +251,12 @@
           }
         }
       }
+    },
+    "Apply Update" : {
+
+    },
+    "Applying…" : {
+
     },
     "Are you sure you want to delete '%@'?" : {
       "extractionState" : "manual",
@@ -283,6 +373,12 @@
         }
       }
     },
+    "Audit All…" : {
+
+    },
+    "Auditing %@…" : {
+
+    },
     "Author and manage your own skill drafts" : {
 
     },
@@ -308,6 +404,9 @@
         }
       }
     },
+    "Browse…" : {
+
+    },
     "Can't open: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -331,6 +430,12 @@
       }
     },
     "Category" : {
+
+    },
+    "Check for Update…" : {
+
+    },
+    "Checking source…" : {
 
     },
     "Choose a writable project folder before installing in project scope." : {
@@ -487,6 +592,9 @@
           }
         }
       }
+    },
+    "Comparing with local installation" : {
+
     },
     "Configuration" : {
 
@@ -664,6 +772,9 @@
         }
       }
     },
+    "Could not enumerate skills — check the repo name and token." : {
+
+    },
     "Could not find prompts file" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -783,6 +894,9 @@
         }
       }
     },
+    "Deselect All" : {
+
+    },
     "Diff" : {
 
     },
@@ -836,6 +950,9 @@
     "Duplicate to Draft" : {
 
     },
+    "e.g. Internal engineering skills" : {
+
+    },
     "Easily remember and reference where your valuable prompts came from." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -858,6 +975,9 @@
         }
       }
     },
+    "Edit Private Source" : {
+
+    },
     "Edit Prompt" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -873,6 +993,9 @@
 
     },
     "Edit Template" : {
+
+    },
+    "Edit…" : {
 
     },
     "Effortless Prompt Sharing" : {
@@ -896,6 +1019,9 @@
           }
         }
       }
+    },
+    "Enter value…" : {
+
     },
     "Enter your Base URL" : {
       "extractionState" : "stale",
@@ -1128,6 +1254,15 @@
         }
       }
     },
+    "Fetching remote SKILL.md…" : {
+
+    },
+    "Fill in variables and copy the rendered output" : {
+
+    },
+    "Format: owner/repo — no https:// prefix required." : {
+
+    },
     "General" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1160,6 +1295,9 @@
         }
       }
     },
+    "ghp_…" : {
+
+    },
     "GitHub" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1171,10 +1309,16 @@
         }
       }
     },
+    "GitHub Personal Access Token" : {
+
+    },
     "Global" : {
 
     },
     "Global Scope" : {
+
+    },
+    "Global skill" : {
 
     },
     "Got It!" : {
@@ -1276,7 +1420,16 @@
     "Install Current Draft" : {
 
     },
+    "Install from Private Source" : {
+
+    },
+    "Install from Private Source…" : {
+
+    },
     "Install Local Skill" : {
+
+    },
+    "Install Selected" : {
 
     },
     "Install…" : {
@@ -1286,6 +1439,12 @@
 
     },
     "Installing…" : {
+
+    },
+    "Integrity" : {
+
+    },
+    "Integrity check not available." : {
 
     },
     "Invalid URL: %@" : {
@@ -1362,6 +1521,9 @@
     "Keyboard Shortcuts" : {
 
     },
+    "Label" : {
+
+    },
     "Last installed %@" : {
 
     },
@@ -1381,6 +1543,9 @@
         }
       }
     },
+    "Leave blank to keep the existing token." : {
+
+    },
     "Leetao" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1391,6 +1556,9 @@
           }
         }
       }
+    },
+    "Library" : {
+
     },
     "Loading Gallery..." : {
 
@@ -1419,7 +1587,7 @@
         }
       }
     },
-    "Loading skills catalog..." : {
+    "Loading skills catalog…" : {
 
     },
     "Loading..." : {
@@ -1431,6 +1599,9 @@
           }
         }
       }
+    },
+    "Local Path" : {
+
     },
     "Make Private" : {
       "extractionState" : "stale",
@@ -1471,6 +1642,9 @@
         }
       }
     },
+    "Missing" : {
+
+    },
     "Model" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1506,6 +1680,9 @@
         }
       }
     },
+    "My Private Skills" : {
+
+    },
     "My Prompts" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1527,6 +1704,9 @@
       }
     },
     "My Skills" : {
+
+    },
+    "myorg/private-skills" : {
 
     },
     "Name" : {
@@ -1614,9 +1794,6 @@
         }
       }
     },
-    "No description" : {
-
-    },
     "No history available for this prompt except the latest version." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1652,6 +1829,12 @@
         }
       }
     },
+    "No Private Sources" : {
+
+    },
+    "No Private Sources Configured" : {
+
+    },
     "No prompts available" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1662,6 +1845,9 @@
           }
         }
       }
+    },
+    "No prompts match \"%@\"" : {
+
     },
     "No result" : {
       "localizations" : {
@@ -1686,6 +1872,12 @@
         }
       }
     },
+    "No SKILL.md folders found at the configured path." : {
+
+    },
+    "No token" : {
+
+    },
     "No URL selected or multiple URLs" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1706,6 +1898,9 @@
           }
         }
       }
+    },
+    "Not installed" : {
+
     },
     "Not Set" : {
       "localizations" : {
@@ -1731,6 +1926,9 @@
         }
       }
     },
+    "Notes (optional)" : {
+
+    },
     "Nothing to Add" : {
 
     },
@@ -1746,6 +1944,9 @@
       }
     },
     "Open Draft" : {
+
+    },
+    "Open Settings" : {
 
     },
     "Open Source Page" : {
@@ -1838,6 +2039,12 @@
     "Private link only" : {
 
     },
+    "Private Skill Sources" : {
+
+    },
+    "Private Sources" : {
+
+    },
     "Project" : {
 
     },
@@ -1845,6 +2052,9 @@
 
     },
     "Project scope installs into the selected project's CLI skill roots." : {
+
+    },
+    "Project skill" : {
 
     },
     "Promote this prompt into a skill draft" : {
@@ -2008,6 +2218,12 @@
         }
       }
     },
+    "Quality" : {
+
+    },
+    "Quality analysis not available." : {
+
+    },
     "Quick Search" : {
 
     },
@@ -2044,6 +2260,9 @@
           }
         }
       }
+    },
+    "Re-run" : {
+
     },
     "Received image data directly. Implement loading from Data." : {
       "extractionState" : "manual",
@@ -2099,6 +2318,18 @@
     "Removing…" : {
 
     },
+    "Render a prompt with variable substitution" : {
+
+    },
+    "Render Prompt" : {
+
+    },
+    "Render Prompt…" : {
+
+    },
+    "Repository (owner/repo)" : {
+
+    },
     "Reset Images" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2139,6 +2370,15 @@
     "Revoke" : {
 
     },
+    "Rollback available" : {
+
+    },
+    "Rollback to Previous" : {
+
+    },
+    "Rolling back…" : {
+
+    },
     "Run" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2148,6 +2388,9 @@
           }
         }
       }
+    },
+    "Run Audit" : {
+
     },
     "Run Tests" : {
       "localizations" : {
@@ -2163,7 +2406,6 @@
 
     },
     "Save" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2183,6 +2425,9 @@
 
     },
     "Scope" : {
+
+    },
+    "Scope Coverage" : {
 
     },
     "Search prompt..." : {
@@ -2208,6 +2453,15 @@
       }
     },
     "Search prompts from anywhere in the app" : {
+
+    },
+    "Search prompts…" : {
+
+    },
+    "Select a configured private source and choose which skills to install." : {
+
+    },
+    "Select a prompt to render" : {
 
     },
     "Select All" : {
@@ -2369,19 +2623,34 @@
     "sk-..." : {
 
     },
+    "Skill" : {
+
+    },
+    "Skill Audit" : {
+
+    },
     "Skill Error" : {
 
     },
     "Skill Name" : {
 
     },
+    "Skill Quality" : {
+
+    },
     "Skill Store" : {
+
+    },
+    "SKILL.md not found — cannot analyze quality." : {
 
     },
     "SKILL.md Preview" : {
 
     },
     "Skills" : {
+
+    },
+    "Skills in %@" : {
 
     },
     "Slug" : {
@@ -2397,6 +2666,12 @@
           }
         }
       }
+    },
+    "Source Integrity" : {
+
+    },
+    "Source Type" : {
+
     },
     "Startup" : {
 
@@ -2510,6 +2785,9 @@
         }
       }
     },
+    "The local SKILL.md matches the remote version." : {
+
+    },
     "These services need API tokens to be used:" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2538,6 +2816,12 @@
           }
         }
       }
+    },
+    "Token is stored in the macOS Keychain. Needs repo scope to read private repos." : {
+
+    },
+    "Token set" : {
+
     },
     "Track Prompt Origins" : {
       "extractionState" : "manual",
@@ -2593,6 +2877,9 @@
         }
       }
     },
+    "Unknown path" : {
+
+    },
     "Unshared prompt" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2603,6 +2890,9 @@
           }
         }
       }
+    },
+    "Update %@" : {
+
     },
     "Update Share" : {
 
@@ -2642,6 +2932,9 @@
       }
     },
     "v%lld" : {
+
+    },
+    "Variables" : {
 
     },
     "Version" : {
@@ -2690,6 +2983,12 @@
           }
         }
       }
+    },
+    "Visibility scan not available." : {
+
+    },
+    "Visible" : {
+
     },
     "Visible to community" : {
 

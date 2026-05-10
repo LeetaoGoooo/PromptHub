@@ -43,20 +43,12 @@
 		0E6FDD652D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Views/SettingViews/AboutView.swift,
-				Views/SettingViews/GeneralView.swift,
-				Views/SettingViews/SettingsView.swift,
-				Views/StatusBarViews/PromptMenuView.swift,
 			);
 			target = 0E6CAD462D72E6D0001FD9B3 /* prompthubTests */;
 		};
 		0E6FDD662D72FA6600294C16 /* Exceptions for "prompthub" folder in "prompthubUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Views/SettingViews/AboutView.swift,
-				Views/SettingViews/GeneralView.swift,
-				Views/SettingViews/SettingsView.swift,
-				Views/StatusBarViews/PromptMenuView.swift,
 			);
 			target = 0E6CAD502D72E6D0001FD9B3 /* prompthubUITests */;
 		};
@@ -539,7 +531,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H6F75GR6PJ;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.duck.leetao.prompthubTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -557,7 +549,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H6F75GR6PJ;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.duck.leetao.prompthubTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

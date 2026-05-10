@@ -234,65 +234,37 @@ struct SearchView: View {
         }
     }
     
-    private func scrollToSelected() {
-        // 滚动到选中的项目
-        // 可以根据 selectedIndex 计算应该滚动到哪个项目
-        /// TODO
-    }
+    func scrollToSelected() { /* TODO: scroll to selectedIndex */ }
 
     @ViewBuilder
-    private func searchSectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.caption.bold())
-            .foregroundStyle(.secondary)
+    func searchSectionHeader(_ title: String) -> some View {
+        Text(title).font(.caption.bold()).foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-    }
-    
-    @ViewBuilder
-    private func emptyStateView(text: String) -> some View {
-        VStack {
-            Spacer()
-            Text(text)
-                .foregroundColor(.secondary)
-                .font(.callout)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-    }
-    
-    private func loadGalleryPrompts() {
-        isLoading = true
-        
-        DispatchQueue.main.async {
-            self.galleryPrompts = BuiltInAgents.agents.map { $0.toGalleryPrompt() }
-            self.isLoading = false
-        }
-    }
-    
-    private func copyToClipboard(_ promptText: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(promptText, forType: .string)
+            .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
     }
 
-    private func copyItem(_ item: any SearchableItem) {
+    @ViewBuilder
+    func emptyStateView(text: String) -> some View {
+        VStack { Spacer(); Text(text).foregroundColor(.secondary).font(.callout); Spacer() }.frame(maxWidth: .infinity)
+    }
+
+    func loadGalleryPrompts() {
+        isLoading = true
+        DispatchQueue.main.async { self.galleryPrompts = BuiltInAgents.agents.map { $0.toGalleryPrompt() }; self.isLoading = false }
+    }
+
+    func copyToClipboard(_ promptText: String) {
+        let pasteboard = NSPasteboard.general; pasteboard.clearContents(); pasteboard.setString(promptText, forType: .string)
+    }
+
+    func copyItem(_ item: any SearchableItem) {
         copyToClipboard(item.content)
         copiedIndex = allFilteredResults.firstIndex(where: { $0.stableID == item.stableID })
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            copiedIndex = nil
-        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { copiedIndex = nil }
     }
 
-    private func openItem(_ item: any SearchableItem) {
-        if let target = item.navigationTarget {
-            SearchNavigationRequest.post(target)
-            onClose()
-            return
-        }
-
+    func openItem(_ item: any SearchableItem) {
+        if let target = item.navigationTarget { SearchNavigationRequest.post(target); onClose(); return }
         copyItem(item)
     }
 }
