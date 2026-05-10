@@ -4,16 +4,19 @@ import SwiftData
 /// Writes PromptHub assets (prompts and skill drafts) to `~/.prompthub/` so the
 /// standalone PromptHub CLI can read them without the App being running.
 ///
+/// Files are keyed by the model's stable UUID to avoid slug collisions and
+/// orphan files when the user renames an item.
+///
 /// Directory layout:
 /// ```
 /// ~/.prompthub/
 ///   prompts/
-///     <slug>.md        — prompt content with YAML front-matter
+///     <uuid>.md        — YAML front-matter + prompt body
 ///   skills/
-///     <slug>/
-///       SKILL.md       — full skill markdown
+///     <uuid>.md        — YAML front-matter + SKILL.md body
 /// ```
-final class PromptHubBridge: @unchecked Sendable {
+@MainActor
+final class PromptHubBridge {
 
     static let shared = PromptHubBridge()
 
@@ -41,58 +44,50 @@ final class PromptHubBridge: @unchecked Sendable {
 
     // MARK: - Prompt export
 
-    /// Writes (or overwrites) `~/.prompthub/prompts/<slug>.md`.
+    /// Writes (or overwrites) `~/.prompthub/prompts/<uuid>.md`.
     func exportPrompt(_ prompt: Prompt) {
         ensureDirectories()
-        let slug = Self.slug(for: prompt.name)
-        guard !slug.isEmpty else { return }
         let content = promptMarkdown(prompt)
-        let url = Self.promptsURL.appendingPathComponent("\(slug).md")
+        let url = Self.promptsURL.appendingPathComponent("\(prompt.id.uuidString).md")
         try? content.write(to: url, atomically: true, encoding: .utf8)
     }
 
-    /// Removes `~/.prompthub/prompts/<slug>.md`.
+    /// Removes `~/.prompthub/prompts/<uuid>.md`.
     func removePrompt(_ prompt: Prompt) {
-        let slug = Self.slug(for: prompt.name)
-        guard !slug.isEmpty else { return }
-        let url = Self.promptsURL.appendingPathComponent("\(slug).md")
+        let url = Self.promptsURL.appendingPathComponent("\(prompt.id.uuidString).md")
         try? FileManager.default.removeItem(at: url)
     }
 
     // MARK: - Skill export
 
-    /// Writes (or overwrites) `~/.prompthub/skills/<slug>/SKILL.md`.
+    /// Writes (or overwrites) `~/.prompthub/skills/<uuid>.md`.
     func exportSkill(_ skill: Skill) {
         ensureDirectories()
-        let slug = skill.installationName
-        guard !slug.isEmpty else { return }
-        let dirURL = Self.skillsURL.appendingPathComponent(slug, isDirectory: true)
-        try? FileManager.default.createDirectory(at: dirURL, withIntermediateDirectories: true)
-        let content = skill.latestVersion?.instructions ?? ""
-        let url = dirURL.appendingPathComponent("SKILL.md")
+        let content = skillMarkdown(skill)
+        let url = Self.skillsURL.appendingPathComponent("\(skill.id.uuidString).md")
         try? content.write(to: url, atomically: true, encoding: .utf8)
     }
 
-    /// Removes `~/.prompthub/skills/<slug>/`.
+    /// Removes `~/.prompthub/skills/<uuid>.md`.
     func removeSkill(_ skill: Skill) {
-        let slug = skill.installationName
-        guard !slug.isEmpty else { return }
-        let dirURL = Self.skillsURL.appendingPathComponent(slug, isDirectory: true)
-        try? FileManager.default.removeItem(at: dirURL)
+        let url = Self.skillsURL.appendingPathComponent("\(skill.id.uuidString).md")
+        try? FileManager.default.removeItem(at: url)
     }
 
     // MARK: - Bulk sync
 
-    /// Re-exports all prompts and skill drafts. Call on app launch or after migration.
+    /// Re-exports all prompts and skill drafts and prunes any stale files.
+    /// Call once on app launch — not on every view appearance.
     func syncAll(prompts: [Prompt], skills: [Skill]) {
         ensureDirectories()
         prompts.forEach { exportPrompt($0) }
         skills.forEach  { exportSkill($0)  }
+        pruneOrphans(livePromptIDs: Set(prompts.map { $0.id }), liveSkillIDs: Set(skills.map { $0.id }))
     }
 
     // MARK: - Helpers
 
-    /// Converts a display name to a stable URL-safe slug.
+    /// Converts a display name to a URL-safe slug for the front-matter only.
     static func slug(for name: String) -> String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
@@ -101,20 +96,70 @@ final class PromptHubBridge: @unchecked Sendable {
             .joined(separator: "-")
     }
 
-    private func promptMarkdown(_ prompt: Prompt) -> String {
-        let content = prompt.getLatestPromptContent()
-        let desc    = prompt.desc ?? ""
-        let link    = prompt.link ?? ""
-        let slug    = Self.slug(for: prompt.name)
-        let date    = ISO8601DateFormatter().string(from: Date())
+    // MARK: - Private
 
-        var fm = "---\n"
-        fm += "name: \(prompt.name)\n"
-        fm += "slug: \(slug)\n"
-        if !desc.isEmpty  { fm += "description: \(desc)\n" }
-        if !link.isEmpty  { fm += "link: \(link)\n" }
-        fm += "exported_at: \(date)\n"
-        fm += "---\n\n"
-        return fm + content
+    private func promptMarkdown(_ prompt: Prompt) -> String {
+        let body   = prompt.getLatestPromptContent()
+        let date   = ISO8601DateFormatter().string(from: Date())
+
+        var lines: [String] = ["---"]
+        lines.append("id: \(prompt.id.uuidString)")
+        lines.append("name: \(yamlScalar(prompt.name))")
+        lines.append("slug: \(Self.slug(for: prompt.name))")
+        if let desc = prompt.desc, !desc.isEmpty { lines.append("description: \(yamlScalar(desc))") }
+        if let link = prompt.link, !link.isEmpty  { lines.append("link: \(yamlScalar(link))") }
+        lines.append("exported_at: \(date)")
+        lines.append("---")
+        lines.append("")
+        lines.append(body)
+        return lines.joined(separator: "\n")
+    }
+
+    private func skillMarkdown(_ skill: Skill) -> String {
+        let body = skill.latestVersion?.instructions ?? ""
+        let date = ISO8601DateFormatter().string(from: Date())
+
+        var lines: [String] = ["---"]
+        lines.append("id: \(skill.id.uuidString)")
+        lines.append("name: \(yamlScalar(skill.displayName))")
+        lines.append("slug: \(skill.installationName)")
+        if let desc = skill.desc, !desc.isEmpty { lines.append("description: \(yamlScalar(desc))") }
+        lines.append("category: \(yamlScalar(skill.category))")
+        if !skill.tags.isEmpty { lines.append("tags: [\(skill.tags.map { yamlScalar($0) }.joined(separator: ", "))]") }
+        lines.append("exported_at: \(date)")
+        lines.append("---")
+        lines.append("")
+        lines.append(body)
+        return lines.joined(separator: "\n")
+    }
+
+    /// Wraps a YAML scalar value in double-quotes if it contains unsafe characters,
+    /// escaping any existing double-quotes inside.
+    private func yamlScalar(_ value: String) -> String {
+        let needsQuoting = value.contains(":") || value.contains("#") ||
+                           value.contains("\n") || value.contains("\"") ||
+                           value.hasPrefix(" ") || value.hasSuffix(" ") ||
+                           value.hasPrefix("---")
+        guard needsQuoting else { return value }
+        let escaped = value.replacingOccurrences(of: "\"", with: "\\\"")
+                           .replacingOccurrences(of: "\n", with: "\\n")
+        return "\"\(escaped)\""
+    }
+
+    /// Deletes any `~/.prompthub/prompts/*.md` or `~/.prompthub/skills/*.md`
+    /// whose UUID filename does not correspond to a live model.
+    private func pruneOrphans(livePromptIDs: Set<UUID>, liveSkillIDs: Set<UUID>) {
+        pruneDirectory(Self.promptsURL, liveIDs: livePromptIDs)
+        pruneDirectory(Self.skillsURL,  liveIDs: liveSkillIDs)
+    }
+
+    private func pruneDirectory(_ url: URL, liveIDs: Set<UUID>) {
+        guard let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) else { return }
+        for file in contents where file.pathExtension == "md" {
+            let stem = file.deletingPathExtension().lastPathComponent
+            if let uuid = UUID(uuidString: stem), !liveIDs.contains(uuid) {
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
     }
 }

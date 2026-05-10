@@ -16,6 +16,7 @@ extension SkillDraftDetailView {
     func saveDraftMetadata() {
         skill.touch()
         try? modelContext.save()
+        PromptHubBridge.shared.exportSkill(skill)
     }
 
     func saveInstructions() {
@@ -25,6 +26,7 @@ extension SkillDraftDetailView {
         }
         skill.touch()
         try? modelContext.save()
+        PromptHubBridge.shared.exportSkill(skill)
     }
 
     func createVersionSnapshot() {

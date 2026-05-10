@@ -91,6 +91,7 @@ struct GalleryPromptItemView: View {
             modelContext.insert(newPromptHistory)
 
             try modelContext.save()
+            PromptHubBridge.shared.exportPrompt(newPrompt)
 
         } catch {
             print("Failed to save prompt and PromptHistory transactionally: \(error)")

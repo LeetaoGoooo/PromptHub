@@ -118,6 +118,7 @@ class DeepLinkManager: ObservableObject {
             context.insert(newHistory)
             
             try context.save()
+            await PromptHubBridge.shared.exportPrompt(newPrompt)
             
             self.importStatusMessage = "'\(newPrompt.name)' imported successfully!"
             self.activeTarget = .showImportedPrompt(promptID: newPrompt.id) // For navigation

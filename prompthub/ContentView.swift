@@ -18,6 +18,7 @@ struct ContentView: View {
     @State var toastType: AlertToast.AlertType = .regular
     @State private var showingPromptRender = false
     @State var whatsNew: WhatsNew? = nil
+    @State private var hasSyncedBridge = false
     @EnvironmentObject var appSettings: AppSettings
 
     var currentAppVersion: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown" }
@@ -88,7 +89,10 @@ struct ContentView: View {
             .onAppear {
                 loadGalleryPrompts()
                 checkForWhatsNew()
-                PromptHubBridge.shared.syncAll(prompts: prompts, skills: skillDrafts)
+                if !hasSyncedBridge {
+                    hasSyncedBridge = true
+                    PromptHubBridge.shared.syncAll(prompts: prompts, skills: skillDrafts)
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .searchNavigationRequested)) { notification in
                 guard let target = SearchNavigationRequest.from(notification) else { return }
