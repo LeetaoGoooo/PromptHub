@@ -131,6 +131,37 @@ public struct SkillInstallRequest: Sendable {
     }
 }
 
+/// The visibility status of a skill for a specific agent, determined by filesystem scan.
+public enum AgentVisibilityStatus: String, Sendable, Equatable, CaseIterable {
+    /// SKILL.md file was found in the agent's expected read directory.
+    case visible
+    /// The agent directory exists but SKILL.md is not present (e.g. missing symlink).
+    case missing
+    /// The agent's root directory is not configured or does not exist on disk.
+    case unknownPath
+}
+
+/// A single agent's filesystem visibility result for a skill.
+public struct SkillAgentVisibility: Sendable, Equatable {
+    public let agent: AgentWorkflow
+    public let status: AgentVisibilityStatus
+    /// The absolute path that was checked (nil when status is unknownPath).
+    public let checkedPath: String?
+    public let isGlobal: Bool
+
+    public init(
+        agent: AgentWorkflow,
+        status: AgentVisibilityStatus,
+        checkedPath: String?,
+        isGlobal: Bool
+    ) {
+        self.agent = agent
+        self.status = status
+        self.checkedPath = checkedPath
+        self.isGlobal = isGlobal
+    }
+}
+
 public struct AgentSkillRoots: Sendable {
     public let global: URL
     public let project: URL
@@ -589,6 +620,44 @@ public actor SkillCatalogService {
         }
 
         return try existingInstalledMarkdown(for: trimmedName, isGlobal: isGlobal)
+    }
+
+    /// Performs a real-time filesystem scan for each agent's expected skill directory.
+    ///
+    /// For every `AgentWorkflow`, this checks whether `SKILL.md` is present inside the
+    /// agent's configured global or project skill root.  The result is intentionally
+    /// synchronous (no network) and is safe to call on any thread because `SkillCatalogService`
+    /// is an actor and all reads use the immutable `agentSkillRoots` map.
+    ///
+    /// - Parameters:
+    ///   - skillName: The full package name (e.g. `"owner/repo@skill"`) or just the short name.
+    ///   - isGlobal: Whether to check the global or project-scoped path for each agent.
+    /// - Returns: One `SkillAgentVisibility` entry per known agent.
+    public func checkAgentVisibility(
+        skillName: String,
+        isGlobal: Bool = true
+    ) -> [SkillAgentVisibility] {
+        let short = sanitizePathComponent(shortSkillName(fromPackage: skillName))
+        return AgentWorkflow.allCases.map { workflow in
+            guard let roots = agentSkillRoots[workflow] else {
+                return SkillAgentVisibility(
+                    agent: workflow,
+                    status: .unknownPath,
+                    checkedPath: nil,
+                    isGlobal: isGlobal
+                )
+            }
+            let base = isGlobal ? roots.global : roots.project
+            let skillDir = base.appendingPathComponent(short, isDirectory: true)
+            let skillFile = skillDir.appendingPathComponent("SKILL.md")
+            let status: AgentVisibilityStatus = fileManager.fileExists(atPath: skillFile.path) ? .visible : .missing
+            return SkillAgentVisibility(
+                agent: workflow,
+                status: status,
+                checkedPath: skillFile.path,
+                isGlobal: isGlobal
+            )
+        }
     }
 
     public func remove(

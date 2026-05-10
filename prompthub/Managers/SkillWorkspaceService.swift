@@ -90,6 +90,17 @@ final class SkillWorkspaceService {
         )
     }
 
+    /// Performs a real-time filesystem scan for each agent's skill directory and returns the
+    /// per-agent visibility status.  This is intentionally separate from `loadInstalledWorkspace`
+    /// so the main list loads instantly while visibility results arrive asynchronously.
+    func auditAgentVisibility(for skill: InstalledSkillSnapshot) async -> [SkillAgentVisibility] {
+        await cliService.checkAgentVisibility(
+            skillName: skill.package.rawValue,
+            isGlobal: skill.isGlobal,
+            projectRootURL: selectedProjectRootURL
+        )
+    }
+
     func installationState(
         for skill: CatalogSkill,
         registry: [String: CatalogSkillInstallationState]

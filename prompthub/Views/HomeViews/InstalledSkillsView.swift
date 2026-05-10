@@ -24,6 +24,8 @@ struct InstalledSkillsView: View {
     @State private var pendingRemoval: PendingRemoval?
     @State private var removingSkillIDs: Set<String> = []
     @State private var addingSkillIDs: Set<String> = []
+    @State private var agentVisibility: [SkillAgentVisibility] = []
+    @State private var isLoadingVisibility = false
     @ObservedObject private var cliAccessManager = CLIDirectoryAccessManager.shared
     @State private var showingCLIAccessManager = false
 
@@ -143,6 +145,9 @@ struct InstalledSkillsView: View {
         .onChange(of: searchText) { _, _ in
             syncSelection()
         }
+        .onChange(of: selectedSkillID) { _, _ in
+            loadVisibilityForSelectedSkill()
+        }
         .alert("Remove Skill", isPresented: Binding(
             get: { pendingRemoval != nil },
             set: { if !$0 { pendingRemoval = nil } }
@@ -261,6 +266,8 @@ struct InstalledSkillsView: View {
                 InstalledSkillDetailPane(
                     skill: selectedSkill,
                     linkedDraft: linkedDraft(for: selectedSkill),
+                    agentVisibility: agentVisibility,
+                    isLoadingVisibility: isLoadingVisibility,
                     isAdding: addingSkillIDs.contains(selectedSkill.id),
                     isRemoving: removingSkillIDs.contains(selectedSkill.id),
                     onEditDraft: {
@@ -330,6 +337,7 @@ struct InstalledSkillsView: View {
     private func fetchInstalledSkills() {
         guard cliAccessManager.anyAccessGranted else { return }
         isLoading = true
+        agentVisibility = []
         errorMessage = nil
         Task {
             do {
@@ -425,6 +433,20 @@ struct InstalledSkillsView: View {
             } catch {
                 errorMessage = draftServiceErrorMessage(for: error, skill: installedSkill)
             }
+        }
+    }
+
+    private func loadVisibilityForSelectedSkill() {
+        guard let skill = selectedSkill else {
+            agentVisibility = []
+            return
+        }
+        isLoadingVisibility = true
+        agentVisibility = []
+        Task {
+            let result = await workspaceService.auditAgentVisibility(for: skill)
+            agentVisibility = result
+            isLoadingVisibility = false
         }
     }
 
@@ -534,6 +556,8 @@ private struct InstalledSkillListRow: View {
 private struct InstalledSkillDetailPane: View {
     let skill: InstalledSkillSnapshot
     let linkedDraft: Skill?
+    let agentVisibility: [SkillAgentVisibility]
+    let isLoadingVisibility: Bool
     let isAdding: Bool
     let isRemoving: Bool
     let onEditDraft: () -> Void
@@ -565,6 +589,54 @@ private struct InstalledSkillDetailPane: View {
             return skill.isManagedByPromptHub ? "No CLI targets recorded" : "External local skill"
         }
         return skill.agents.map(\.displayName).joined(separator: ", ")
+    }
+
+    @ViewBuilder
+    private var agentVisibilitySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Agent Visibility")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                if isLoadingVisibility {
+                    ProgressView()
+                        .controlSize(.mini)
+                }
+            }
+
+            if agentVisibility.isEmpty && !isLoadingVisibility {
+                Text("Visibility scan not available.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(agentVisibility, id: \.agent.rawValue) { entry in
+                        HStack(spacing: 8) {
+                            Image(systemName: entry.status == .visible ? "checkmark.circle.fill" : (entry.status == .missing ? "xmark.circle.fill" : "questionmark.circle.fill"))
+                                .foregroundStyle(entry.status == .visible ? Color.green : (entry.status == .missing ? Color.red : Color.secondary))
+                                .font(.system(size: 13))
+                            Text(entry.agent.displayName)
+                                .font(.callout)
+                            Spacer()
+                            Text(entry.status == .visible ? "Visible" : (entry.status == .missing ? "Missing" : "Unknown path"))
+                                .font(.caption)
+                                .foregroundStyle(entry.status == .visible ? Color.green : (entry.status == .missing ? Color.red : Color.secondary))
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                        if entry.agent != agentVisibility.last?.agent {
+                            Divider()
+                        }
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+                )
+            }
+        }
     }
 
     private var addableAgents: [AgentWorkflow] {
@@ -627,6 +699,8 @@ private struct InstalledSkillDetailPane: View {
                         ("CLIs", formattedAgents)
                     ]
                 )
+
+                agentVisibilitySection
 
                 SkillLibraryMetadataBlock(
                     title: "Package",

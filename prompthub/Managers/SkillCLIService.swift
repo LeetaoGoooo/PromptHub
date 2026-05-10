@@ -220,6 +220,22 @@ final class SkillCLIService {
         }
     }
 
+    /// Performs a synchronous filesystem scan to determine which agents can actually see
+    /// the named skill.  Uses security-scoped bookmarks that are already active; call this
+    /// inside a `withAccess` block when you need accurate results for sandboxed paths.
+    func checkAgentVisibility(
+        skillName: String,
+        isGlobal: Bool,
+        projectRootURL: URL? = nil
+    ) async -> [SkillAgentVisibility] {
+        await cliAccessManager.withAccess {
+            await self.makeCatalog(projectRootURL: projectRootURL).checkAgentVisibility(
+                skillName: skillName,
+                isGlobal: isGlobal
+            )
+        }
+    }
+
     func userFacingErrorMessage(for error: Error) -> String {
         if let cliError = error as? CLIError,
            let description = cliError.errorDescription {
