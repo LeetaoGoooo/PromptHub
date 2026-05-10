@@ -65,6 +65,8 @@ struct SettingsView: View {
 // MARK: - General Tab
 
 private struct GeneralTab: View {
+    @State private var cliDismissed = false
+
     var body: some View {
         // Launch at Login
         GroupBox {
@@ -78,6 +80,15 @@ private struct GeneralTab: View {
             .padding(.vertical, 4)
         } label: {
             Label("Startup", systemImage: "power")
+                .font(.headline)
+        }
+
+        // PromptHub CLI
+        GroupBox {
+            CLIInstallGuideView(isDismissed: $cliDismissed)
+                .padding(.vertical, 4)
+        } label: {
+            Label("CLI Integration", systemImage: "terminal")
                 .font(.headline)
         }
         
