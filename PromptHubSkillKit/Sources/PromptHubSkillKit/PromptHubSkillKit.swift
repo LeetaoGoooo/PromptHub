@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 public enum SkillKitError: LocalizedError, Equatable, Sendable {
@@ -159,6 +160,50 @@ public struct SkillAgentVisibility: Sendable, Equatable {
         self.status = status
         self.checkedPath = checkedPath
         self.isGlobal = isGlobal
+    }
+}
+
+/// The result of comparing a locally installed SKILL.md against its remote source.
+public enum SkillSourceIntegrityStatus: Sendable, Equatable {
+    /// Local content matches the remote source exactly.
+    case verified
+    /// Local content differs from the current remote version.
+    case modified
+    /// Remote content could not be fetched (offline or network error).
+    case remoteUnavailable
+    /// Skill has no resolvable remote source (e.g. authored locally).
+    case noRemoteSource
+    /// Local SKILL.md could not be found on disk.
+    case notInstalled
+}
+
+/// The result of a source integrity check for a single installed skill.
+public struct SkillSourceIntegrity: Sendable, Equatable {
+    /// Hex-encoded SHA-256 of the local SKILL.md, or nil if not installed.
+    public let localHash: String?
+    /// Hex-encoded SHA-256 of the remote SKILL.md, or nil if unavailable.
+    public let remoteHash: String?
+    public let status: SkillSourceIntegrityStatus
+    /// The raw content URL that was fetched for comparison.
+    public let remoteURL: String?
+    /// The local file path that was read.
+    public let localPath: String?
+    public let checkedAt: Date
+
+    public init(
+        localHash: String?,
+        remoteHash: String?,
+        status: SkillSourceIntegrityStatus,
+        remoteURL: String?,
+        localPath: String?,
+        checkedAt: Date = Date()
+    ) {
+        self.localHash = localHash
+        self.remoteHash = remoteHash
+        self.status = status
+        self.remoteURL = remoteURL
+        self.localPath = localPath
+        self.checkedAt = checkedAt
     }
 }
 
@@ -668,6 +713,115 @@ public actor SkillCatalogService {
                 isGlobal: isGlobal
             )
         }
+    }
+
+    /// Computes a SHA-256 hash of the locally installed SKILL.md and optionally fetches the
+    /// remote version from GitHub to compare.  Falls back to offline-only mode when network
+    /// access is unavailable.
+    ///
+    /// - Parameters:
+    ///   - skillName: Full package name (e.g. `"owner/repo@skill"`) used to locate the file and derive the remote URL.
+    ///   - isGlobal: Whether to look in the global or project skill root.
+    /// - Returns: A `SkillSourceIntegrity` describing local hash, remote hash, and status.
+    public func checkSourceIntegrity(
+        skillName: String,
+        isGlobal: Bool = true
+    ) async -> SkillSourceIntegrity {
+        let now = Date()
+
+        // Locate local SKILL.md via the first agent that has a configured root.
+        let short = sanitizePathComponent(shortSkillName(fromPackage: skillName))
+        var localContent: String?
+        var localFilePath: String?
+        for workflow in AgentWorkflow.allCases {
+            guard let roots = agentSkillRoots[workflow] else { continue }
+            let base = isGlobal ? roots.global : roots.project
+            let skillFile = base.appendingPathComponent(short, isDirectory: true)
+                .appendingPathComponent("SKILL.md")
+            if let text = try? String(contentsOf: skillFile, encoding: .utf8), !text.isEmpty {
+                localContent = text
+                localFilePath = skillFile.path
+                break
+            }
+        }
+
+        guard let localText = localContent else {
+            return SkillSourceIntegrity(
+                localHash: nil,
+                remoteHash: nil,
+                status: .notInstalled,
+                remoteURL: nil,
+                localPath: localFilePath,
+                checkedAt: now
+            )
+        }
+
+        let localHash = sha256Hex(localText)
+
+        // Parse package to get owner/repo/skillName for GitHub fetching.
+        guard let parsed = try? parsePackage(skillName) else {
+            return SkillSourceIntegrity(
+                localHash: localHash,
+                remoteHash: nil,
+                status: .noRemoteSource,
+                remoteURL: nil,
+                localPath: localFilePath,
+                checkedAt: now
+            )
+        }
+
+        // Attempt to fetch remote content.
+        let remoteMarkdown: String?
+        var remoteRawURL: String?
+
+        do {
+            let markdown = try await fetchSkillMarkdownFromGitHub(
+                owner: parsed.owner,
+                repo: parsed.repo,
+                skillName: parsed.skill
+            )
+            remoteMarkdown = markdown
+            // Best-effort URL for display purposes.
+            remoteRawURL = "https://raw.githubusercontent.com/\(parsed.owner)/\(parsed.repo)/HEAD/skills/\(parsed.skill)/SKILL.md"
+        } catch {
+            return SkillSourceIntegrity(
+                localHash: localHash,
+                remoteHash: nil,
+                status: .remoteUnavailable,
+                remoteURL: nil,
+                localPath: localFilePath,
+                checkedAt: now
+            )
+        }
+
+        guard let remoteText = remoteMarkdown else {
+            return SkillSourceIntegrity(
+                localHash: localHash,
+                remoteHash: nil,
+                status: .remoteUnavailable,
+                remoteURL: remoteRawURL,
+                localPath: localFilePath,
+                checkedAt: now
+            )
+        }
+
+        let remoteHash = sha256Hex(remoteText)
+        let status: SkillSourceIntegrityStatus = localHash == remoteHash ? .verified : .modified
+
+        return SkillSourceIntegrity(
+            localHash: localHash,
+            remoteHash: remoteHash,
+            status: status,
+            remoteURL: remoteRawURL,
+            localPath: localFilePath,
+            checkedAt: now
+        )
+    }
+
+    private func sha256Hex(_ text: String) -> String {
+        let data = Data(text.utf8)
+        let digest = SHA256.hash(data: data)
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 
     public func remove(

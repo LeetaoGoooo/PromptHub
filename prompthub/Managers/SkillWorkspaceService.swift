@@ -101,6 +101,16 @@ final class SkillWorkspaceService {
         )
     }
 
+    /// Computes a local SHA-256 hash of the installed SKILL.md and optionally compares it
+    /// with the remote GitHub source.  Returns quickly when offline (remoteUnavailable status).
+    func auditSourceIntegrity(for skill: InstalledSkillSnapshot) async -> SkillSourceIntegrity {
+        await cliService.checkSourceIntegrity(
+            skillName: skill.package.rawValue,
+            isGlobal: skill.isGlobal,
+            projectRootURL: selectedProjectRootURL
+        )
+    }
+
     func installationState(
         for skill: CatalogSkill,
         registry: [String: CatalogSkillInstallationState]

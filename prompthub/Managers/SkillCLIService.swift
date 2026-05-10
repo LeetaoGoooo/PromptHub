@@ -236,6 +236,20 @@ final class SkillCLIService {
         }
     }
 
+    /// Checks whether the local SKILL.md content matches the remote GitHub source.
+    func checkSourceIntegrity(
+        skillName: String,
+        isGlobal: Bool,
+        projectRootURL: URL? = nil
+    ) async -> SkillSourceIntegrity {
+        await cliAccessManager.withAccess {
+            await self.makeCatalog(projectRootURL: projectRootURL).checkSourceIntegrity(
+                skillName: skillName,
+                isGlobal: isGlobal
+            )
+        }
+    }
+
     func userFacingErrorMessage(for error: Error) -> String {
         if let cliError = error as? CLIError,
            let description = cliError.errorDescription {

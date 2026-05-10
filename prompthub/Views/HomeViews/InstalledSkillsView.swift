@@ -26,6 +26,8 @@ struct InstalledSkillsView: View {
     @State private var addingSkillIDs: Set<String> = []
     @State private var agentVisibility: [SkillAgentVisibility] = []
     @State private var isLoadingVisibility = false
+    @State private var sourceIntegrity: SkillSourceIntegrity?
+    @State private var isLoadingIntegrity = false
     @ObservedObject private var cliAccessManager = CLIDirectoryAccessManager.shared
     @State private var showingCLIAccessManager = false
 
@@ -150,15 +152,27 @@ struct InstalledSkillsView: View {
             // which prevents stale results from an older selection overwriting the current one.
             guard let skill = selectedSkill else {
                 agentVisibility = []
+                sourceIntegrity = nil
                 return
             }
+            // Kick off visibility scan (fast, filesystem only).
             isLoadingVisibility = true
+            isLoadingIntegrity = true
             agentVisibility = []
-            let result = await workspaceService.auditAgentVisibility(for: skill)
-            // Guard against cancellation delivering results after selection changed.
+            sourceIntegrity = nil
+
+            async let visibilityTask = workspaceService.auditAgentVisibility(for: skill)
+            async let integrityTask = workspaceService.auditSourceIntegrity(for: skill)
+
+            let visResult = await visibilityTask
             guard !Task.isCancelled else { return }
-            agentVisibility = result
+            agentVisibility = visResult
             isLoadingVisibility = false
+
+            let intResult = await integrityTask
+            guard !Task.isCancelled else { return }
+            sourceIntegrity = intResult
+            isLoadingIntegrity = false
         }
         .alert("Remove Skill", isPresented: Binding(
             get: { pendingRemoval != nil },
@@ -168,6 +182,7 @@ struct InstalledSkillsView: View {
             Button("Remove", role: .destructive) {
                 if let pending = pendingRemoval {
                     removeSkill(pending.skill, targetAgents: pending.targetAgents)
+
                 }
             }
         } message: {
@@ -280,6 +295,8 @@ struct InstalledSkillsView: View {
                     linkedDraft: linkedDraft(for: selectedSkill),
                     agentVisibility: agentVisibility,
                     isLoadingVisibility: isLoadingVisibility,
+                    sourceIntegrity: sourceIntegrity,
+                    isLoadingIntegrity: isLoadingIntegrity,
                     isAdding: addingSkillIDs.contains(selectedSkill.id),
                     isRemoving: removingSkillIDs.contains(selectedSkill.id),
                     onEditDraft: {
@@ -350,7 +367,9 @@ struct InstalledSkillsView: View {
         guard cliAccessManager.anyAccessGranted else { return }
         isLoading = true
         agentVisibility = []
+        sourceIntegrity = nil
         isLoadingVisibility = true
+        isLoadingIntegrity = true
         errorMessage = nil
         Task {
             do {
@@ -359,18 +378,25 @@ struct InstalledSkillsView: View {
                 )
                 syncSelection()
                 isLoading = false
-                // Reload visibility after the list refreshes. This covers the case where the
+                // Reload security audits after the list refreshes. This covers the case where the
                 // same skill stays selected (selectedSkillID unchanged) and task(id:) would
                 // not fire automatically.
                 if let skill = selectedSkill {
-                    let result = await workspaceService.auditAgentVisibility(for: skill)
-                    agentVisibility = result
+                    async let visTask = workspaceService.auditAgentVisibility(for: skill)
+                    async let intTask = workspaceService.auditSourceIntegrity(for: skill)
+                    agentVisibility = await visTask
+                    isLoadingVisibility = false
+                    sourceIntegrity = await intTask
+                    isLoadingIntegrity = false
+                } else {
+                    isLoadingVisibility = false
+                    isLoadingIntegrity = false
                 }
-                isLoadingVisibility = false
             } catch {
                 errorMessage = workspaceService.userFacingErrorMessage(for: error)
                 isLoading = false
                 isLoadingVisibility = false
+                isLoadingIntegrity = false
             }
         }
     }
@@ -566,6 +592,8 @@ private struct InstalledSkillDetailPane: View {
     let linkedDraft: Skill?
     let agentVisibility: [SkillAgentVisibility]
     let isLoadingVisibility: Bool
+    let sourceIntegrity: SkillSourceIntegrity?
+    let isLoadingIntegrity: Bool
     let isAdding: Bool
     let isRemoving: Bool
     let onEditDraft: () -> Void
@@ -655,6 +683,93 @@ private struct InstalledSkillDetailPane: View {
         !addableAgents.isEmpty
     }
 
+    @ViewBuilder
+    private var sourceIntegritySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Source Integrity")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                if isLoadingIntegrity {
+                    ProgressView()
+                        .controlSize(.mini)
+                }
+            }
+
+            if isLoadingIntegrity && sourceIntegrity == nil {
+                Text("Checking source…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if let integrity = sourceIntegrity {
+                VStack(spacing: 0) {
+                    integrityStatusRow(integrity)
+                    Divider()
+                    if let hash = integrity.localHash {
+                        integrityInfoRow(label: "Local SHA-256", value: String(hash.prefix(16)) + "…")
+                    }
+                    if let remoteHash = integrity.remoteHash {
+                        Divider()
+                        integrityInfoRow(label: "Remote SHA-256", value: String(remoteHash.prefix(16)) + "…")
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+                )
+            } else if !isLoadingIntegrity {
+                Text("Integrity check not available.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func integrityStatusRow(_ integrity: SkillSourceIntegrity) -> some View {
+        let (icon, label, color): (String, String, Color) = {
+            switch integrity.status {
+            case .verified:
+                return ("checkmark.shield.fill", "Verified — matches remote", .green)
+            case .modified:
+                return ("exclamationmark.shield.fill", "Modified — differs from remote", .orange)
+            case .remoteUnavailable:
+                return ("wifi.slash", "Remote unavailable (offline check)", .secondary)
+            case .noRemoteSource:
+                return ("internaldrive", "Local-only skill, no remote source", .secondary)
+            case .notInstalled:
+                return ("xmark.circle", "SKILL.md not found locally", .red)
+            }
+        }()
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundStyle(color)
+                .font(.system(size: 13))
+            Text(label)
+                .font(.callout)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+    }
+
+    @ViewBuilder
+    private func integrityInfoRow(label: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.caption.monospaced())
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+    }
+
     var body: some View {
         SkillLibraryInspectorCard {
             VStack(alignment: .leading, spacing: 20) {
@@ -709,6 +824,8 @@ private struct InstalledSkillDetailPane: View {
                 )
 
                 agentVisibilitySection
+
+                sourceIntegritySection
 
                 SkillLibraryMetadataBlock(
                     title: "Package",
