@@ -111,6 +111,15 @@ final class SkillWorkspaceService {
         )
     }
 
+    /// Analyzes the local SKILL.md for structural quality signals (no network required).
+    func auditEffectiveness(for skill: InstalledSkillSnapshot) async -> SkillEffectivenessReport {
+        await cliService.checkEffectiveness(
+            skillName: skill.package.rawValue,
+            isGlobal: skill.isGlobal,
+            projectRootURL: selectedProjectRootURL
+        )
+    }
+
     func installationState(
         for skill: CatalogSkill,
         registry: [String: CatalogSkillInstallationState]

@@ -28,6 +28,8 @@ struct InstalledSkillsView: View {
     @State private var isLoadingVisibility = false
     @State private var sourceIntegrity: SkillSourceIntegrity?
     @State private var isLoadingIntegrity = false
+    @State private var effectiveness: SkillEffectivenessReport?
+    @State private var isLoadingEffectiveness = false
     @State private var fetchTask: Task<Void, Never>?
     @ObservedObject private var cliAccessManager = CLIDirectoryAccessManager.shared
     @State private var showingCLIAccessManager = false
@@ -154,16 +156,20 @@ struct InstalledSkillsView: View {
             guard let skill = selectedSkill else {
                 agentVisibility = []
                 sourceIntegrity = nil
+                effectiveness = nil
                 return
             }
             // Kick off visibility scan (fast, filesystem only).
             isLoadingVisibility = true
             isLoadingIntegrity = true
+            isLoadingEffectiveness = true
             agentVisibility = []
             sourceIntegrity = nil
+            effectiveness = nil
 
             async let visibilityTask = workspaceService.auditAgentVisibility(for: skill)
             async let integrityTask = workspaceService.auditSourceIntegrity(for: skill)
+            async let effectivenessTask = workspaceService.auditEffectiveness(for: skill)
 
             let visResult = await visibilityTask
             guard !Task.isCancelled else { return }
@@ -174,6 +180,11 @@ struct InstalledSkillsView: View {
             guard !Task.isCancelled else { return }
             sourceIntegrity = intResult
             isLoadingIntegrity = false
+
+            let effResult = await effectivenessTask
+            guard !Task.isCancelled else { return }
+            effectiveness = effResult
+            isLoadingEffectiveness = false
         }
         .alert("Remove Skill", isPresented: Binding(
             get: { pendingRemoval != nil },
@@ -298,6 +309,8 @@ struct InstalledSkillsView: View {
                     isLoadingVisibility: isLoadingVisibility,
                     sourceIntegrity: sourceIntegrity,
                     isLoadingIntegrity: isLoadingIntegrity,
+                    effectiveness: effectiveness,
+                    isLoadingEffectiveness: isLoadingEffectiveness,
                     isAdding: addingSkillIDs.contains(selectedSkill.id),
                     isRemoving: removingSkillIDs.contains(selectedSkill.id),
                     onEditDraft: {
@@ -616,6 +629,8 @@ private struct InstalledSkillDetailPane: View {
     let isLoadingVisibility: Bool
     let sourceIntegrity: SkillSourceIntegrity?
     let isLoadingIntegrity: Bool
+    let effectiveness: SkillEffectivenessReport?
+    let isLoadingEffectiveness: Bool
     let isAdding: Bool
     let isRemoving: Bool
     let onEditDraft: () -> Void
@@ -908,6 +923,121 @@ private struct InstalledSkillDetailPane: View {
         .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
     }
 
+    // MARK: - Effectiveness Section
+
+    @ViewBuilder
+    private var effectivenessSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Skill Quality")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                if isLoadingEffectiveness {
+                    ProgressView()
+                        .controlSize(.mini)
+                }
+            }
+
+            if isLoadingEffectiveness && effectiveness == nil {
+                Text("Analyzing SKILL.md…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if let report = effectiveness {
+                if !report.fileFound {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundStyle(.orange)
+                        Text("SKILL.md not found — cannot analyze quality.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    // Score bar + tier badge
+                    HStack(spacing: 12) {
+                        // Circular score indicator
+                        ZStack {
+                            Circle()
+                                .stroke(Color(NSColor.separatorColor), lineWidth: 3)
+                            Circle()
+                                .trim(from: 0, to: report.score)
+                                .stroke(tierColor(report.tier), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                                .rotationEffect(.degrees(-90))
+                            Text("\(Int(report.score * 100))")
+                                .font(.system(size: 11, weight: .semibold))
+                                .monospacedDigit()
+                        }
+                        .frame(width: 36, height: 36)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 5) {
+                                Image(systemName: report.tier.systemImage)
+                                    .foregroundStyle(tierColor(report.tier))
+                                    .font(.caption)
+                                Text(report.tier.label)
+                                    .font(.callout.weight(.semibold))
+                                    .foregroundStyle(tierColor(report.tier))
+                            }
+                            Text("\(report.checks.filter(\.passed).count) of \(report.checks.count) checks passed")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    // Individual checks
+                    VStack(spacing: 0) {
+                        ForEach(report.checks, id: \.title) { check in
+                            effectivenessCheckRow(check)
+                            if check.title != report.checks.last?.title {
+                                Divider()
+                            }
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+                    )
+                }
+            } else if !isLoadingEffectiveness {
+                Text("Quality analysis not available.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func tierColor(_ tier: EffectivenessTier) -> Color {
+        switch tier {
+        case .excellent: return .green
+        case .good: return .blue
+        case .fair: return .orange
+        case .poor: return .red
+        }
+    }
+
+    @ViewBuilder
+    private func effectivenessCheckRow(_ check: SkillEffectivenessCheck) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                Image(systemName: check.passed ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .foregroundStyle(check.passed ? Color.green : Color.red)
+                    .font(.caption)
+                Text(check.title)
+                    .font(.callout)
+                Spacer()
+            }
+            if !check.passed, let hint = check.hint {
+                Text(hint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 20)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+    }
+
     var body: some View {
         SkillLibraryInspectorCard {
             VStack(alignment: .leading, spacing: 20) {
@@ -958,6 +1088,8 @@ private struct InstalledSkillDetailPane: View {
                 agentVisibilitySection
 
                 sourceIntegritySection
+
+                effectivenessSection
 
                 SkillLibraryMetadataBlock(
                     title: "Package",

@@ -207,6 +207,81 @@ public struct SkillSourceIntegrity: Sendable, Equatable {
     }
 }
 
+// MARK: - Skill Effectiveness
+
+/// A single structural check on a SKILL.md file.
+public struct SkillEffectivenessCheck: Sendable, Equatable {
+    /// Human-readable title, e.g. "Has frontmatter description".
+    public let title: String
+    /// Short explanation of why this check matters.
+    public let rationale: String
+    /// Whether the check passed.
+    public let passed: Bool
+    /// Optional hint shown when the check fails.
+    public let hint: String?
+
+    public init(title: String, rationale: String, passed: Bool, hint: String?) {
+        self.title = title
+        self.rationale = rationale
+        self.passed = passed
+        self.hint = hint
+    }
+}
+
+/// Effectiveness tier derived from the overall score.
+public enum EffectivenessTier: String, Sendable, Equatable {
+    /// 80–100 % of checks pass.
+    case excellent
+    /// 60–79 % of checks pass.
+    case good
+    /// 40–59 % of checks pass.
+    case fair
+    /// < 40 % of checks pass.
+    case poor
+
+    public var label: String {
+        switch self {
+        case .excellent: return "Excellent"
+        case .good: return "Good"
+        case .fair: return "Fair"
+        case .poor: return "Poor"
+        }
+    }
+
+    public var systemImage: String {
+        switch self {
+        case .excellent: return "checkmark.seal.fill"
+        case .good: return "star.fill"
+        case .fair: return "exclamationmark.circle.fill"
+        case .poor: return "xmark.circle.fill"
+        }
+    }
+}
+
+/// Aggregate effectiveness report for an installed SKILL.md.
+public struct SkillEffectivenessReport: Sendable, Equatable {
+    public let checks: [SkillEffectivenessCheck]
+    /// 0.0 … 1.0
+    public let score: Double
+    public let tier: EffectivenessTier
+    /// Whether the SKILL.md file was found at all.
+    public let fileFound: Bool
+
+    public init(checks: [SkillEffectivenessCheck], score: Double, tier: EffectivenessTier, fileFound: Bool) {
+        self.checks = checks
+        self.score = score
+        self.tier = tier
+        self.fileFound = fileFound
+    }
+
+    public static let notFound = SkillEffectivenessReport(
+        checks: [],
+        score: 0,
+        tier: .poor,
+        fileFound: false
+    )
+}
+
 public struct AgentSkillRoots: Sendable {
     public let global: URL
     public let project: URL
@@ -816,6 +891,146 @@ public actor SkillCatalogService {
             localPath: localFilePath,
             checkedAt: now
         )
+    }
+
+    /// Analyzes the locally installed SKILL.md for structural quality signals.
+    ///
+    /// The checks are purely structural/textual — no network access is required.
+    /// - Parameters:
+    ///   - skillName: Full package name or short skill name.
+    ///   - isGlobal: Whether to look in the global or project skill root.
+    /// - Returns: An `SkillEffectivenessReport` with individual check results and an overall score.
+    public func checkEffectiveness(
+        skillName: String,
+        isGlobal: Bool = true
+    ) -> SkillEffectivenessReport {
+        let short = sanitizePathComponent(shortSkillName(fromPackage: skillName))
+
+        // Locate the SKILL.md from the first agent that has a configured root.
+        var markdown: String?
+        for workflow in AgentWorkflow.allCases {
+            guard let roots = agentSkillRoots[workflow] else { continue }
+            let base = isGlobal ? roots.global : roots.project
+            let skillFile = base
+                .appendingPathComponent(short, isDirectory: true)
+                .appendingPathComponent("SKILL.md")
+            if let content = try? String(contentsOf: skillFile, encoding: .utf8) {
+                markdown = content
+                break
+            }
+        }
+
+        guard let content = markdown else {
+            return .notFound
+        }
+
+        let checks = Self.runEffectivenessChecks(on: content)
+        let passedCount = checks.filter(\.passed).count
+        let score = checks.isEmpty ? 0.0 : Double(passedCount) / Double(checks.count)
+        let tier: EffectivenessTier = {
+            switch score {
+            case 0.8...: return .excellent
+            case 0.6..<0.8: return .good
+            case 0.4..<0.6: return .fair
+            default: return .poor
+            }
+        }()
+
+        return SkillEffectivenessReport(checks: checks, score: score, tier: tier, fileFound: true)
+    }
+
+    /// Pure function: run all structural checks on raw SKILL.md content.
+    private static func runEffectivenessChecks(on content: String) -> [SkillEffectivenessCheck] {
+        let lines = content.components(separatedBy: .newlines)
+        let lower = content.lowercased()
+        let headings = lines.filter { $0.hasPrefix("#") }.map { $0.lowercased() }
+
+        // 1. Has YAML frontmatter
+        let hasFrontmatter: Bool = {
+            guard lines.first?.trimmingCharacters(in: .whitespaces) == "---" else { return false }
+            let closeIdx = lines.dropFirst().firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "---" })
+            return closeIdx != nil
+        }()
+
+        // 2. Has non-empty description in frontmatter
+        let hasDescription: Bool = {
+            guard hasFrontmatter else { return false }
+            let descLine = lines.first(where: { $0.lowercased().hasPrefix("description:") })
+            guard let raw = descLine else { return false }
+            let value = raw.dropFirst("description:".count).trimmingCharacters(in: .whitespacesAndNewlines)
+            return !value.isEmpty && value.count > 10
+        }()
+
+        // 3. Has a ## Usage section (or similar trigger-word heading)
+        let hasUsageSection = headings.contains(where: {
+            $0.contains("usage") || $0.contains("when to use") || $0.contains("trigger")
+        })
+
+        // 4. Has a code block (example of usage)
+        let hasCodeBlock = content.contains("```")
+
+        // 5. Length is substantial (> 150 chars of non-frontmatter content)
+        let contentWithoutFrontmatter: String = {
+            guard hasFrontmatter,
+                  let closeRange = content.range(of: "\n---", range: content.range(of: "---")!.upperBound..<content.endIndex) else {
+                return content
+            }
+            return String(content[closeRange.upperBound...])
+        }()
+        let isSubstantial = contentWithoutFrontmatter
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .count > 150
+
+        // 6. Has a primary heading (# Title)
+        let hasTitle = lines.contains(where: { $0.hasPrefix("# ") })
+
+        // 7. Has tool/file references (indicates practical grounding)
+        let hasToolRefs = lower.contains("file") || lower.contains("command") || lower.contains("tool") || lower.contains("function")
+
+        return [
+            SkillEffectivenessCheck(
+                title: "YAML frontmatter",
+                rationale: "Frontmatter lets agents extract structured metadata.",
+                passed: hasFrontmatter,
+                hint: hasFrontmatter ? nil : "Add `---` frontmatter with at least a `description:` field."
+            ),
+            SkillEffectivenessCheck(
+                title: "Non-empty description",
+                rationale: "A clear description helps agents decide when to invoke this skill.",
+                passed: hasDescription,
+                hint: hasDescription ? nil : "Add a `description:` field with at least a sentence."
+            ),
+            SkillEffectivenessCheck(
+                title: "Title heading",
+                rationale: "A `# Title` heading makes the skill scannable.",
+                passed: hasTitle,
+                hint: hasTitle ? nil : "Add a top-level `# SkillName` heading."
+            ),
+            SkillEffectivenessCheck(
+                title: "Usage section",
+                rationale: "An explicit usage or 'when to use' section sets invocation expectations.",
+                passed: hasUsageSection,
+                hint: hasUsageSection ? nil : "Add a `## Usage` or `## When to use` section."
+            ),
+            SkillEffectivenessCheck(
+                title: "Code or command examples",
+                rationale: "Concrete examples improve agent reliability.",
+                passed: hasCodeBlock,
+                hint: hasCodeBlock ? nil : "Add at least one fenced code block with an example."
+            ),
+            SkillEffectivenessCheck(
+                title: "Substantial content",
+                rationale: "Thin skill files often lack enough context for reliable agent behavior.",
+                passed: isSubstantial,
+                hint: isSubstantial ? nil : "Expand the skill file with more detail (aim for > 150 characters of body content)."
+            ),
+            SkillEffectivenessCheck(
+                title: "Tool or file references",
+                rationale: "Referencing tools or files grounds the skill in practical usage.",
+                passed: hasToolRefs,
+                hint: hasToolRefs ? nil : "Mention specific tools, files, or commands this skill relies on."
+            ),
+        ]
     }
 
     private func sha256Hex(_ text: String) -> String {

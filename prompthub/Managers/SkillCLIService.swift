@@ -250,6 +250,20 @@ final class SkillCLIService {
         }
     }
 
+    /// Analyzes the local SKILL.md for structural quality signals (no network required).
+    func checkEffectiveness(
+        skillName: String,
+        isGlobal: Bool,
+        projectRootURL: URL? = nil
+    ) async -> SkillEffectivenessReport {
+        await cliAccessManager.withAccess {
+            self.makeCatalog(projectRootURL: projectRootURL).checkEffectiveness(
+                skillName: skillName,
+                isGlobal: isGlobal
+            )
+        }
+    }
+
     /// Installs a skill from a private GitHub repo (using an optional PAT) or from a
     /// team-shared local directory.
     ///
