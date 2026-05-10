@@ -40,6 +40,7 @@ final class SkillDraftService {
         context.insert(draft)
         context.insert(initialVersion)
         try context.save()
+        PromptHubBridge.shared.exportSkill(draft)
         return draft
     }
 
@@ -72,6 +73,7 @@ final class SkillDraftService {
         let version = draft.createVersion(instructions: instructions)
         context.insert(version)
         try context.save()
+        PromptHubBridge.shared.exportSkill(draft)
         return version
     }
 
@@ -103,6 +105,7 @@ final class SkillDraftService {
     }
 
     func deleteDraft(_ draft: Skill, in context: ModelContext) throws {
+        PromptHubBridge.shared.removeSkill(draft)
         context.delete(draft)
         try context.save()
     }

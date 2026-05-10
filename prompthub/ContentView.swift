@@ -85,7 +85,11 @@ struct ContentView: View {
                 return .ignored
             }
             .toast(isPresenting: $showToast) { AlertToast(type: toastType, title: toastMessage) }
-            .onAppear { loadGalleryPrompts(); checkForWhatsNew() }
+            .onAppear {
+                loadGalleryPrompts()
+                checkForWhatsNew()
+                PromptHubBridge.shared.syncAll(prompts: prompts, skills: skillDrafts)
+            }
             .onReceive(NotificationCenter.default.publisher(for: .searchNavigationRequested)) { notification in
                 guard let target = SearchNavigationRequest.from(notification) else { return }
                 handleSearchNavigation(target)

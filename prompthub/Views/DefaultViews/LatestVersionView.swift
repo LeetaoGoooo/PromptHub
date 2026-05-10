@@ -77,6 +77,7 @@ struct LatestVersionView: View {
                                     latestHistory.promptText = newValue
                                     latestHistory.updatedAt = Date()
                                     try? modelContext.save()
+                                    PromptHubBridge.shared.exportPrompt(prompt)
                                 }
                             }
 
