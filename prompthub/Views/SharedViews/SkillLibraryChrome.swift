@@ -27,36 +27,56 @@ struct SkillLibraryHeaderCard<Accessory: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(title)
-                        .font(.largeTitle.weight(.semibold))
+        HStack(alignment: .center, spacing: 12) {
+            // Title + subtitle
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.title3.weight(.semibold))
 
+                if !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.subheadline)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
-
-                Spacer(minLength: 12)
-
-                accessory()
             }
 
+            Spacer(minLength: 8)
+
+            // Metrics inline
             if !metrics.isEmpty {
-                HStack(spacing: 10) {
+                HStack(spacing: 6) {
                     ForEach(metrics) { metric in
-                        SkillMetricPill(metric: metric)
+                        HStack(spacing: 4) {
+                            Image(systemName: metric.systemImage)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(metric.value)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            Text(metric.title)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Color(NSColor.separatorColor), lineWidth: 0.5))
                     }
                 }
             }
+
+            // Accessory actions
+            accessory()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 24)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(Color(NSColor.windowBackgroundColor))
+
+        Divider()
     }
 }
 

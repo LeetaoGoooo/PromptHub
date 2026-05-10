@@ -61,56 +61,71 @@ struct PromptRenderSheet: View {
     }
 
     var body: some View {
-        HSplitView {
-            // Left: prompt picker
-            VStack(spacing: 0) {
-                TextField("Search prompts…", text: $searchText)
-                    .textFieldStyle(.roundedBorder)
-                    .padding(10)
-
-                Divider()
-
-                List(filteredPrompts, id: \.id, selection: $selectedPromptID) { prompt in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(prompt.name)
-                            .font(.callout.weight(.medium))
-                            .lineLimit(1)
-                        if let desc = prompt.desc, !desc.isEmpty {
-                            Text(desc)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-                    .tag(prompt.id)
+        VStack(spacing: 0) {
+            // Standard sheet header bar
+            HStack {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Render Prompt")
+                        .font(.headline)
+                    Text("Fill in variables and copy the rendered output")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .listStyle(.sidebar)
+                Spacer()
+                Button("Close", action: onDismiss)
+                    .keyboardShortcut(.escape)
             }
-            .frame(minWidth: 200, maxWidth: 240)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
 
-            // Right: render panel
-            VStack(spacing: 0) {
-                if selectedPrompt == nil {
-                    VStack(spacing: 8) {
-                        Image(systemName: "text.cursor")
-                            .font(.system(size: 32))
-                            .foregroundStyle(.secondary)
-                        Text("Select a prompt to render")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
+            Divider()
+
+            HSplitView {
+                // Left: prompt picker
+                VStack(spacing: 0) {
+                    TextField("Search prompts…", text: $searchText)
+                        .textFieldStyle(.roundedBorder)
+                        .padding(10)
+
+                    Divider()
+
+                    List(filteredPrompts, id: \.id, selection: $selectedPromptID) { prompt in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(prompt.name)
+                                .font(.callout.weight(.medium))
+                                .lineLimit(1)
+                            if let desc = prompt.desc, !desc.isEmpty {
+                                Text(desc)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .tag(prompt.id)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    renderPanel
+                    .listStyle(.sidebar)
+                }
+                .frame(minWidth: 200, maxWidth: 240)
+
+                // Right: render panel
+                VStack(spacing: 0) {
+                    if selectedPrompt == nil {
+                        VStack(spacing: 8) {
+                            Image(systemName: "text.cursor")
+                                .font(.system(size: 32))
+                                .foregroundStyle(.secondary)
+                            Text("Select a prompt to render")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        renderPanel
+                    }
                 }
             }
         }
         .frame(minWidth: 680, minHeight: 480)
-        .overlay(alignment: .topTrailing) {
-            Button("Close", action: onDismiss)
-                .keyboardShortcut(.escape)
-                .padding(12)
-        }
         .onChange(of: selectedPromptID) { _, _ in
             variables = [:]
             isCopied = false

@@ -89,21 +89,11 @@ struct PromptItemView: View {
                 Spacer()
             }
         }
-        .padding(12)
-        .background(isHovering ? Color.accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(isHovering ? Color.accentColor.opacity(0.3) : Color(NSColor.separatorColor), lineWidth: 1)
-        )
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                self.isHovering = hovering
-            }
+        .promptCardStyle(isHovering: $isHovering) {
+            copyPromptToClipboard(promptContent)
+            showToastMsg("Copied to clipboard", .complete(.green))
         }
         .onTapGesture {
-            // In a Master-Detail view, we might want to select it.
-            // But PromptItemView is currently a card in a grid.
             showingPreviewSheet.toggle()
         }
         // Context menu remains the primary way to interact for quick actions

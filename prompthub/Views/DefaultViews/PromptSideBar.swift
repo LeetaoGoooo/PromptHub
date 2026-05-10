@@ -11,7 +11,7 @@ import SwiftUI
 struct PromptSideBar: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Prompt.name) var prompts: [Prompt]
-    @AppStorage("sidebar.recentPromptsExpanded") private var isRecentPromptsExpanded = false
+    @AppStorage("sidebar.recentPromptsExpanded") private var isRecentPromptsExpanded = true
     
     @State private var promptToDelete: Prompt?
     
@@ -51,25 +51,27 @@ struct PromptSideBar: View {
 
     @ViewBuilder
     private var librarySection: some View {
-        NavigationLink(value: PromptSelection.allPrompts) {
-            Label("All Prompts", systemImage: "tray.full")
+        Section("Library") {
+            NavigationLink(value: PromptSelection.allPrompts) {
+                Label("All Prompts", systemImage: "tray.full")
+            }
+            .help("View all saved prompts in your library")
+
+            NavigationLink(value: PromptSelection.mine) {
+                Label("My Prompts", systemImage: "person.circle")
+            }
+            .help("Prompts created by you")
+
+            NavigationLink(value: PromptSelection.explore) {
+                Label("Explore Gallery", systemImage: "safari")
+            }
+            .help("Discover community prompts")
+
+            NavigationLink(value: PromptSelection.shared) {
+                Label("Shared with Me", systemImage: "person.2")
+            }
+            .help("Prompts shared by others via CloudKit")
         }
-        .help("View all saved prompts in your library")
-        
-        NavigationLink(value: PromptSelection.mine) {
-            Label("My Prompts", systemImage: "person.circle")
-        }
-        .help("Prompts created by you")
-        
-        NavigationLink(value: PromptSelection.explore) {
-            Label("Explore Gallery", systemImage: "safari")
-        }
-        .help("Discover community prompts")
-        
-        NavigationLink(value: PromptSelection.shared) {
-            Label("Shared with Me", systemImage: "person.2")
-        }
-        .help("Prompts shared by others via CloudKit")
     }
 
     @ViewBuilder

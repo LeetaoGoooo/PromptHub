@@ -56,30 +56,82 @@ struct AllPromptsView: View {
         } else {
             GeometryReader { geometry in
                 ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
-                        // User prompts
-                        ForEach(filteredUserPrompts) { prompt in
-                            PromptItemView(
-                                prompt: prompt,
-                                showToastMsg: showToastMsg,
-                                copyPromptToClipboard: copyPromptToClipboard
+                    VStack(alignment: .leading, spacing: 0) {
+                        // My Prompts section
+                        if !filteredUserPrompts.isEmpty {
+                            sectionHeader(
+                                title: "My Prompts",
+                                count: filteredUserPrompts.count,
+                                systemImage: "person.circle"
                             )
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                                ForEach(filteredUserPrompts) { prompt in
+                                    PromptItemView(
+                                        prompt: prompt,
+                                        showToastMsg: showToastMsg,
+                                        copyPromptToClipboard: copyPromptToClipboard
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 24)
                         }
-                        
-                        // Gallery prompts
-                        ForEach(filteredGalleryPrompts) { prompt in
-                            GalleryPromptItemView(
-                                galleryPromptItem: prompt,
-                                showToastMsg: showToastMsg,
-                                copyPromptToClipboard: copyPromptToClipboard
+
+                        // Gallery section
+                        if !filteredGalleryPrompts.isEmpty {
+                            sectionHeader(
+                                title: "Gallery",
+                                count: filteredGalleryPrompts.count,
+                                systemImage: "safari"
                             )
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                                ForEach(filteredGalleryPrompts) { prompt in
+                                    GalleryPromptItemView(
+                                        galleryPromptItem: prompt,
+                                        showToastMsg: showToastMsg,
+                                        copyPromptToClipboard: copyPromptToClipboard
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 24)
+                        }
+
+                        if filteredUserPrompts.isEmpty && filteredGalleryPrompts.isEmpty {
+                            VStack(spacing: 8) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(.secondary)
+                                Text("No prompts match \"\(searchText)\"")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.top, 80)
                         }
                     }
-                    .padding(20)
+                    .padding(.top, 20)
                 }
                 .background(Color(NSColor.windowBackgroundColor))
             }
         }
+    }
+
+    @ViewBuilder
+    private func sectionHeader(title: String, count: Int, systemImage: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text("(\(count))")
+                .font(.subheadline)
+                .foregroundStyle(Color(NSColor.tertiaryLabelColor))
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 10)
     }
 }
 

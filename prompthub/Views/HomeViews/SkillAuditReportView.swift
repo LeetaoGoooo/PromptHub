@@ -20,8 +20,55 @@ struct SkillAuditReportView: View {
     @State private var isDone = false
     @State private var currentSkillName = ""
     @State private var auditTask: Task<Void, Never>?
+    @State private var sortOrder: [KeyPathComparator<AuditRow>] = [
+        .init(\.displayName, order: .forward)
+    ]
+    @State private var tableSelection: String?
 
     private let workspaceService = SkillWorkspaceService.shared
+
+    // MARK: - Data model for Table rows
+
+    private struct AuditRow: Identifiable {
+        let id: String
+        let skill: InstalledSkillSnapshot
+        let visibility: [SkillAgentVisibility]
+        let integrity: SkillSourceIntegrity?
+        let effectiveness: SkillEffectivenessReport?
+
+        var displayName: String { skill.displayName }
+        var scope: String { skill.isGlobal ? "Global" : "Project" }
+        var visibleCount: Int { visibility.filter { $0.status == .visible }.count }
+        var totalAgents: Int { AgentWorkflow.allCases.count }
+        var integrityRank: Int {
+            guard let i = integrity else { return -1 }
+            switch i.status {
+            case .verified: return 0
+            case .noRemoteSource: return 1
+            case .remoteUnavailable: return 2
+            case .modified: return 3
+            case .notInstalled: return 4
+            }
+        }
+        var effectivenessScore: Double { effectiveness?.score ?? -1 }
+    }
+
+    private var auditRows: [AuditRow] {
+        skills.map { skill in
+            AuditRow(
+                id: skill.id,
+                skill: skill,
+                visibility: visibilityMap[skill.id] ?? [],
+                integrity: integrityMap[skill.id],
+                effectiveness: effectivenessMap[skill.id]
+            )
+        }
+    }
+
+    private var sortedRows: [AuditRow] {
+        auditRows.sorted(using: sortOrder)
+    }
+
 
     // MARK: - Computed summary stats
 
@@ -43,23 +90,33 @@ struct SkillAuditReportView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
+            // Header bar
+            HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Skill Audit")
                         .font(.headline)
-                    Text("\(totalSkills) installed skill\(totalSkills == 1 ? "" : "s")")
+                    Text("\(totalSkills) skill\(totalSkills == 1 ? "" : "s")")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Close", action: {
+                if isDone {
+                    Button {
+                        isDone = false
+                        startAudit()
+                    } label: {
+                        Label("Re-run", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+                }
+                Button("Close") {
                     auditTask?.cancel()
                     onDismiss()
-                })
+                }
                 .keyboardShortcut(.escape)
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
 
             Divider()
 
@@ -69,7 +126,7 @@ struct SkillAuditReportView: View {
                 reportView
             }
         }
-        .frame(minWidth: 720, minHeight: 520)
+        .frame(minWidth: 700, minHeight: 480)
         .onAppear { startAudit() }
     }
 
@@ -101,219 +158,167 @@ struct SkillAuditReportView: View {
 
     private var reportView: some View {
         VStack(spacing: 0) {
-            // Summary bar
             summaryBar
-
             Divider()
-
-            // Table
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    // Column headers
-                    auditTableHeader
-
-                    Divider()
-
-                    ForEach(skills) { skill in
-                        auditTableRow(skill)
-                        Divider()
-                    }
-                }
-            }
-
-            Divider()
-
-            // Footer
-            HStack {
-                Button {
-                    isDone = false
-                    startAudit()
-                } label: {
-                    Label("Re-run Audit", systemImage: "arrow.clockwise")
-                }
-                Spacer()
-                Button("Close", action: onDismiss)
-            }
-            .padding(16)
+            auditTable
         }
     }
 
     // MARK: - Summary Bar
 
     private var summaryBar: some View {
-        HStack(spacing: 20) {
-            auditSummaryPill(
+        HStack(spacing: 16) {
+            summaryPill(
                 value: "\(totalSkills)",
                 label: "Skills",
                 icon: "shippingbox.fill",
                 color: .blue
             )
-            auditSummaryPill(
+            summaryPill(
                 value: "\(missingAgentCount)",
                 label: "Missing Agents",
                 icon: "exclamationmark.triangle.fill",
-                color: missingAgentCount > 0 ? .orange : .secondary
+                color: missingAgentCount > 0 ? .orange : Color(NSColor.tertiaryLabelColor)
             )
-            auditSummaryPill(
+            summaryPill(
                 value: "\(integrityIssueCount)",
                 label: "Modified",
                 icon: "exclamationmark.shield.fill",
-                color: integrityIssueCount > 0 ? .orange : .secondary
+                color: integrityIssueCount > 0 ? .orange : Color(NSColor.tertiaryLabelColor)
             )
-            auditSummaryPill(
+            summaryPill(
                 value: "\(poorEffectivenessCount)",
                 label: "Low Quality",
                 icon: "xmark.circle.fill",
-                color: poorEffectivenessCount > 0 ? .red : .secondary
+                color: poorEffectivenessCount > 0 ? .red : Color(NSColor.tertiaryLabelColor)
             )
             Spacer()
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(NSColor.windowBackgroundColor))
     }
 
     @ViewBuilder
-    private func auditSummaryPill(value: String, label: String, icon: String, color: Color) -> some View {
-        HStack(spacing: 6) {
+    private func summaryPill(value: String, label: String, icon: String, color: Color) -> some View {
+        HStack(spacing: 5) {
             Image(systemName: icon)
                 .foregroundStyle(color)
                 .font(.caption)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(value)
-                    .font(.callout.weight(.semibold))
-                    .monospacedDigit()
-                Text(label)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
+            Text(value)
+                .font(.callout.weight(.semibold))
+                .monospacedDigit()
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
-    // MARK: - Table Header
+    // MARK: - Native Table
 
-    private var auditTableHeader: some View {
-        HStack(spacing: 0) {
-            Text("Skill")
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text("Scope")
-                .frame(width: 70, alignment: .center)
-            Text("Agents")
-                .frame(width: 90, alignment: .center)
-            Text("Integrity")
-                .frame(width: 100, alignment: .center)
-            Text("Quality")
-                .frame(width: 80, alignment: .center)
-        }
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 7)
-        .background(Color(NSColor.controlBackgroundColor))
-    }
-
-    // MARK: - Table Row
-
-    @ViewBuilder
-    private func auditTableRow(_ skill: InstalledSkillSnapshot) -> some View {
-        let visibility = visibilityMap[skill.id] ?? []
-        let integrity = integrityMap[skill.id]
-        let effectiveness = effectivenessMap[skill.id]
-
-        HStack(spacing: 0) {
-            // Skill name
-            VStack(alignment: .leading, spacing: 2) {
-                Text(skill.displayName)
-                    .font(.callout.weight(.medium))
-                    .lineLimit(1)
-                if let source = skill.displaySource {
-                    Text(source)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+    private var auditTable: some View {
+        Table(sortedRows, selection: $tableSelection, sortOrder: $sortOrder) {
+            TableColumn("Skill", value: \.displayName) { row in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(row.displayName)
+                        .font(.callout.weight(.medium))
                         .lineLimit(1)
+                    if let source = row.skill.displaySource {
+                        Text(source)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Scope
-            scopeBadgeSmall(skill)
-                .frame(width: 70)
+            TableColumn("Scope", value: \.scope) { row in
+                let isGlobal = row.skill.isGlobal
+                let color: Color = isGlobal ? .blue : .mint
+                Label(isGlobal ? "Global" : "Project",
+                      systemImage: isGlobal ? "globe" : "folder")
+                    .font(.caption2)
+                    .foregroundStyle(color)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(color.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            .width(90)
 
-            // Agent visibility
-            agentVisibilityCells(visibility)
-                .frame(width: 90)
+            TableColumn("Agents", value: \.visibleCount) { row in
+                agentCell(row)
+            }
+            .width(80)
 
-            // Integrity
-            integrityCellSmall(integrity)
-                .frame(width: 100)
+            TableColumn("Integrity", value: \.integrityRank) { row in
+                integrityCell(row.integrity)
+            }
+            .width(110)
 
-            // Effectiveness
-            effectivenessCellSmall(effectiveness)
-                .frame(width: 80)
+            TableColumn("Quality", value: \.effectivenessScore) { row in
+                effectivenessCell(row.effectiveness)
+            }
+            .width(100)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .tableStyle(.inset(alternatesRowBackgrounds: true))
     }
 
     @ViewBuilder
-    private func scopeBadgeSmall(_ skill: InstalledSkillSnapshot) -> some View {
-        let color: Color = skill.isGlobal ? .blue : .mint
-        Label(skill.isGlobal ? "Global" : "Project",
-              systemImage: skill.isGlobal ? "globe" : "folder")
-            .font(.caption2)
-            .foregroundStyle(color)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.12))
-            .clipShape(Capsule())
-    }
-
-    @ViewBuilder
-    private func agentVisibilityCells(_ visibility: [SkillAgentVisibility]) -> some View {
-        if visibility.isEmpty {
+    private func agentCell(_ row: AuditRow) -> some View {
+        if row.visibility.isEmpty {
             ProgressView().controlSize(.mini)
         } else {
-            let visible = visibility.filter { $0.status == .visible }.count
-            let total = AgentWorkflow.allCases.count
+            let visible = row.visibleCount
+            let total = row.totalAgents
             HStack(spacing: 3) {
                 Text("\(visible)/\(total)")
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(visible == total ? Color.green : Color.orange)
                     .monospacedDigit()
+                if visible < total {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
             }
         }
     }
 
     @ViewBuilder
-    private func integrityCellSmall(_ integrity: SkillSourceIntegrity?) -> some View {
+    private func integrityCell(_ integrity: SkillSourceIntegrity?) -> some View {
         if let integrity {
-            let (icon, color): (String, Color) = {
+            let (icon, color, label): (String, Color, String) = {
                 switch integrity.status {
-                case .verified: return ("checkmark.shield.fill", .green)
-                case .modified: return ("exclamationmark.shield.fill", .orange)
-                case .remoteUnavailable: return ("wifi.slash", .secondary)
-                case .noRemoteSource: return ("internaldrive", .secondary)
-                case .notInstalled: return ("xmark.circle.fill", .red)
+                case .verified: return ("checkmark.shield.fill", .green, "Verified")
+                case .modified: return ("exclamationmark.shield.fill", .orange, "Modified")
+                case .remoteUnavailable: return ("wifi.slash", Color(NSColor.secondaryLabelColor), "Unavailable")
+                case .noRemoteSource: return ("internaldrive", Color(NSColor.secondaryLabelColor), "Local")
+                case .notInstalled: return ("xmark.circle.fill", .red, "Missing")
                 }
             }()
-            Image(systemName: icon)
-                .foregroundStyle(color)
-                .font(.caption)
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .foregroundStyle(color)
+                    .font(.caption)
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(color)
+            }
         } else {
             ProgressView().controlSize(.mini)
         }
     }
 
     @ViewBuilder
-    private func effectivenessCellSmall(_ effectiveness: SkillEffectivenessReport?) -> some View {
+    private func effectivenessCell(_ effectiveness: SkillEffectivenessReport?) -> some View {
         if let effectiveness {
             let color = tierColor(effectiveness.tier)
-            HStack(spacing: 3) {
+            HStack(spacing: 4) {
                 Image(systemName: effectiveness.tier.systemImage)
                     .foregroundStyle(color)
                     .font(.caption)
                 Text(effectiveness.tier.label)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(color)
             }
         } else {

@@ -222,10 +222,12 @@ struct SkillUpdateDiffSheet: View {
                         Label("Rollback to Previous", systemImage: "arrow.uturn.backward")
                     }
                 }
+                .buttonStyle(.bordered)
                 .disabled(isApplying || isRollingBack)
             }
 
             Button("Cancel", action: onDismiss)
+                .keyboardShortcut(.escape)
 
             if preview.status == .updateAvailable {
                 Button {

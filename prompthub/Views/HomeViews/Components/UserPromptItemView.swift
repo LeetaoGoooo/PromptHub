@@ -53,27 +53,14 @@ struct UserPromptItemView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .lineLimit(1)
-                    } else {
-                        Text("No description")
-                            .font(.caption)
-                            .foregroundColor(Color(nsColor: .tertiaryLabelColor))
-                            .lineLimit(1)
                     }
                 }
                 Spacer()
             }
         }
-        .padding(12)
-        .background(isHovering ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(isHovering ? Color.accentColor.opacity(0.3) : Color(nsColor: .separatorColor), lineWidth: 1)
-        )
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                self.isHovering = hovering
-            }
+        .promptCardStyle(isHovering: $isHovering) {
+            copyPromptToClipboard(latestPromptContent)
+            showToastMsg("Copied to clipboard", .complete(.green))
         }
         // Context menu remains the primary way to interact without opening
         .contextMenu {
