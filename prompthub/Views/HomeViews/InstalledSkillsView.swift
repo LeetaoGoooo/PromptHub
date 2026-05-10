@@ -33,6 +33,7 @@ struct InstalledSkillsView: View {
     @State private var fetchTask: Task<Void, Never>?
     @ObservedObject private var cliAccessManager = CLIDirectoryAccessManager.shared
     @State private var showingCLIAccessManager = false
+    @State private var showingAuditReport = false
 
     private var installedSkills: [InstalledSkillSnapshot] {
         workspaceSnapshot.installedSkills
@@ -121,6 +122,11 @@ struct InstalledSkillsView: View {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .buttonStyle(.bordered)
+
+                Button(action: { showingAuditReport = true }) {
+                    Label("Audit All…", systemImage: "checklist")
+                }
+                .buttonStyle(.bordered)
                 
                 Button(action: { showingCLIAccessManager = true }) {
                     Label("CLI Access", systemImage: "lock.shield")
@@ -131,6 +137,11 @@ struct InstalledSkillsView: View {
             VStack(spacing: 0) {
                 mainContentView
                 nonFatalErrorBanner
+            }
+        }
+        .sheet(isPresented: $showingAuditReport) {
+            SkillAuditReportView(skills: installedSkills) {
+                showingAuditReport = false
             }
         }
         .sheet(isPresented: $showingCLIAccessManager, onDismiss: {

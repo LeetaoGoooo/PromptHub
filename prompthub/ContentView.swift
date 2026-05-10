@@ -74,6 +74,7 @@ struct ContentView: View {
     @State private var showToast = false
     @State private var toastMessage = ""
     @State private var toastType: AlertToast.AlertType = .regular
+    @State private var showingPromptRender = false
     
     @State var whatsNew: WhatsNew? = nil
     
@@ -227,6 +228,20 @@ struct ContentView: View {
                         .help("Create a new prompt (Cmd+N)")
                     }
                 }
+
+                ToolbarItem(placement: .secondaryAction) {
+                    switch promptSelection {
+                    case .allPrompts, .mine, .prompt:
+                        Button {
+                            showingPromptRender = true
+                        } label: {
+                            Label("Render Prompt…", systemImage: "play.rectangle")
+                        }
+                        .help("Render a prompt with variable substitution")
+                    default:
+                        EmptyView()
+                    }
+                }
             }
             .onKeyPress(.escape) {
                 if case .prompt(_) = promptSelection {
@@ -255,6 +270,11 @@ struct ContentView: View {
             .sheet(whatsNew: self.$whatsNew, onDismiss: {
                 appSettings.lastShownWhatsNewVersion = self.currentAppVersion
             })
+            .sheet(isPresented: $showingPromptRender) {
+                PromptRenderSheet {
+                    showingPromptRender = false
+                }
+            }
         }
     }
     
