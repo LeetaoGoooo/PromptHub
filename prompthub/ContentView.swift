@@ -100,7 +100,7 @@ struct ContentView: View {
             }
             .sheet(whatsNew: self.$whatsNew, onDismiss: { appSettings.lastShownWhatsNewVersion = self.currentAppVersion })
             .sheet(isPresented: $showingPromptRender) { PromptRenderSheet { showingPromptRender = false } }
-            .overlay(alignment: .bottomLeading) {
+            .safeAreaInset(edge: .bottom, alignment: .leading) {
                 CLIStartupBanner()
                     .frame(maxWidth: 420)
             }

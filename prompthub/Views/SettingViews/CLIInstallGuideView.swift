@@ -3,19 +3,20 @@ import SwiftUI
 // MARK: - CLI Install Guide View
 
 /// An in-app guide that helps users install the PromptHub CLI.
-/// Shown in Settings > General and as a dismissable startup banner.
+/// `showDismissButton` controls whether a close button is shown (for banners);
+/// in Settings it is always shown without a close control.
 struct CLIInstallGuideView: View {
 
-    /// Whether the user has dismissed the banner for this session.
+    /// Only used when `showDismissButton == true`.
     @Binding var isDismissed: Bool
+    var showDismissButton: Bool = true
 
     @State private var cliPath: String? = nil
     @State private var copiedStep: Int? = nil
+    @Environment(\.scenePhase) private var scenePhase
 
     private let brewCommand   = "brew install LeetaoGoooo/tap/prompthub"
-    private let curlCommand   = """
-        curl -fsSL https://raw.githubusercontent.com/LeetaoGoooo/PromptHub/main/install.sh | sh
-        """
+    private let curlCommand   = "curl -fsSL https://raw.githubusercontent.com/LeetaoGoooo/PromptHub/main/install.sh | sh"
     private let verifyCommand = "prompthub agent doctor"
 
     var body: some View {
@@ -44,6 +45,15 @@ struct CLIInstallGuideView: View {
                     .truncationMode(.middle)
             }
             Spacer()
+            Button {
+                refresh()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .imageScale(.small)
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Check again")
         }
         .padding(.vertical, 4)
     }
@@ -71,44 +81,43 @@ struct CLIInstallGuideView: View {
 
                 Spacer()
 
-                Button {
-                    isDismissed = true
-                } label: {
-                    Image(systemName: "xmark")
-                        .imageScale(.small)
-                        .foregroundColor(.secondary)
+                if showDismissButton {
+                    Button {
+                        isDismissed = true
+                    } label: {
+                        Image(systemName: "xmark")
+                            .imageScale(.small)
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Don't show again for this version")
                 }
-                .buttonStyle(.plain)
-                .help("Dismiss")
             }
 
             Divider()
 
             // Option A — Homebrew
-            installOption(
-                step: 1,
-                icon: "🍺",
-                title: "Homebrew (recommended)",
-                command: brewCommand
-            )
+            installOption(step: 1, icon: "🍺", title: "Homebrew (recommended)", command: brewCommand)
 
             // Option B — curl
-            installOption(
-                step: 2,
-                icon: "📦",
-                title: "Manual (curl)",
-                command: curlCommand
-            )
+            installOption(step: 2, icon: "📦", title: "Manual (curl)", command: curlCommand)
 
             // Verify
-            installOption(
-                step: 3,
-                icon: "✅",
-                title: "Verify installation",
-                command: verifyCommand
-            )
+            installOption(step: 3, icon: "✅", title: "Verify installation", command: verifyCommand)
+
+            // Check again
+            Button {
+                refresh()
+            } label: {
+                Label("Check again", systemImage: "arrow.clockwise")
+                    .font(.caption)
+            }
+            .buttonStyle(.borderless)
         }
         .onAppear { refresh() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { refresh() }
+        }
     }
 
     // MARK: - Command Row
@@ -116,17 +125,11 @@ struct CLIInstallGuideView: View {
     @ViewBuilder
     private func installOption(step: Int, icon: String, title: String, command: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label(title, image: "")
-                .overlay(
-                    HStack(spacing: 6) {
-                        Text(icon)
-                        Text(title)
-                            .font(.caption.weight(.medium))
-                    },
-                    alignment: .leading
-                )
-                .font(.caption.weight(.medium))
-                .opacity(0)  // invisible label used only for spacing
+            HStack(spacing: 6) {
+                Text(icon)
+                Text(title)
+                    .font(.caption.weight(.medium))
+            }
 
             HStack(spacing: 6) {
                 Text(command)
@@ -167,27 +170,40 @@ struct CLIInstallGuideView: View {
     }
 }
 
-// MARK: - Startup Banner (one-time, dismissable)
+// MARK: - Startup Banner (one-time per version, dismissable)
 
-/// A floating banner shown once per app session when CLI is not installed.
+/// A floating banner shown once per app version when CLI is not installed.
+/// Uses `@AppStorage` to persist the dismissed state across relaunches.
+/// The intent is: don't nag the user repeatedly, but remind on each major release.
 struct CLIStartupBanner: View {
+    /// Tracks which app version the user last dismissed the banner for.
     @AppStorage("cli_banner_dismissed_version") private var dismissedVersion: String = ""
+    @State private var isCLIInstalled: Bool = true  // optimistic default — refreshed on appear
     @State private var isDismissed: Bool = false
+    @Environment(\.scenePhase) private var scenePhase
 
     private var currentVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
 
+    private var shouldShow: Bool {
+        !isDismissed && dismissedVersion != currentVersion && !isCLIInstalled
+    }
+
     var body: some View {
-        if !isDismissed && dismissedVersion != currentVersion && !CLIDetector.isInstalled() {
+        if shouldShow {
             VStack(alignment: .leading, spacing: 0) {
-                CLIInstallGuideView(isDismissed: Binding(
-                    get: { isDismissed },
-                    set: {
-                        isDismissed = $0
-                        if $0 { dismissedVersion = currentVersion }
-                    }
-                ))
+                CLIInstallGuideView(
+                    isDismissed: Binding(
+                        get: { isDismissed },
+                        set: {
+                            isDismissed = $0
+                            // Persist per-version dismissal so it doesn't come back on relaunch
+                            if $0 { dismissedVersion = currentVersion }
+                        }
+                    ),
+                    showDismissButton: true
+                )
                 .padding()
             }
             .background(Color(NSColor.windowBackgroundColor))
@@ -198,12 +214,20 @@ struct CLIStartupBanner: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
             .padding()
+            .onAppear { refreshInstallState() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { refreshInstallState() }
+            }
         }
+    }
+
+    private func refreshInstallState() {
+        isCLIInstalled = CLIDetector.isInstalled()
     }
 }
 
 #Preview("Not installed") {
-    CLIInstallGuideView(isDismissed: .constant(false))
+    CLIInstallGuideView(isDismissed: .constant(false), showDismissButton: false)
         .frame(width: 480)
         .padding()
 }

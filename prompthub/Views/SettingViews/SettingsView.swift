@@ -65,8 +65,6 @@ struct SettingsView: View {
 // MARK: - General Tab
 
 private struct GeneralTab: View {
-    @State private var cliDismissed = false
-
     var body: some View {
         // Launch at Login
         GroupBox {
@@ -85,7 +83,7 @@ private struct GeneralTab: View {
 
         // PromptHub CLI
         GroupBox {
-            CLIInstallGuideView(isDismissed: $cliDismissed)
+            CLIInstallGuideView(isDismissed: .constant(false), showDismissButton: false)
                 .padding(.vertical, 4)
         } label: {
             Label("CLI Integration", systemImage: "terminal")
