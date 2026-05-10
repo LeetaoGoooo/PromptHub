@@ -133,7 +133,7 @@ public struct SkillInstallRequest: Sendable {
 }
 
 /// The visibility status of a skill for a specific agent, determined by filesystem scan.
-public enum AgentVisibilityStatus: String, Sendable, Equatable, CaseIterable {
+public enum AgentVisibilityStatus: String, Codable, Sendable, Equatable, CaseIterable {
     /// SKILL.md file was found in the agent's expected read directory.
     case visible
     /// The agent directory exists but SKILL.md is not present (e.g. missing symlink).
@@ -143,7 +143,7 @@ public enum AgentVisibilityStatus: String, Sendable, Equatable, CaseIterable {
 }
 
 /// A single agent's filesystem visibility result for a skill.
-public struct SkillAgentVisibility: Sendable, Equatable {
+public struct SkillAgentVisibility: Codable, Sendable, Equatable {
     public let agent: AgentWorkflow
     public let status: AgentVisibilityStatus
     /// The absolute path that was checked (nil when status is unknownPath).
@@ -164,7 +164,7 @@ public struct SkillAgentVisibility: Sendable, Equatable {
 }
 
 /// The result of comparing a locally installed SKILL.md against its remote source.
-public enum SkillSourceIntegrityStatus: Sendable, Equatable {
+public enum SkillSourceIntegrityStatus: String, Codable, Sendable, Equatable {
     /// Local content matches the remote source exactly.
     case verified
     /// Local content differs from the current remote version.
@@ -178,7 +178,7 @@ public enum SkillSourceIntegrityStatus: Sendable, Equatable {
 }
 
 /// The result of a source integrity check for a single installed skill.
-public struct SkillSourceIntegrity: Sendable, Equatable {
+public struct SkillSourceIntegrity: Codable, Sendable, Equatable {
     /// Hex-encoded SHA-256 of the local SKILL.md, or nil if not installed.
     public let localHash: String?
     /// Hex-encoded SHA-256 of the remote SKILL.md, or nil if unavailable.
@@ -210,7 +210,7 @@ public struct SkillSourceIntegrity: Sendable, Equatable {
 // MARK: - Skill Effectiveness
 
 /// A single structural check on a SKILL.md file.
-public struct SkillEffectivenessCheck: Sendable, Equatable {
+public struct SkillEffectivenessCheck: Codable, Sendable, Equatable {
     /// Human-readable title, e.g. "Has frontmatter description".
     public let title: String
     /// Short explanation of why this check matters.
@@ -229,7 +229,7 @@ public struct SkillEffectivenessCheck: Sendable, Equatable {
 }
 
 /// Effectiveness tier derived from the overall score.
-public enum EffectivenessTier: String, Sendable, Equatable {
+public enum EffectivenessTier: String, Codable, Sendable, Equatable {
     /// 80–100 % of checks pass.
     case excellent
     /// 60–79 % of checks pass.
@@ -259,7 +259,7 @@ public enum EffectivenessTier: String, Sendable, Equatable {
 }
 
 /// Aggregate effectiveness report for an installed SKILL.md.
-public struct SkillEffectivenessReport: Sendable, Equatable {
+public struct SkillEffectivenessReport: Codable, Sendable, Equatable {
     public let checks: [SkillEffectivenessCheck]
     /// 0.0 … 1.0
     public let score: Double

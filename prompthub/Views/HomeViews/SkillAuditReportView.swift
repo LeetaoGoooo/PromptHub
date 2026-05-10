@@ -16,6 +16,7 @@ struct SkillAuditReportView: View {
     @State var auditTask: Task<Void, Never>?
     @State var sortOrder: [KeyPathComparator<AuditRow>] = [.init(\.displayName, order: .forward)]
     @State var tableSelection: String?
+    @State var lastAuditedAt: Date? = nil
 
     let workspaceService = SkillWorkspaceService.shared
 
@@ -42,23 +43,43 @@ struct SkillAuditReportView: View {
             if !isDone { progressView } else { reportView }
         }
         .frame(minWidth: 700, minHeight: 480)
-        .onAppear { startAudit() }
+        .onAppear { loadCacheOrStartAudit() }
     }
 
     private var headerBar: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Skill Audit").font(.headline)
-                Text("\(totalSkills) skill\(totalSkills == 1 ? "" : "s")").font(.caption).foregroundStyle(.secondary)
+                if let date = lastAuditedAt {
+                    Text("Last run \(date.formatted(.relative(presentation: .named)))").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("\(totalSkills) skill\(totalSkills == 1 ? "" : "s")").font(.caption).foregroundStyle(.secondary)
+                }
             }
             Spacer()
             if isDone {
-                Button { isDone = false; startAudit() } label: { Label("Re-run", systemImage: "arrow.clockwise") }
+                Button {
+                    isDone = false
+                    visibilityMap = [:]; integrityMap = [:]; effectivenessMap = [:]
+                    startAudit()
+                } label: { Label("Re-run", systemImage: "arrow.clockwise") }
                     .buttonStyle(.bordered)
             }
             Button("Close") { auditTask?.cancel(); onDismiss() }.keyboardShortcut(.escape)
         }
         .padding(.horizontal, 16).padding(.vertical, 12)
+    }
+
+    private func loadCacheOrStartAudit() {
+        if let cache = SkillAuditCacheStore.load(), cache.skillCount == skills.count {
+            visibilityMap = cache.visibilityMap
+            integrityMap = cache.integrityMap
+            effectivenessMap = cache.effectivenessMap
+            lastAuditedAt = cache.auditedAt
+            isDone = true
+        } else {
+            startAudit()
+        }
     }
 
     var progressView: some View {

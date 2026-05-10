@@ -29,7 +29,20 @@ extension SkillAuditReportView {
                     progress = Double(index + 1) / total
                 }
             }
-            await MainActor.run { isRunning = false; isDone = true; currentSkillName = "" }
+            await MainActor.run {
+                isRunning = false
+                isDone = true
+                currentSkillName = ""
+                let now = Date()
+                lastAuditedAt = now
+                SkillAuditCacheStore.save(SkillAuditCache(
+                    auditedAt: now,
+                    skillCount: skills.count,
+                    visibilityMap: visibilityMap,
+                    integrityMap: integrityMap,
+                    effectivenessMap: effectivenessMap
+                ))
+            }
         }
     }
 }

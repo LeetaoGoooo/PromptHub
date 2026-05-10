@@ -72,7 +72,7 @@ struct InstalledSkillsView: View {
             subtitle: "Audit what is live in each CLI environment, remove it cleanly by scope, and keep project and global installations explicit.",
             metrics: headerMetrics
         ) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Menu {
                     Button { chooseProjectRoot() }
                     label: { Label("Choose Project…", systemImage: "folder") }
@@ -86,12 +86,25 @@ struct InstalledSkillsView: View {
                 }
                 .menuStyle(.borderedButton)
 
-                Button(action: fetchInstalledSkills) { Label("Refresh", systemImage: "arrow.clockwise") }
-                    .buttonStyle(.bordered)
-                Button(action: { showingAuditReport = true }) { Label("Audit All…", systemImage: "checklist") }
-                    .buttonStyle(.bordered)
-                Button(action: { showingCLIAccessManager = true }) { Label("CLI Access", systemImage: "lock.shield") }
-                    .buttonStyle(.bordered)
+                Divider().frame(height: 16)
+
+                Button(action: fetchInstalledSkills) {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .help("Refresh installed skills")
+
+                Button(action: { showingAuditReport = true }) {
+                    Image(systemName: "checklist")
+                }
+                .buttonStyle(.bordered)
+                .help("Audit all installed skills")
+
+                Divider().frame(height: 16)
+
+                CLIStatusIndicator(manager: cliAccessManager) {
+                    showingCLIAccessManager = true
+                }
             }
         } content: {
             VStack(spacing: 0) {

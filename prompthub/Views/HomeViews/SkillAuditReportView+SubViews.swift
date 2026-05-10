@@ -59,11 +59,19 @@ extension SkillAuditReportView {
     var auditTable: some View {
         Table(sortedRows, selection: $tableSelection, sortOrder: $sortOrder) {
             TableColumn("Skill", value: \.displayName) { row in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(row.displayName).font(.callout.weight(.medium)).lineLimit(1)
-                    if let source = row.skill.displaySource {
-                        Text(source).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                let isSelected = tableSelection == row.id
+                HStack(spacing: 0) {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(Color.accentColor)
+                        .frame(width: 3)
+                        .opacity(isSelected ? 1 : 0)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(row.displayName).font(.callout.weight(.medium)).lineLimit(1)
+                        if let source = row.skill.displaySource {
+                            Text(source).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                        }
                     }
+                    .padding(.leading, isSelected ? 8 : 11)
                 }
             }
             TableColumn("Scope", value: \.scope) { row in
@@ -79,7 +87,7 @@ extension SkillAuditReportView {
             TableColumn("Integrity", value: \.integrityRank) { row in integrityCell(row.integrity) }.width(110)
             TableColumn("Quality", value: \.effectivenessScore) { row in effectivenessCell(row.effectiveness) }.width(100)
         }
-        .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .tableStyle(.inset(alternatesRowBackgrounds: false))
     }
 
     @ViewBuilder
