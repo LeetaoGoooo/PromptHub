@@ -20,6 +20,9 @@ struct MyPromptsView: View {
     let onCreatePrompt: () -> Void
     let onRenderPrompt: () -> Void
     @State private var selectedItemID: String?
+    @State private var renderingPrompt: Prompt?
+    @State private var testingPrompt: Prompt?
+    @State private var optimizingPrompt: Prompt?
 
     private func navigateToPrompt(_ prompt: Prompt) {
         onSelectPrompt(prompt)
@@ -52,7 +55,7 @@ struct MyPromptsView: View {
 
     private var headerSummary: String {
         searchText.isEmpty
-            ? "Private prompts and drafts. Click any card to open the editor."
+            ? "Private prompts and drafts. Inspect, render, test, or optimize directly from the selected detail pane."
             : "Private prompts and drafts filtered by your current search."
     }
 
@@ -89,7 +92,33 @@ struct MyPromptsView: View {
                         onPrimaryAction: { navigateToPrompt(prompt) },
                         secondaryActionTitle: "Copy Content",
                         secondaryActionSystemImage: "doc.on.doc",
-                        onSecondaryAction: { copyPromptToClipboard(prompt.getLatestPromptContent()) }
+                        onSecondaryAction: { copyPromptToClipboard(prompt.getLatestPromptContent()) },
+                        quickActions: [
+                            PromptBrowserQuickAction(
+                                id: "render-\(prompt.id.uuidString)",
+                                title: "Render",
+                                systemImage: "play.rectangle",
+                                emphasis: .standard,
+                                isDisabled: false,
+                                onSelect: { renderingPrompt = prompt }
+                            ),
+                            PromptBrowserQuickAction(
+                                id: "test-\(prompt.id.uuidString)",
+                                title: "Test",
+                                systemImage: "bolt.badge.checkmark",
+                                emphasis: .standard,
+                                isDisabled: false,
+                                onSelect: { testingPrompt = prompt }
+                            ),
+                            PromptBrowserQuickAction(
+                                id: "optimize-\(prompt.id.uuidString)",
+                                title: "AI Optimize",
+                                systemImage: "wand.and.stars",
+                                emphasis: .standard,
+                                isDisabled: false,
+                                onSelect: { optimizingPrompt = prompt }
+                            )
+                        ]
                     )
                 }
             )
@@ -131,6 +160,17 @@ struct MyPromptsView: View {
                 }
             }
         )
+        .sheet(item: $renderingPrompt) { prompt in
+            PromptRenderSheet(initialPromptID: prompt.id) {
+                renderingPrompt = nil
+            }
+        }
+        .sheet(item: $testingPrompt) { prompt in
+            SinglePromptTestView(prompt: prompt.getLatestPromptContent())
+        }
+        .sheet(item: $optimizingPrompt) { prompt in
+            PromptOptimizeSheet(prompt: prompt)
+        }
     }
 
     private func badges(for prompt: Prompt) -> [PromptCollectionFooterBadge] {

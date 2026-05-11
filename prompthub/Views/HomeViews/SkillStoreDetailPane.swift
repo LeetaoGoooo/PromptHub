@@ -69,11 +69,33 @@ struct SkillStoreDetailPane: View {
                 ]
             )
 
-            HStack(spacing: 10) {
-                installActions
-                if skill.url != nil {
-                    Button("Open Source Page", action: onOpenSourcePage).buttonStyle(.bordered)
+            Divider()
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Quick Actions")
+                    .font(.headline)
+
+                HStack(spacing: 10) {
+                    installActions
+                    if skill.url != nil {
+                        Button("Open Source Page", action: onOpenSourcePage).buttonStyle(.bordered)
+                    }
                 }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Summary")
+                    .font(.headline)
+
+                ScrollView {
+                    Text(skill.summary)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                }
+                .frame(minHeight: 96, idealHeight: 120, maxHeight: 140)
+                .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
             }
 
             Spacer(minLength: 0)

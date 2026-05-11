@@ -8,6 +8,7 @@ struct ContentView: View {
     @Query var prompts: [Prompt]
     @Query var skillDrafts: [Skill]
     let skillDraftService = SkillDraftService.shared
+    @StateObject private var installedWorkspaceStore = InstalledSkillsWorkspaceStore()
 
     @State var promptSelection: PromptSelection = .allPrompts
     @AppStorage("onboardingCompleted") private var onboardingCompleted = false
@@ -17,6 +18,8 @@ struct ContentView: View {
     @State var showToast = false
     @State var toastMessage = ""
     @State var toastType: AlertToast.AlertType = .regular
+    @State private var skillsScopeFilter: SkillsSidebarScopeFilter = .allInstalled
+    @State private var skillsSourceFilter: SkillsSidebarSourceFilter = .all
     @State private var showingPromptRender = false
     @State var whatsNew: WhatsNew? = nil
     @EnvironmentObject var appSettings: AppSettings
@@ -71,7 +74,10 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             PromptSideBar(
+                installedWorkspaceStore: installedWorkspaceStore,
                 promptSelection: $promptSelection,
+                skillsScopeFilter: $skillsScopeFilter,
+                skillsSourceFilter: $skillsSourceFilter,
                 searchText: $searchText,
                 searchPlaceholder: searchPrompt,
                 isSearchEnabled: isSidebarSearchEnabled,
@@ -83,7 +89,13 @@ struct ContentView: View {
         } detail: {
             Group {
                 if isSkillsSelection {
-                    SkillsRootView(promptSelection: $promptSelection, searchText: searchText)
+                    SkillsRootView(
+                        installedWorkspaceStore: installedWorkspaceStore,
+                        promptSelection: $promptSelection,
+                        searchText: searchText,
+                        skillsScopeFilter: $skillsScopeFilter,
+                        skillsSourceFilter: $skillsSourceFilter
+                    )
                 } else {
                     NavigationStack {
                         switch promptSelection {
@@ -117,9 +129,16 @@ struct ContentView: View {
             .onAppear {
                 loadGalleryPrompts()
                 checkForWhatsNew()
+                refreshInstalledWorkspace()
                 if !onboardingCompleted {
                     promptSelection = .onboarding
                 }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in
+                refreshInstalledWorkspace()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .skillProjectSelectionDidChange)) { _ in
+                refreshInstalledWorkspace()
             }
             .onReceive(NotificationCenter.default.publisher(for: .searchNavigationRequested)) { notification in
                 guard let target = SearchNavigationRequest.from(notification) else { return }
@@ -169,6 +188,13 @@ struct ContentView: View {
                 EmptyView()
             }
         }
+    }
+
+    private func refreshInstalledWorkspace() {
+        installedWorkspaceStore.refresh(
+            authoredDraftCount: skillDrafts.count,
+            hasCLIAccess: CLIDirectoryAccessManager.shared.anyAccessGranted
+        )
     }
 }
 

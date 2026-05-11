@@ -10,6 +10,64 @@ struct SkillLibraryMetric: Identifiable {
     var id: String { title }
 }
 
+enum SkillsWorkspaceTab: String, CaseIterable, Identifiable {
+    case installed
+    case drafts
+    case discover
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .installed: return "Installed"
+        case .drafts: return "Drafts"
+        case .discover: return "Discover"
+        }
+    }
+}
+
+struct SkillsWorkspacePicker: View {
+    @Binding var promptSelection: PromptSelection
+
+    private var selectedTab: Binding<SkillsWorkspaceTab> {
+        Binding(
+            get: {
+                switch promptSelection {
+                case .installedSkills:
+                    return .installed
+                case .mySkills, .skill:
+                    return .drafts
+                case .skillStore:
+                    return .discover
+                default:
+                    return .installed
+                }
+            },
+            set: { newValue in
+                switch newValue {
+                case .installed:
+                    promptSelection = .installedSkills
+                case .drafts:
+                    promptSelection = .mySkills
+                case .discover:
+                    promptSelection = .skillStore
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        Picker("Skills Workspace", selection: selectedTab) {
+            ForEach(SkillsWorkspaceTab.allCases) { tab in
+                Text(tab.title).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+        .frame(width: 270)
+        .labelsHidden()
+    }
+}
+
 // MARK: - Liquid Glass Material
 
 /// Bridges NSVisualEffectView into SwiftUI for true macOS vibrancy.
@@ -38,7 +96,7 @@ struct LibraryGlassMaterial: NSViewRepresentable {
 struct SkillLibraryHeaderCard<Accessory: View>: View {
     let title: String
     let subtitle: String
-    let metrics: [SkillLibraryMetric]
+    let metrics: [SkillLibraryMetric] 
     @ViewBuilder let accessory: () -> Accessory
 
     init(title: String, subtitle: String, metrics: [SkillLibraryMetric],

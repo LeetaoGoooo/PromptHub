@@ -88,7 +88,6 @@ extension MySkillsView {
                 .padding(14)
                 .background(Color(NSColor.controlBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(NSColor.separatorColor).opacity(0.5), lineWidth: 0.5))
                 .frame(maxWidth: 460)
             }
             .padding(32)

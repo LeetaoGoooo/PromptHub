@@ -19,16 +19,14 @@ struct SkillDraftDetailView: View {
     @State var toastTitle = ""
     @State var toastType: AlertToast.AlertType = .regular
 
-    let borderColor = Color(NSColor.separatorColor)
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 metadataCard
-                instructionsCard
                 installCard
-                versionsCard
+                instructionsCard
                 markdownPreviewCard
+                versionsCard
             }
             .padding(24)
         }

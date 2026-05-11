@@ -5,6 +5,7 @@ import SwiftUI
 struct MySkillsView: View {
     @Environment(\.modelContext) var modelContext
     @Query(sort: \Skill.updatedAt, order: .reverse) var skillDrafts: [Skill]
+    @Binding var promptSelection: PromptSelection
 
     let draftService = SkillDraftService.shared
 
@@ -23,6 +24,10 @@ struct MySkillsView: View {
             metrics: headerMetrics,
             accessory: {
                 HStack(spacing: 8) {
+                    SkillsWorkspacePicker(promptSelection: $promptSelection)
+
+                    Divider().frame(height: 18)
+
                     if !skillDrafts.isEmpty {
                         Button(action: createSkillDraft) {
                             Label("New Draft", systemImage: "plus")

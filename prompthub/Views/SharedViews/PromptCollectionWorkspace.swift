@@ -22,6 +22,20 @@ struct PromptBrowserMetadataRow: Identifiable {
     var id: String { "\(label)-\(value)" }
 }
 
+enum PromptBrowserQuickActionEmphasis {
+    case prominent
+    case standard
+}
+
+struct PromptBrowserQuickAction: Identifiable {
+    let id: String
+    let title: String
+    let systemImage: String
+    let emphasis: PromptBrowserQuickActionEmphasis
+    let isDisabled: Bool
+    let onSelect: () -> Void
+}
+
 struct PromptBrowserItem: Identifiable {
     let id: String
     let title: String
@@ -39,6 +53,45 @@ struct PromptBrowserItem: Identifiable {
     let secondaryActionTitle: String?
     let secondaryActionSystemImage: String?
     let onSecondaryAction: (() -> Void)?
+    let quickActions: [PromptBrowserQuickAction]
+
+    init(
+        id: String,
+        title: String,
+        summary: String,
+        promptText: String,
+        systemImage: String,
+        iconTint: Color,
+        badges: [PromptCollectionFooterBadge],
+        trailingDetail: String?,
+        metadata: [PromptBrowserMetadataRow],
+        primaryActionTitle: String?,
+        primaryActionSystemImage: String?,
+        isPrimaryActionDisabled: Bool,
+        onPrimaryAction: (() -> Void)?,
+        secondaryActionTitle: String?,
+        secondaryActionSystemImage: String?,
+        onSecondaryAction: (() -> Void)?,
+        quickActions: [PromptBrowserQuickAction] = []
+    ) {
+        self.id = id
+        self.title = title
+        self.summary = summary
+        self.promptText = promptText
+        self.systemImage = systemImage
+        self.iconTint = iconTint
+        self.badges = badges
+        self.trailingDetail = trailingDetail
+        self.metadata = metadata
+        self.primaryActionTitle = primaryActionTitle
+        self.primaryActionSystemImage = primaryActionSystemImage
+        self.isPrimaryActionDisabled = isPrimaryActionDisabled
+        self.onPrimaryAction = onPrimaryAction
+        self.secondaryActionTitle = secondaryActionTitle
+        self.secondaryActionSystemImage = secondaryActionSystemImage
+        self.onSecondaryAction = onSecondaryAction
+        self.quickActions = quickActions
+    }
 }
 
 struct PromptBrowserScreen<Actions: View, EmptyState: View>: View {
@@ -178,18 +231,19 @@ private struct PromptBrowserRow: View {
         Button(action: onSelect) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: item.systemImage)
-                    .foregroundStyle(isSelected ? .white : item.iconTint)
+                    .foregroundStyle(item.iconTint)
                     .frame(width: 18, height: 18)
                     .padding(8)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(isSelected ? Color.white.opacity(0.18) : item.iconTint.opacity(0.10))
+                            .fill(item.iconTint.opacity(isSelected ? 0.18 : 0.10))
                     )
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(item.title)
                             .font(.headline)
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
 
                         Spacer(minLength: 8)
@@ -197,13 +251,13 @@ private struct PromptBrowserRow: View {
                         if let trailingDetail = item.trailingDetail, !trailingDetail.isEmpty {
                             Text(trailingDetail)
                                 .font(.caption)
-                                .foregroundStyle(isSelected ? .white.opacity(0.78) : .secondary)
+                                .foregroundStyle(.secondary)
                         }
                     }
 
                     Text(item.summary)
                         .font(.caption)
-                        .foregroundStyle(isSelected ? .white.opacity(0.84) : .secondary)
+                        .foregroundStyle(.secondary)
                         .lineLimit(2)
 
                     if !item.badges.isEmpty {
@@ -211,12 +265,12 @@ private struct PromptBrowserRow: View {
                             ForEach(item.badges) { badge in
                                 Text(badge.title)
                                     .font(.caption2.weight(.medium))
-                                    .foregroundStyle(isSelected ? .white : badge.tint)
+                                    .foregroundStyle(badge.tint)
                                     .padding(.horizontal, 7)
                                     .padding(.vertical, 3)
                                     .background(
                                         RoundedRectangle(cornerRadius: 999)
-                                            .fill(isSelected ? Color.white.opacity(0.16) : badge.tint.opacity(0.12))
+                                            .fill(badge.tint.opacity(0.12))
                                     )
                             }
                         }
@@ -227,11 +281,11 @@ private struct PromptBrowserRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.accentColor : Color(NSColor.windowBackgroundColor))
+                    .fill(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? Color.accentColor : Color(NSColor.separatorColor).opacity(0.5), lineWidth: 1)
+                    .stroke(isSelected ? Color.accentColor.opacity(0.20) : Color.clear, lineWidth: 0.8)
             )
         }
         .buttonStyle(.plain)
@@ -263,8 +317,45 @@ private struct PromptBrowserDetail: View {
         return ordered
     }
 
+    private var detailActions: [PromptBrowserQuickAction] {
+        var actions: [PromptBrowserQuickAction] = []
+
+        if let primaryActionTitle = item.primaryActionTitle,
+           let primaryActionSystemImage = item.primaryActionSystemImage,
+           let onPrimaryAction = item.onPrimaryAction {
+            actions.append(
+                PromptBrowserQuickAction(
+                    id: "primary-\(item.id)",
+                    title: primaryActionTitle,
+                    systemImage: primaryActionSystemImage,
+                    emphasis: .prominent,
+                    isDisabled: item.isPrimaryActionDisabled,
+                    onSelect: onPrimaryAction
+                )
+            )
+        }
+
+        if let secondaryActionTitle = item.secondaryActionTitle,
+           let secondaryActionSystemImage = item.secondaryActionSystemImage,
+           let onSecondaryAction = item.onSecondaryAction {
+            actions.append(
+                PromptBrowserQuickAction(
+                    id: "secondary-\(item.id)",
+                    title: secondaryActionTitle,
+                    systemImage: secondaryActionSystemImage,
+                    emphasis: .standard,
+                    isDisabled: false,
+                    onSelect: onSecondaryAction
+                )
+            )
+        }
+
+        actions.append(contentsOf: item.quickActions)
+        return actions
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: item.systemImage)
@@ -298,72 +389,56 @@ private struct PromptBrowserDetail: View {
                 }
             }
 
-            if item.onPrimaryAction != nil || item.onSecondaryAction != nil {
-                HStack(spacing: 10) {
-                    if let primaryActionTitle = item.primaryActionTitle,
-                       let primaryActionSystemImage = item.primaryActionSystemImage,
-                       let onPrimaryAction = item.onPrimaryAction {
-                        Button(action: onPrimaryAction) {
-                            Label(primaryActionTitle, systemImage: primaryActionSystemImage)
+            if !item.metadata.isEmpty || !variables.isEmpty {
+                PromptCollectionInspectorPanel(title: "Properties") {
+                    VStack(alignment: .leading, spacing: 14) {
+                        if !item.metadata.isEmpty {
+                            PromptCollectionKVList(items: item.metadata.map { ($0.label, $0.value) })
                         }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(item.isPrimaryActionDisabled)
-                    }
 
-                    if let secondaryActionTitle = item.secondaryActionTitle,
-                       let secondaryActionSystemImage = item.secondaryActionSystemImage,
-                       let onSecondaryAction = item.onSecondaryAction {
-                        Button(action: onSecondaryAction) {
-                            Label(secondaryActionTitle, systemImage: secondaryActionSystemImage)
+                        if !variables.isEmpty {
+                            Divider()
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Variables")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8, alignment: .leading)], alignment: .leading, spacing: 8) {
+                                    ForEach(variables, id: \.self) { variable in
+                                        Text("{{\(variable)}}")
+                                            .font(.caption.monospaced())
+                                            .foregroundStyle(.accent)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 5)
+                                            .background(Color.accentColor.opacity(0.10), in: Capsule())
+                                    }
+                                }
+                            }
                         }
-                        .buttonStyle(.bordered)
                     }
                 }
             }
 
-            if !item.metadata.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Details")
-                        .font(.headline)
-
-                    PromptCollectionInspectorPanel(title: "Metadata") {
-                        PromptCollectionKVList(items: item.metadata.map { ($0.label, $0.value) })
-                    }
-                }
-            }
-
-            if !variables.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Variables")
-                        .font(.headline)
-
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8, alignment: .leading)], alignment: .leading, spacing: 8) {
-                        ForEach(variables, id: \.self) { variable in
-                            Text("{{\(variable)}}")
-                                .font(.caption.monospaced())
-                                .foregroundStyle(.accent)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 5)
-                                .background(Color.accentColor.opacity(0.10), in: Capsule())
-                        }
-                    }
+            if !detailActions.isEmpty {
+                PromptCollectionInspectorPanel(title: "Quick Actions") {
+                    PromptQuickActionWrap(actions: detailActions)
                 }
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("Prompt")
+                Text("Content")
                     .font(.headline)
 
-                Text(item.promptText)
-                    .font(.system(.body, design: .monospaced))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color(NSColor.separatorColor).opacity(0.5), lineWidth: 1)
-                    )
-                    .textSelection(.enabled)
+                ScrollView {
+                    Text(item.promptText)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .textSelection(.enabled)
+                }
+                .frame(minHeight: 220, idealHeight: 280, maxHeight: 280)
+                .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -445,13 +520,87 @@ struct PromptCollectionInspectorPanel<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .tracking(0.4)
             content()
         }
-        .padding(14)
+        .padding(.vertical, 2)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(NSColor.windowBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+struct PromptQuickActionWrap: View {
+    let actions: [PromptBrowserQuickAction]
+
+    private var rows: [[PromptBrowserQuickAction]] {
+        stride(from: 0, to: actions.count, by: 3).map { startIndex in
+            Array(actions[startIndex..<min(startIndex + 3, actions.count)])
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(alignment: .center, spacing: 8) {
+                    ForEach(row) { action in
+                        PromptQuickActionButton(action: action)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct PromptQuickActionButton: View {
+    let action: PromptBrowserQuickAction
+
+    var body: some View {
+        Button(action: action.onSelect) {
+            Label(action.title, systemImage: action.systemImage)
+                .font(.callout)
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(foregroundColor)
+        .background(backgroundColor, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .stroke(borderColor, lineWidth: 0.8)
+        )
+        .opacity(action.isDisabled ? 0.45 : 1)
+        .disabled(action.isDisabled)
+    }
+
+    private var foregroundColor: Color {
+        switch action.emphasis {
+        case .prominent:
+            return Color(NSColor.controlAccentColor)
+        case .standard:
+            return .primary
+        }
+    }
+
+    private var backgroundColor: Color {
+        switch action.emphasis {
+        case .prominent:
+            return Color(NSColor.controlAccentColor).opacity(0.10)
+        case .standard:
+            return Color(NSColor.controlBackgroundColor).opacity(0.82)
+        }
+    }
+
+    private var borderColor: Color {
+        switch action.emphasis {
+        case .prominent:
+            return Color(NSColor.controlAccentColor).opacity(0.18)
+        case .standard:
+            return Color(NSColor.separatorColor).opacity(0.32)
+        }
     }
 }
 
@@ -459,16 +608,24 @@ struct PromptCollectionKVList: View {
     let items: [(String, String)]
 
     var body: some View {
-        VStack(spacing: 10) {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                HStack {
+        VStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                HStack(alignment: .top, spacing: 12) {
                     Text(item.0)
+                        .fontWeight(.medium)
                         .foregroundStyle(.secondary)
+                        .frame(width: 96, alignment: .leading)
                     Spacer()
                     Text(item.1)
                         .fontWeight(.medium)
+                        .multilineTextAlignment(.trailing)
                 }
                 .font(.callout)
+                .padding(.vertical, 8)
+
+                if index < items.count - 1 {
+                    Divider().padding(.leading, 108)
+                }
             }
         }
     }
@@ -492,11 +649,11 @@ struct PromptCollectionCard<Footer: View>: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(isHovering ? Color.accentColor.opacity(0.06) : Color(NSColor.controlBackgroundColor))
+        .background(isHovering ? Color.accentColor.opacity(0.05) : Color(NSColor.controlBackgroundColor).opacity(0.72))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(isHovering ? Color.accentColor.opacity(0.25) : Color(NSColor.separatorColor).opacity(0.7), lineWidth: 1)
+            .stroke(isHovering ? Color.accentColor.opacity(0.18) : Color.clear, lineWidth: 0.8)
         )
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {

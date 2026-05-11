@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import PromptHubSkillKit
 
@@ -113,5 +114,118 @@ final class SkillWorkspaceService {
             isInstalled: true, scopes: hintedScopes, agents: skill.hintedAgents,
             removableScopes: hintedScopes, agentsByScope: hintedAgentsByScope
         )
+    }
+}
+
+@MainActor
+final class InstalledSkillsWorkspaceStore: ObservableObject {
+    struct SkillAuditState {
+        let agentVisibility: [SkillAgentVisibility]
+        let sourceIntegrity: SkillSourceIntegrity
+        let effectiveness: SkillEffectivenessReport
+    }
+
+    @Published private(set) var snapshot = InstalledSkillsWorkspaceSnapshot.empty
+    @Published private(set) var isLoading = false
+    @Published private(set) var errorMessage: String?
+    @Published private(set) var revision = 0
+
+    private let workspaceService: SkillWorkspaceService
+    private var refreshTask: Task<Void, Never>?
+    private var auditCache: [String: SkillAuditState] = [:]
+    private var auditTasks: [String: Task<SkillAuditState, Never>] = [:]
+
+    init(workspaceService: SkillWorkspaceService = .shared) {
+        self.workspaceService = workspaceService
+    }
+
+    var installedSkills: [InstalledSkillSnapshot] {
+        snapshot.installedSkills
+    }
+
+    func refresh(authoredDraftCount: Int, hasCLIAccess: Bool) {
+        refreshTask?.cancel()
+
+        guard hasCLIAccess else {
+            snapshot = .empty
+            isLoading = false
+            errorMessage = nil
+            clearAuditCache()
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        refreshTask = Task { [workspaceService] in
+            do {
+                let snapshot = try await workspaceService.loadInstalledWorkspace(
+                    authoredDraftCount: authoredDraftCount
+                )
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.snapshot = snapshot
+                    self.isLoading = false
+                    self.errorMessage = nil
+                    self.revision += 1
+                    self.clearAuditCache()
+                    self.refreshTask = nil
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.isLoading = false
+                    self.errorMessage = workspaceService.userFacingErrorMessage(for: error)
+                    self.refreshTask = nil
+                }
+            }
+        }
+    }
+
+    func apply(snapshot: InstalledSkillsWorkspaceSnapshot) {
+        self.snapshot = snapshot
+        isLoading = false
+        errorMessage = nil
+        revision += 1
+        clearAuditCache()
+    }
+
+    func setError(_ message: String?) {
+        errorMessage = message
+        isLoading = false
+    }
+
+    func loadAuditState(for skill: InstalledSkillSnapshot) async -> SkillAuditState {
+        if let cached = auditCache[skill.id] {
+            return cached
+        }
+
+        if let runningTask = auditTasks[skill.id] {
+            return await runningTask.value
+        }
+
+        let task = Task { [workspaceService] in
+            async let visTask = workspaceService.auditAgentVisibility(for: skill)
+            async let intTask = workspaceService.auditSourceIntegrity(for: skill)
+            async let effTask = workspaceService.auditEffectiveness(for: skill)
+
+            return SkillAuditState(
+                agentVisibility: await visTask,
+                sourceIntegrity: await intTask,
+                effectiveness: await effTask
+            )
+        }
+
+        auditTasks[skill.id] = task
+        let state = await task.value
+        auditTasks[skill.id] = nil
+        auditCache[skill.id] = state
+        return state
+    }
+
+    private func clearAuditCache() {
+        auditTasks.values.forEach { $0.cancel() }
+        auditTasks.removeAll()
+        auditCache.removeAll()
     }
 }

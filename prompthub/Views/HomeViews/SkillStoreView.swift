@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 struct SkillStoreView: View {
     let workspaceService = SkillWorkspaceService.shared
     @Query(sort: \Skill.updatedAt, order: .reverse) var skillDrafts: [Skill]
+    @Binding var promptSelection: PromptSelection
 
     struct PendingCatalogInstall: Identifiable {
         let id = UUID()

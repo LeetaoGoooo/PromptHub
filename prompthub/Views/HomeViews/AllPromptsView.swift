@@ -23,6 +23,9 @@ struct AllPromptsView: View {
     let onCreatePrompt: () -> Void
     let onRenderPrompt: () -> Void
     @State private var selectedItemID: String?
+    @State private var renderingPrompt: Prompt?
+    @State private var testingPrompt: Prompt?
+    @State private var optimizingPrompt: Prompt?
     
     private var filteredGalleryPrompts: [GalleryPrompt] {
         if searchText.isEmpty {
@@ -50,7 +53,7 @@ struct AllPromptsView: View {
 
     private var headerSummary: String {
         searchText.isEmpty
-            ? "Browse your private library alongside gallery prompts."
+            ? "Browse your private library alongside gallery prompts, then render, test, or optimize directly from the detail pane."
             : "Showing matches across your private library and gallery prompts."
     }
 
@@ -90,7 +93,33 @@ struct AllPromptsView: View {
                             onPrimaryAction: { onSelectPrompt(prompt) },
                             secondaryActionTitle: "Copy Content",
                             secondaryActionSystemImage: "doc.on.doc",
-                            onSecondaryAction: { copyPromptToClipboard(prompt.getLatestPromptContent()) }
+                            onSecondaryAction: { copyPromptToClipboard(prompt.getLatestPromptContent()) },
+                            quickActions: [
+                                PromptBrowserQuickAction(
+                                    id: "render-\(prompt.id.uuidString)",
+                                    title: "Render",
+                                    systemImage: "play.rectangle",
+                                    emphasis: .standard,
+                                    isDisabled: false,
+                                    onSelect: { renderingPrompt = prompt }
+                                ),
+                                PromptBrowserQuickAction(
+                                    id: "test-\(prompt.id.uuidString)",
+                                    title: "Test",
+                                    systemImage: "bolt.badge.checkmark",
+                                    emphasis: .standard,
+                                    isDisabled: false,
+                                    onSelect: { testingPrompt = prompt }
+                                ),
+                                PromptBrowserQuickAction(
+                                    id: "optimize-\(prompt.id.uuidString)",
+                                    title: "AI Optimize",
+                                    systemImage: "wand.and.stars",
+                                    emphasis: .standard,
+                                    isDisabled: false,
+                                    onSelect: { optimizingPrompt = prompt }
+                                )
+                            ]
                         )
                     }
                 )
@@ -112,7 +141,7 @@ struct AllPromptsView: View {
                             summary: prompt.description ?? "No description",
                             promptText: prompt.prompt,
                             systemImage: "sparkles",
-                            iconTint: .primary,
+                            iconTint: .indigo,
                             badges: [PromptCollectionFooterBadge(title: isSaved ? "Saved" : "Save to library", tint: isSaved ? .secondary : .green)],
                             trailingDetail: prompt.link?.isEmpty == false ? "Link available" : "Built-in",
                             metadata: galleryMetadata(for: prompt, isSaved: isSaved),
@@ -126,7 +155,8 @@ struct AllPromptsView: View {
                             },
                             secondaryActionTitle: "Copy Content",
                             secondaryActionSystemImage: "doc.on.doc",
-                            onSecondaryAction: { copyPromptToClipboard(prompt.prompt) }
+                            onSecondaryAction: { copyPromptToClipboard(prompt.prompt) },
+                            quickActions: []
                         )
                     }
                 )
@@ -174,6 +204,17 @@ struct AllPromptsView: View {
                     )
                 }
             )
+            .sheet(item: $renderingPrompt) { prompt in
+                PromptRenderSheet(initialPromptID: prompt.id) {
+                    renderingPrompt = nil
+                }
+            }
+            .sheet(item: $testingPrompt) { prompt in
+                SinglePromptTestView(prompt: prompt.getLatestPromptContent())
+            }
+            .sheet(item: $optimizingPrompt) { prompt in
+                PromptOptimizeSheet(prompt: prompt)
+            }
         }
     }
 

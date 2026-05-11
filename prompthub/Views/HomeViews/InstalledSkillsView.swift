@@ -8,7 +8,11 @@ struct InstalledSkillsView: View {
     let workspaceService = SkillWorkspaceService.shared
     let draftService = SkillDraftService.shared
     @Query(sort: \Skill.updatedAt, order: .reverse) var skillDrafts: [Skill]
+    @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
+    @Binding var promptSelection: PromptSelection
     let searchText: String
+    @Binding var scopeFilter: SkillsSidebarScopeFilter
+    @Binding var sourceFilter: SkillsSidebarSourceFilter
     let onSelectSkillDraft: (Skill) -> Void
 
     struct PendingRemoval: Identifiable {
@@ -17,9 +21,6 @@ struct InstalledSkillsView: View {
         let targetAgents: [AgentWorkflow]?
     }
 
-    @State var workspaceSnapshot = InstalledSkillsWorkspaceSnapshot.empty
-    @State var isLoading = false
-    @State var errorMessage: String?
     @State var selectedSkillID: String?
     @State var pendingRemoval: PendingRemoval?
     @State var removingSkillIDs: Set<String> = []
@@ -30,7 +31,6 @@ struct InstalledSkillsView: View {
     @State var isLoadingIntegrity = false
     @State var effectiveness: SkillEffectivenessReport?
     @State var isLoadingEffectiveness = false
-    @State var fetchTask: Task<Void, Never>?
     @ObservedObject var cliAccessManager = CLIDirectoryAccessManager.shared
     @State var showingCLIAccessManager = false
     @State var showingAuditReport = false
@@ -38,11 +38,35 @@ struct InstalledSkillsView: View {
     @State var isCheckingUpdates = false
     @State var updatingSkill: InstalledSkillSnapshot?
 
-    var installedSkills: [InstalledSkillSnapshot] { workspaceSnapshot.installedSkills }
+    var installedSkills: [InstalledSkillSnapshot] { installedWorkspaceStore.installedSkills }
+
+    private var filteredBySidebar: [InstalledSkillSnapshot] {
+        let scopeFiltered = installedSkills.filter { skill in
+            switch scopeFilter {
+            case .allInstalled, .drafts:
+                return true
+            case .global:
+                return skill.isGlobal
+            case .project:
+                return !skill.isGlobal
+            }
+        }
+
+        return scopeFiltered.filter { skill in
+            switch sourceFilter {
+            case .all, .discover:
+                return true
+            case .external:
+                return skill.displaySource != nil
+            case .localOnly:
+                return skill.displaySource == nil
+            }
+        }
+    }
 
     var filteredSkills: [InstalledSkillSnapshot] {
-        guard !searchText.isEmpty else { return installedSkills }
-        return installedSkills.filter {
+        guard !searchText.isEmpty else { return filteredBySidebar }
+        return filteredBySidebar.filter {
             $0.packageName.localizedCaseInsensitiveContains(searchText) ||
             $0.displayName.localizedCaseInsensitiveContains(searchText) ||
             $0.summary.localizedCaseInsensitiveContains(searchText)
@@ -60,11 +84,15 @@ struct InstalledSkillsView: View {
         return filteredSkills.first
     }
 
+    private var auditLoadKey: String {
+        "\(selectedSkillID ?? "none")-\(installedWorkspaceStore.revision)"
+    }
+
     private var headerMetrics: [SkillLibraryMetric] {
         [
-            SkillLibraryMetric(value: "\(workspaceSnapshot.summary.installedCount)",      title: "Installed", systemImage: "square.stack.3d.up"),
-            SkillLibraryMetric(value: "\(workspaceSnapshot.summary.projectInstalledCount)", title: "Project",  systemImage: "folder"),
-            SkillLibraryMetric(value: "\(workspaceSnapshot.summary.globalInstalledCount)", title: "Global",   systemImage: "globe"),
+            SkillLibraryMetric(value: "\(installedWorkspaceStore.snapshot.summary.installedCount)",      title: "Installed", systemImage: "square.stack.3d.up"),
+            SkillLibraryMetric(value: "\(installedWorkspaceStore.snapshot.summary.projectInstalledCount)", title: "Project",  systemImage: "folder"),
+            SkillLibraryMetric(value: "\(installedWorkspaceStore.snapshot.summary.globalInstalledCount)", title: "Global",   systemImage: "globe"),
             SkillLibraryMetric(value: "\(skillDrafts.count)",                              title: "Drafts",   systemImage: "wand.and.stars")
         ]
     }
@@ -76,6 +104,10 @@ struct InstalledSkillsView: View {
             metrics: headerMetrics
         ) {
             HStack(spacing: 8) {
+                SkillsWorkspacePicker(promptSelection: $promptSelection)
+
+                Divider().frame(height: 18)
+
                 Menu {
                     Button { chooseProjectRoot() }
                     label: { Label("Choose Project…", systemImage: "folder") }
@@ -136,6 +168,7 @@ struct InstalledSkillsView: View {
                 nonFatalErrorBanner
             }
         }
+        .onAppear { syncSelection() }
         .sheet(isPresented: $showingAuditReport) {
             SkillAuditReportView(skills: installedSkills) { showingAuditReport = false }
         }
@@ -145,33 +178,31 @@ struct InstalledSkillsView: View {
         .sheet(isPresented: $showingCLIAccessManager, onDismiss: { fetchInstalledSkills() }) {
             CLIAccessManagerView()
         }
-        .onAppear { fetchInstalledSkills() }
-        .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in fetchInstalledSkills() }
-        .onReceive(NotificationCenter.default.publisher(for: .skillProjectSelectionDidChange)) { _ in fetchInstalledSkills() }
+        .onChange(of: installedWorkspaceStore.snapshot) { _, _ in syncSelection() }
         .onChange(of: searchText) { _, _ in syncSelection() }
-        .task(id: selectedSkillID) {
+        .task(id: auditLoadKey) {
             guard let skill = selectedSkill else {
-                agentVisibility = []; sourceIntegrity = nil; effectiveness = nil
+                agentVisibility = []
+                sourceIntegrity = nil
+                effectiveness = nil
+                isLoadingVisibility = false
+                isLoadingIntegrity = false
+                isLoadingEffectiveness = false
                 return
             }
-            isLoadingVisibility = true; isLoadingIntegrity = true; isLoadingEffectiveness = true
-            agentVisibility = []; sourceIntegrity = nil; effectiveness = nil
 
-            async let visTask = workspaceService.auditAgentVisibility(for: skill)
-            async let intTask = workspaceService.auditSourceIntegrity(for: skill)
-            async let effTask = workspaceService.auditEffectiveness(for: skill)
+            isLoadingVisibility = true
+            isLoadingIntegrity = true
+            isLoadingEffectiveness = true
 
-            let vis = await visTask
+            let auditState = await installedWorkspaceStore.loadAuditState(for: skill)
             guard !Task.isCancelled else { return }
-            agentVisibility = vis; isLoadingVisibility = false
-
-            let int = await intTask
-            guard !Task.isCancelled else { return }
-            sourceIntegrity = int; isLoadingIntegrity = false
-
-            let eff = await effTask
-            guard !Task.isCancelled else { return }
-            effectiveness = eff; isLoadingEffectiveness = false
+            agentVisibility = auditState.agentVisibility
+            sourceIntegrity = auditState.sourceIntegrity
+            effectiveness = auditState.effectiveness
+            isLoadingVisibility = false
+            isLoadingIntegrity = false
+            isLoadingEffectiveness = false
         }
         .alert("Remove Skill", isPresented: Binding(
             get: { pendingRemoval != nil },

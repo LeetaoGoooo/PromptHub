@@ -31,6 +31,9 @@
         }
       }
     },
+    "{{%@}}" : {
+
+    },
     "/Volumes/teamshare/skills" : {
 
     },
@@ -66,6 +69,12 @@
       }
     },
     "%lld added" : {
+
+    },
+    "%lld catalog skills" : {
+
+    },
+    "%lld installed skills" : {
 
     },
     "%lld of %lld checks passed" : {
@@ -217,6 +226,12 @@
         }
       }
     },
+    "AI Diff Review" : {
+
+    },
+    "AI Optimize Prompt" : {
+
+    },
     "All" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -229,6 +244,7 @@
       }
     },
     "All Prompts" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -405,9 +421,6 @@
     "Auditing %@…" : {
 
     },
-    "Author and manage your own skill drafts" : {
-
-    },
     "Authorize All" : {
 
     },
@@ -439,6 +452,9 @@
     "Build %@" : {
 
     },
+    "Built-in" : {
+
+    },
     "Can't open: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -461,6 +477,9 @@
         }
       }
     },
+    "Catalog (%lld)" : {
+
+    },
     "Category" : {
 
     },
@@ -468,9 +487,6 @@
 
     },
     "Check all skills for available updates" : {
-
-    },
-    "Check for Update…" : {
 
     },
     "Checking source…" : {
@@ -670,6 +686,9 @@
 
     },
     "Connected AI Agents" : {
+
+    },
+    "Content" : {
 
     },
     "Copied to clipboard" : {
@@ -953,15 +972,6 @@
     "Discard" : {
 
     },
-    "Discover" : {
-
-    },
-    "Discover and install skills from skills.sh" : {
-
-    },
-    "Discover community prompts" : {
-
-    },
     "Dismiss" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -982,6 +992,9 @@
           }
         }
       }
+    },
+    "Drafts (%lld)" : {
+
     },
     "Dropped file is not an image type. Detected type: %@" : {
       "extractionState" : "manual",
@@ -1264,9 +1277,6 @@
         }
       }
     },
-    "Explore Gallery" : {
-
-    },
     "Failed to delete prompt" : {
       "comment" : "Error message for prompt deletion",
       "extractionState" : "stale",
@@ -1365,6 +1375,9 @@
     "GitHub Private repos require a **Personal Access Token** with `repo` (read) scope. Tokens are stored in the macOS Keychain." : {
 
     },
+    "global" : {
+
+    },
     "Global" : {
 
     },
@@ -1459,6 +1472,9 @@
     "Identifier" : {
 
     },
+    "Identifier:" : {
+
+    },
     "Image Viewer" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1531,9 +1547,6 @@
 
     },
     "Installation Scope" : {
-
-    },
-    "Installed" : {
 
     },
     "Installing…" : {
@@ -1659,7 +1672,7 @@
         }
       }
     },
-    "Library" : {
+    "Link available" : {
 
     },
     "Loading Gallery..." : {
@@ -1730,16 +1743,10 @@
     "Manage Access" : {
 
     },
-    "Manage CLI agent connections and installed skills" : {
-
-    },
     "Manage CLI directories from Grant Agent Access, and select the active project folder here in the dashboard." : {
 
     },
     "Manage CLIs" : {
-
-    },
-    "Manage your installed skills" : {
 
     },
     "Mine" : {
@@ -1795,6 +1802,7 @@
 
     },
     "My Prompts" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1814,9 +1822,6 @@
           }
         }
       }
-    },
-    "My Skills" : {
-
     },
     "myorg/private-skills" : {
 
@@ -1842,6 +1847,9 @@
           }
         }
       }
+    },
+    "New Draft" : {
+
     },
     "New Prompt" : {
       "extractionState" : "manual",
@@ -2182,6 +2190,9 @@
     "Private Sources" : {
 
     },
+    "project" : {
+
+    },
     "Project" : {
 
     },
@@ -2320,15 +2331,6 @@
     "PromptHub writes SKILL.md files into each agent's config directory. Next time you open Cursor, Claude Code, or Codex, those skills are already loaded and ready to use." : {
 
     },
-    "Prompts created by you" : {
-
-    },
-    "Prompts shared by others via CloudKit" : {
-
-    },
-    "Public gallery is up to date." : {
-
-    },
     "Public prompt" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2369,6 +2371,9 @@
 
     },
     "Quality analysis not available." : {
+
+    },
+    "Quick Actions" : {
 
     },
     "Quick Search:" : {
@@ -2419,9 +2424,6 @@
         }
       }
     },
-    "Recent Prompts" : {
-
-    },
     "Refactor" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2438,12 +2440,6 @@
     "Refresh catalog" : {
 
     },
-    "Refresh Community" : {
-
-    },
-    "Refresh Gallery" : {
-
-    },
     "Refresh installed skills" : {
 
     },
@@ -2456,19 +2452,13 @@
     "Refreshing installations…" : {
 
     },
-    "Refreshing public gallery…" : {
-
-    },
     "Remove" : {
 
     },
     "Remove %@" : {
 
     },
-    "Remove from All CLIs" : {
-
-    },
-    "Remove from CLI" : {
+    "Remove from %@" : {
 
     },
     "Remove Skill" : {
@@ -2502,6 +2492,9 @@
     "Reset to Default" : {
 
     },
+    "Results" : {
+
+    },
     "Retry" : {
 
     },
@@ -2529,6 +2522,9 @@
           }
         }
       }
+    },
+    "Review Update" : {
+
     },
     "Revoke" : {
 
@@ -2673,6 +2669,9 @@
     "Setup Progress" : {
 
     },
+    "SHA-256  %@…" : {
+
+    },
     "Share" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2751,9 +2750,6 @@
         }
       }
     },
-    "Shared with Me" : {
-
-    },
     "Shared: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2817,13 +2813,13 @@
     "SKILL.md Preview" : {
 
     },
-    "Skills" : {
-
-    },
     "Skills are reusable, versioned instruction sets that extend AI agents. Create one from scratch or promote an existing prompt." : {
 
     },
     "Skills in %@" : {
+
+    },
+    "Skills Workspace" : {
 
     },
     "Slug" : {
@@ -2855,6 +2851,9 @@
           }
         }
       }
+    },
+    "Summary" : {
+
     },
     "Tags (comma separated)" : {
 
@@ -3084,9 +3083,6 @@
     "Updating CLIs…" : {
 
     },
-    "Updating gallery..." : {
-
-    },
     "Use Discover or My Skills to install a skill, then return here to verify which agents received it." : {
 
     },
@@ -3140,9 +3136,6 @@
           }
         }
       }
-    },
-    "View all saved prompts in your library" : {
-
     },
     "View in full screen" : {
       "localizations" : {

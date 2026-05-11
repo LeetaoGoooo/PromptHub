@@ -9,6 +9,10 @@ extension SkillStoreView {
     @ViewBuilder
     var accessoryBar: some View {
         HStack(spacing: 8) {
+            SkillsWorkspacePicker(promptSelection: $promptSelection)
+
+            Divider().frame(height: 18)
+
             if isInstallingLocalSkill { ProgressView().controlSize(.small) }
 
             Menu {
@@ -103,6 +107,22 @@ extension SkillStoreView {
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 .background(Color(NSColor.controlBackgroundColor))
             }
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Results")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    Text("\(availableSkills.count) catalog skills")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color(NSColor.windowBackgroundColor).opacity(0.82))
+
             List {
                 if !availableSkills.isEmpty {
                     Section("Catalog (\(availableSkills.count))") {

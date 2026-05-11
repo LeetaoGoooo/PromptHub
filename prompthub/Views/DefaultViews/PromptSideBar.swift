@@ -13,12 +13,12 @@ struct PromptSideBar: View {
     @Query(sort: \Prompt.name) var prompts: [Prompt]
     @Query(sort: \Skill.updatedAt, order: .reverse) private var skillDrafts: [Skill]
     @Query private var sharedCreations: [SharedCreation]
-    @AppStorage("sidebar.recentPromptsExpanded") private var isRecentPromptsExpanded = true
     @ObservedObject private var cliAccess = CLIDirectoryAccessManager.shared
-
-    @State private var promptToDelete: Prompt?
+    @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
 
     @Binding var promptSelection: PromptSelection
+    @Binding var skillsScopeFilter: SkillsSidebarScopeFilter
+    @Binding var skillsSourceFilter: SkillsSidebarSourceFilter
     @Binding var searchText: String
     let searchPlaceholder: String
     let isSearchEnabled: Bool
@@ -27,80 +27,40 @@ struct PromptSideBar: View {
 
     private var grantedAgentCount: Int { cliAccess.grantedDirectories.count }
     private var galleryCount: Int { BuiltInAgents.agents.count }
+    private var installedSkills: [InstalledSkillSnapshot] { installedWorkspaceStore.installedSkills }
 
-    private var recentPrompts: [Prompt] {
-        prompts
-            .sorted { ($0.lastEditedAt ?? Date.distantPast) > ($1.lastEditedAt ?? Date.distantPast) }
-            .prefix(8)
-            .map { $0 }
-    }
-
-    private var sidebarRows: [SidebarSectionModel] {
-        [
-            SidebarSectionModel(
-                title: "Library",
-                items: [
-                    .init(selection: .allPrompts, title: "All Prompts", systemImage: "square.grid.2x2", meta: "\(prompts.count + galleryCount)"),
-                    .init(selection: .mine, title: "My Prompts", systemImage: "person", meta: "\(prompts.count)"),
-                    .init(selection: .explore, title: "Explore Gallery", systemImage: "sparkles", meta: "\(galleryCount)"),
-                    .init(selection: .shared, title: "Shared with Me", systemImage: "link", meta: sharedCreations.isEmpty ? nil : "\(sharedCreations.count)")
-                ]
-            ),
-            SidebarSectionModel(
-                title: "Skills",
-                items: [
-                    .init(selection: .mySkills, title: "My Skills", systemImage: "wand.and.stars", meta: skillDrafts.isEmpty ? nil : "\(skillDrafts.count)"),
-                    .init(selection: .skillStore, title: "Discover", systemImage: "sparkles", meta: nil),
-                    .init(selection: .installedSkills, title: "Installed", systemImage: "square.stack.3d.up.fill", meta: nil)
-                ]
-            )
-        ]
-    }
+    private var promptsCount: Int { prompts.count + galleryCount }
+    private var allInstalledCount: Int { installedSkills.count }
+    private var globalInstalledCount: Int { installedSkills.filter(\.isGlobal).count }
+    private var projectInstalledCount: Int { installedSkills.filter { !$0.isGlobal }.count }
+    private var externalInstalledCount: Int { installedSkills.filter { $0.displaySource != nil }.count }
+    private var localInstalledCount: Int { installedSkills.filter { $0.displaySource == nil }.count }
+    private var currentPrimaryArea: SidebarPrimaryArea { promptSelection.sidebarPrimaryArea }
     
     var body: some View {
         VStack(spacing: 0) {
             sidebarHeader
 
-            List(selection: $promptSelection) {
-                ForEach(sidebarRows) { section in
-                    Section {
-                        ForEach(section.items) { item in
-                            NavigationLink(value: item.selection) {
-                                sidebarRowLabel(item)
-                            }
-                        }
-                    } header: {
-                        sidebarSectionHeader(section.title)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    primaryAreaSection
+
+                    switch currentPrimaryArea {
+                    case .skills:
+                        skillsNavigationSection
+                    case .prompts:
+                        promptsNavigationSection
+                    case .agents:
+                        agentsNavigationSection
                     }
                 }
-
-                cliSection
-
-                if !recentPrompts.isEmpty {
-                    recentPromptsSection
-                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 18)
             }
-            .listStyle(.sidebar)
-            .scrollContentBackground(.hidden)
 
             sidebarFooter
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .alert("Delete Prompt", isPresented: Binding(
-            get: { promptToDelete != nil },
-            set: { if !$0 { promptToDelete = nil } }
-        )) {
-            Button("Cancel", role: .cancel) { promptToDelete = nil }
-            Button("Delete", role: .destructive) {
-                if let prompt = promptToDelete {
-                    deletePrompt(prompt)
-                }
-            }
-        } message: {
-            if let prompt = promptToDelete {
-                Text("Are you sure you want to delete '\(prompt.name)'?")
-            }
-        }
     }
 
     @ViewBuilder
@@ -141,6 +101,78 @@ struct PromptSideBar: View {
         .padding(.bottom, 8)
     }
 
+    private var primaryAreaSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(primaryAreaItems) { item in
+                sidebarPrimaryButton(item)
+            }
+        }
+    }
+
+    private var promptsNavigationSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sidebarSectionHeader("Prompts")
+
+            VStack(spacing: 6) {
+                sidebarSelectionButton(title: "All Prompts", icon: "square.grid.2x2", meta: "\(promptsCount)", isActive: promptSelection == .allPrompts) {
+                    promptSelection = .allPrompts
+                }
+                sidebarSelectionButton(title: "My Prompts", icon: "person", meta: "\(prompts.count)", isActive: promptSelection == .mine) {
+                    promptSelection = .mine
+                }
+                sidebarSelectionButton(title: "Shared with Me", icon: "link", meta: sharedCreations.isEmpty ? nil : "\(sharedCreations.count)", isActive: promptSelection == .shared) {
+                    promptSelection = .shared
+                }
+                sidebarSelectionButton(title: "Explore Gallery", icon: "sparkles", meta: "\(galleryCount)", isActive: promptSelection == .explore) {
+                    promptSelection = .explore
+                }
+            }
+        }
+    }
+
+    private var skillsNavigationSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 10) {
+                sidebarSectionHeader("Workspace")
+
+                VStack(spacing: 6) {
+                    sidebarSelectionButton(title: "Installed", icon: "square.stack.3d.up.fill", meta: "\(allInstalledCount)", isActive: promptSelection == .installedSkills) {
+                        promptSelection = .installedSkills
+                    }
+                    sidebarSelectionButton(title: "Drafts", icon: "tag", meta: "\(skillDrafts.count)", isActive: promptSelection == .mySkills || isSkillDraftDetailSelected) {
+                        promptSelection = .mySkills
+                    }
+                    sidebarSelectionButton(title: "Discover", icon: "globe.europe.africa", meta: nil, isActive: promptSelection == .skillStore) {
+                        promptSelection = .skillStore
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                sidebarSectionHeader("Coverage")
+
+                VStack(spacing: 6) {
+                    sidebarInfoRow(title: "Global", icon: "globe", meta: "\(globalInstalledCount)")
+                    sidebarInfoRow(title: "Project", icon: "folder", meta: "\(projectInstalledCount)")
+                    sidebarInfoRow(title: "External", icon: "wrench.and.screwdriver", meta: "\(externalInstalledCount)")
+                    sidebarInfoRow(title: "Local", icon: "laptopcomputer", meta: "\(localInstalledCount)")
+                }
+            }
+        }
+    }
+
+    private var agentsNavigationSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sidebarSectionHeader("Agents")
+
+            VStack(spacing: 6) {
+                sidebarSelectionButton(title: "Workspaces", icon: "terminal", meta: "\(grantedAgentCount)", isActive: promptSelection == .cliDashboard) {
+                    promptSelection = .cliDashboard
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private func sidebarSectionHeader(_ title: String) -> some View {
         Text(title)
@@ -148,61 +180,6 @@ struct PromptSideBar: View {
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
             .tracking(0.8)
-    }
-
-    @ViewBuilder
-    private var cliSection: some View {
-        Section {
-            NavigationLink(value: PromptSelection.cliDashboard) {
-                HStack(spacing: 10) {
-                    ZStack(alignment: .bottomTrailing) {
-                        Image(systemName: "terminal")
-                            .frame(width: 16)
-                        Circle()
-                            .fill(grantedAgentCount > 0 ? Color.green : Color.secondary.opacity(0.45))
-                            .frame(width: 7, height: 7)
-                            .offset(x: 3, y: 3)
-                    }
-                    Text("Workspaces")
-                        .font(.subheadline.weight(.medium))
-                    Spacer(minLength: 8)
-                    Text("\(grantedAgentCount)")
-                        .font(.caption2.weight(.bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.primary.opacity(0.08))
-                        .clipShape(Capsule())
-                }
-            }
-        } header: {
-            sidebarSectionHeader("Agents")
-        }
-    }
-
-    @ViewBuilder
-    private var recentPromptsSection: some View {
-        Section("Recent Prompts", isExpanded: $isRecentPromptsExpanded) {
-            ForEach(recentPrompts) { prompt in
-                NavigationLink(value: PromptSelection.prompt(prompt)) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "doc.text")
-                            .frame(width: 16)
-                        Text(prompt.name)
-                            .font(prompt.name == "Untitled Prompt" ? .body.italic() : .body)
-                            .lineLimit(1)
-                        Spacer(minLength: 8)
-                        Text("v\(max(prompt.latestVersionNumber, 1))")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .contextMenu {
-                    Button("Delete", role: .destructive) {
-                        promptToDelete = prompt
-                    }
-                }
-            }
-        }
     }
 
     @ViewBuilder
@@ -295,28 +272,103 @@ struct PromptSideBar: View {
         }
     }
 
-    @ViewBuilder
-    private func sidebarRowLabel(_ item: SidebarItemModel) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: item.systemImage)
-                .frame(width: 16)
-            Text(item.title)
-                .font(.subheadline.weight(.medium))
-            Spacer(minLength: 8)
-            if let meta = item.meta {
-                Text(meta)
-                    .font(.caption2.weight(.bold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.primary.opacity(0.08))
-                    .clipShape(Capsule())
-            }
+    private var primaryAreaItems: [SidebarPrimaryButtonItem] {
+        [
+            SidebarPrimaryButtonItem(area: .skills, title: "Skills", systemImage: "wrench.and.screwdriver", meta: "\(max(allInstalledCount, skillDrafts.count))"),
+            SidebarPrimaryButtonItem(area: .prompts, title: "Prompts", systemImage: "doc.text", meta: "\(promptsCount)"),
+            SidebarPrimaryButtonItem(area: .agents, title: "Agents", systemImage: "gearshape.2", meta: "\(grantedAgentCount)")
+        ]
+    }
+
+    private var isSkillDraftDetailSelected: Bool {
+        if case .skill = promptSelection {
+            return true
         }
+        return false
+    }
+
+    @ViewBuilder
+    private func sidebarPrimaryButton(_ item: SidebarPrimaryButtonItem) -> some View {
+        Button {
+            switch item.area {
+            case .skills:
+                if promptSelection.sidebarPrimaryArea != .skills {
+                    skillsScopeFilter = .allInstalled
+                    skillsSourceFilter = .all
+                    promptSelection = .installedSkills
+                }
+            case .prompts:
+                promptSelection = .allPrompts
+            case .agents:
+                promptSelection = .cliDashboard
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: item.systemImage)
+                    .frame(width: 16)
+                Text(item.title)
+                    .font(.subheadline.weight(.medium))
+                Spacer(minLength: 8)
+                Text(item.meta)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(item.area == currentPrimaryArea ? Color.accentColor.opacity(0.10) : Color.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(item.area == currentPrimaryArea ? Color.accentColor.opacity(0.7) : Color(NSColor.separatorColor).opacity(0.35), lineWidth: item.area == currentPrimaryArea ? 1 : 0.8)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func sidebarSelectionButton(title: String, icon: String, meta: String?, isActive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .frame(width: 16)
+                    .foregroundStyle(isActive ? Color.accentColor : .secondary)
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 8)
+                if let meta {
+                    Text(meta)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(isActive ? Color.accentColor : .secondary)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(isActive ? Color.accentColor.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func sidebarInfoRow(title: String, icon: String, meta: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .frame(width: 16)
+                .foregroundStyle(.secondary)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Text(meta)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
     }
 
     private func deletePrompt(_ prompt: Prompt) {
         modelContext.delete(prompt)
-        
+
         do {
             try modelContext.save()
             if case .prompt(let selectedPrompt) = promptSelection, selectedPrompt == prompt {
@@ -325,20 +377,13 @@ struct PromptSideBar: View {
         } catch {
             print("Failed to delete prompt: \(error.localizedDescription)")
         }
-        promptToDelete = nil
     }
 }
 
-private struct SidebarSectionModel: Identifiable {
-    let title: String
-    let items: [SidebarItemModel]
-    var id: String { title }
-}
-
-private struct SidebarItemModel: Identifiable {
-    let selection: PromptSelection
+private struct SidebarPrimaryButtonItem: Identifiable {
+    let area: SidebarPrimaryArea
     let title: String
     let systemImage: String
-    let meta: String?
-    var id: PromptSelection { selection }
+    let meta: String
+    var id: SidebarPrimaryArea { area }
 }

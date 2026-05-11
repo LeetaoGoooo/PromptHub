@@ -7,66 +7,39 @@ import SwiftUI
 extension InstalledSkillsView {
 
     func fetchInstalledSkills() {
-        guard cliAccessManager.anyAccessGranted else { return }
-        fetchTask?.cancel()
-        isLoading = true
         agentVisibility = []
         sourceIntegrity = nil
+        effectiveness = nil
         isLoadingVisibility = true
         isLoadingIntegrity = true
-        errorMessage = nil
-        fetchTask = Task {
-            do {
-                let snapshot = try await workspaceService.loadInstalledWorkspace(
-                    authoredDraftCount: skillDrafts.count
-                )
-                guard !Task.isCancelled else { return }
-                workspaceSnapshot = snapshot
-                syncSelection()
-                isLoading = false
-                if let skill = selectedSkill {
-                    async let visTask = workspaceService.auditAgentVisibility(for: skill)
-                    async let intTask = workspaceService.auditSourceIntegrity(for: skill)
-                    let vis = await visTask
-                    guard !Task.isCancelled else { return }
-                    agentVisibility = vis
-                    isLoadingVisibility = false
-                    let int = await intTask
-                    guard !Task.isCancelled else { return }
-                    sourceIntegrity = int
-                    isLoadingIntegrity = false
-                } else {
-                    isLoadingVisibility = false
-                    isLoadingIntegrity = false
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                errorMessage = workspaceService.userFacingErrorMessage(for: error)
-                isLoading = false
-                isLoadingVisibility = false
-                isLoadingIntegrity = false
-            }
-        }
+        isLoadingEffectiveness = true
+        installedWorkspaceStore.refresh(
+            authoredDraftCount: skillDrafts.count,
+            hasCLIAccess: cliAccessManager.anyAccessGranted
+        )
     }
 
     func removeSkill(_ skill: InstalledSkillSnapshot, targetAgents: [AgentWorkflow]? = nil) {
         withAnimation(.easeInOut(duration: 0.2)) {
             removingSkillIDs.insert(skill.id)
-            errorMessage = nil
+            installedWorkspaceStore.setError(nil)
         }
         Task {
             do {
-                workspaceSnapshot = try await workspaceService.removeInstalledSkill(
+                let snapshot = try await workspaceService.removeInstalledSkill(
                     skill, targetAgents: targetAgents, authoredDraftCount: skillDrafts.count
                 )
-                syncSelection()
+                await MainActor.run {
+                    installedWorkspaceStore.apply(snapshot: snapshot)
+                    syncSelection()
+                }
                 _ = withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                     removingSkillIDs.remove(skill.id)
                 }
             } catch {
                 withAnimation {
                     removingSkillIDs.remove(skill.id)
-                    errorMessage = "Failed to remove \(skill.displayName): \(workspaceService.userFacingErrorMessage(for: error))"
+                    installedWorkspaceStore.setError("Failed to remove \(skill.displayName): \(workspaceService.userFacingErrorMessage(for: error))")
                 }
             }
         }
@@ -77,19 +50,22 @@ extension InstalledSkillsView {
         guard !agents.isEmpty else { return }
         withAnimation(.easeInOut(duration: 0.2)) {
             addingSkillIDs.insert(skill.id)
-            errorMessage = nil
+            installedWorkspaceStore.setError(nil)
         }
         Task {
             do {
-                workspaceSnapshot = try await workspaceService.addInstalledSkillTargets(
+                let snapshot = try await workspaceService.addInstalledSkillTargets(
                     skill, targetAgents: agents, authoredDraftCount: skillDrafts.count
                 )
-                syncSelection()
+                await MainActor.run {
+                    installedWorkspaceStore.apply(snapshot: snapshot)
+                    syncSelection()
+                }
                 _ = withAnimation(.easeInOut(duration: 0.2)) { addingSkillIDs.remove(skill.id) }
             } catch {
                 withAnimation {
                     addingSkillIDs.remove(skill.id)
-                    errorMessage = "Failed to update \(skill.displayName): \(workspaceService.userFacingErrorMessage(for: error))"
+                    installedWorkspaceStore.setError("Failed to update \(skill.displayName): \(workspaceService.userFacingErrorMessage(for: error))")
                 }
             }
         }
@@ -100,7 +76,7 @@ extension InstalledSkillsView {
     }
 
     func openDraft(for installedSkill: InstalledSkillSnapshot) {
-        errorMessage = nil
+        installedWorkspaceStore.setError(nil)
         Task {
             do {
                 let draft = try await draftService.openOrCreateDraft(
@@ -111,7 +87,7 @@ extension InstalledSkillsView {
                 )
                 onSelectSkillDraft(draft)
             } catch {
-                errorMessage = draftServiceErrorMessage(for: error, skill: installedSkill)
+                installedWorkspaceStore.setError(draftServiceErrorMessage(for: error, skill: installedSkill))
             }
         }
     }

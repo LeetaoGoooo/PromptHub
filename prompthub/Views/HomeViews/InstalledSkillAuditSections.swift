@@ -47,11 +47,7 @@ struct InstalledSkillAgentVisibilityView: View {
                         }
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
-                )
+                .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
             }
         }
     }
@@ -86,8 +82,7 @@ struct InstalledSkillIntegrityView: View {
                         integrityInfoRow(label: "Remote SHA-256", value: String(remoteHash.prefix(16)) + "…", fullValue: remoteHash)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor), lineWidth: 0.5))
+                .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
             } else if !isLoading {
                 Text("Integrity check not available.").font(.caption).foregroundStyle(.secondary)
             }
@@ -153,40 +148,41 @@ struct InstalledSkillEffectivenessView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 } else {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle().stroke(Color(NSColor.separatorColor), lineWidth: 3)
-                            Circle()
-                                .trim(from: 0, to: report.score)
-                                .stroke(tierColor(report.tier), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                                .rotationEffect(.degrees(-90))
-                            Text("\(Int(report.score * 100))")
-                                .font(.system(size: 11, weight: .semibold))
-                                .monospacedDigit()
-                        }
-                        .frame(width: 36, height: 36)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 5) {
-                                Image(systemName: report.tier.systemImage)
-                                    .foregroundStyle(tierColor(report.tier)).font(.caption)
-                                Text(report.tier.label)
-                                    .font(.callout.weight(.semibold))
-                                    .foregroundStyle(tierColor(report.tier))
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle().stroke(Color(NSColor.separatorColor), lineWidth: 3)
+                                Circle()
+                                    .trim(from: 0, to: report.score)
+                                    .stroke(tierColor(report.tier), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                                    .rotationEffect(.degrees(-90))
+                                Text("\(Int(report.score * 100))")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .monospacedDigit()
                             }
-                            Text("\(report.checks.filter(\.passed).count) of \(report.checks.count) checks passed")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
+                            .frame(width: 36, height: 36)
 
-                    VStack(spacing: 0) {
-                        ForEach(report.checks, id: \.title) { check in
-                            effectivenessCheckRow(check)
-                            if check.title != report.checks.last?.title { Divider() }
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 5) {
+                                    Image(systemName: report.tier.systemImage)
+                                        .foregroundStyle(tierColor(report.tier)).font(.caption)
+                                    Text(report.tier.label)
+                                        .font(.callout.weight(.semibold))
+                                        .foregroundStyle(tierColor(report.tier))
+                                }
+                                Text("\(report.checks.filter(\.passed).count) of \(report.checks.count) checks passed")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
                         }
+
+                        VStack(spacing: 0) {
+                            ForEach(report.checks, id: \.title) { check in
+                                effectivenessCheckRow(check)
+                                if check.title != report.checks.last?.title { Divider() }
+                            }
+                        }
+                        .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor), lineWidth: 0.5))
                 }
             } else if !isLoading {
                 Text("Quality analysis not available.").font(.caption).foregroundStyle(.secondary)

@@ -15,27 +15,24 @@ struct SkillLibraryRowCardStyle: ViewModifier {
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(borderColor, lineWidth: isSelected ? 1.0 : 0.5)
+                if isSelected || isHovered {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(borderColor, lineWidth: isSelected ? 0.9 : 0.6)
+                }
             }
-            .shadow(
-                color: isSelected ? Color(nsColor: .controlAccentColor).opacity(0.10) : Color.black.opacity(0.04),
-                radius: isSelected ? 4 : 2,
-                x: 0, y: isSelected ? 2 : 1
-            )
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private var backgroundColor: Color {
-        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.10) }
-        if isHovered  { return Color.primary.opacity(0.04) }
-        return Color(NSColor.textBackgroundColor).opacity(0.7)
+        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.08) }
+        if isHovered  { return Color.primary.opacity(0.03) }
+        return .clear
     }
 
     private var borderColor: Color {
-        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.35) }
-        if isHovered  { return Color.primary.opacity(0.10) }
-        return Color(NSColor.separatorColor).opacity(0.35)
+        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.20) }
+        if isHovered  { return Color.primary.opacity(0.08) }
+        return .clear
     }
 }
 
@@ -156,14 +153,7 @@ struct SkillLibraryInspectorCard<Content: View>: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(Color(NSColor.controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
-        }
-        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+        .padding(.vertical, 4)
     }
 }
 

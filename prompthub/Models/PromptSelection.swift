@@ -45,3 +45,38 @@ enum PromptSelection: Hashable, Equatable {
         }
     }
 }
+
+enum SidebarPrimaryArea: String, CaseIterable, Hashable {
+    case skills
+    case prompts
+    case agents
+}
+
+enum SkillsSidebarScopeFilter: Hashable {
+    case allInstalled
+    case global
+    case project
+    case drafts
+}
+
+enum SkillsSidebarSourceFilter: Hashable {
+    case all
+    case external
+    case localOnly
+    case discover
+}
+
+extension PromptSelection {
+    var sidebarPrimaryArea: SidebarPrimaryArea {
+        switch self {
+        case .allPrompts, .mine, .shared, .explore, .prompt:
+            return .prompts
+        case .mySkills, .skill, .skillStore, .installedSkills:
+            return .skills
+        case .cliDashboard:
+            return .agents
+        case .settings, .onboarding:
+            return .prompts
+        }
+    }
+}

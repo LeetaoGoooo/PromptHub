@@ -7,12 +7,18 @@ struct PromptRenderSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Prompt.name) private var prompts: [Prompt]
 
+    let initialPromptID: UUID?
     let onDismiss: () -> Void
 
     @State private var selectedPromptID: UUID?
     @State private var variables: [String: String] = [:]
     @State private var searchText = ""
     @State private var isCopied = false
+
+    init(initialPromptID: UUID? = nil, onDismiss: @escaping () -> Void) {
+        self.initialPromptID = initialPromptID
+        self.onDismiss = onDismiss
+    }
 
     private var selectedPrompt: Prompt? {
         guard let id = selectedPromptID else { return nil }
@@ -126,6 +132,12 @@ struct PromptRenderSheet: View {
             }
         }
         .frame(minWidth: 680, minHeight: 480)
+        .onAppear {
+            guard selectedPromptID == nil else { return }
+            if let initialPromptID, prompts.contains(where: { $0.id == initialPromptID }) {
+                selectedPromptID = initialPromptID
+            }
+        }
         .onChange(of: selectedPromptID) { _, _ in
             variables = [:]
             isCopied = false
@@ -198,8 +210,6 @@ struct PromptRenderSheet: View {
                         }
                     }
                     .frame(minWidth: 180, maxWidth: 220)
-
-                    Divider()
                 }
 
                 // Rendered output

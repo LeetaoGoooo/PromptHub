@@ -65,37 +65,65 @@ struct SkillDraftSummaryPane: View {
                     ("Installed", lastInstalledText)
                 ])
 
+                Divider()
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Quick Actions")
+                        .font(.headline)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 10) {
+                        Button(action: { showingInstallSheet = true }) {
+                            Label("Install…", systemImage: "arrow.down.circle.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Button(action: onOpenDraft) {
+                            Label("Open Draft", systemImage: "arrow.right.circle")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(action: onCopyMarkdown) {
+                            Label("Copy SKILL.md", systemImage: "doc.on.doc")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(role: .destructive, action: onDeleteDraft) {
+                            Label("Delete Draft", systemImage: "trash")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Latest Instructions").font(.headline)
-                    Text(latestInstructionsPreview)
-                        .font(.body).foregroundStyle(.secondary).lineLimit(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ScrollView {
+                        Text(latestInstructionsPreview)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                            .padding(14)
+                    }
+                    .frame(minHeight: 110, idealHeight: 140, maxHeight: 180)
+                    .background(Color(NSColor.textBackgroundColor).opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("SKILL.md Preview").font(.headline)
-                    ScrollView(.horizontal) {
+                    ScrollView([.horizontal, .vertical]) {
                         Text(exportedMarkdown)
                             .font(.system(.caption, design: .monospaced))
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(minHeight: 260, idealHeight: 340, maxHeight: 420)
                     .padding(12)
-                    .background(Color(NSColor.textBackgroundColor))
+                    .background(Color(NSColor.textBackgroundColor).opacity(0.82))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-
-                HStack(spacing: 10) {
-                    Button(action: { showingInstallSheet = true }) {
-                        Label("Install…", systemImage: "arrow.down.circle.fill")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button(action: onOpenDraft) { Label("Open Draft", systemImage: "arrow.right.circle") }
-                        .buttonStyle(.bordered)
-                    Button(action: onCopyMarkdown) { Label("Copy SKILL.md", systemImage: "doc.on.doc") }
-                        .buttonStyle(.bordered)
-                    Button(role: .destructive, action: onDeleteDraft) { Label("Delete Draft", systemImage: "trash") }
-                        .buttonStyle(.bordered)
                 }
                 .sheet(isPresented: $showingInstallSheet) {
                     SkillDraftInstallSheet(skill: skill)

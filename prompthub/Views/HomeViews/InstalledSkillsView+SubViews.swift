@@ -17,10 +17,10 @@ extension InstalledSkillsView {
                 Button("Configure Access\u{2026}") { showingCLIAccessManager = true }
                     .buttonStyle(.borderedProminent)
             }
-        } else if isLoading && installedSkills.isEmpty {
+        } else if installedWorkspaceStore.isLoading && installedSkills.isEmpty {
             ProgressView("Loading installed skills...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let error = errorMessage, installedSkills.isEmpty {
+        } else if let error = installedWorkspaceStore.errorMessage, installedSkills.isEmpty {
             SkillLibraryEmptyState(
                 title: "Error Loading Skills",
                 systemImage: "exclamationmark.triangle",
@@ -51,7 +51,7 @@ extension InstalledSkillsView {
 
     var skillListPane: some View {
         VStack(spacing: 0) {
-            if isLoading && !installedSkills.isEmpty {
+            if installedWorkspaceStore.isLoading && !installedSkills.isEmpty {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text("Refreshing installations…")
@@ -61,21 +61,11 @@ extension InstalledSkillsView {
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 .background(Color(NSColor.controlBackgroundColor))
             }
-            List {
-                installedSection(title: "Project", skills: projectSkills)
-                installedSection(title: "Global",  skills: globalSkills)
-            }
-            .listStyle(.inset(alternatesRowBackgrounds: false))
-            .scrollContentBackground(.hidden)
-        }
-        .background(Color(NSColor.controlBackgroundColor))
-    }
 
-    @ViewBuilder
-    func installedSection(title: String, skills: [InstalledSkillSnapshot]) -> some View {
-        if !skills.isEmpty {
-            Section("\(title) (\(skills.count))") {
-                ForEach(skills) { skill in
+            installedListHeaderBar
+
+            List {
+                ForEach(filteredSkills) { skill in
                     InstalledSkillListRow(
                         skill: skill,
                         isRemoving: removingSkillIDs.contains(skill.id),
@@ -92,7 +82,81 @@ extension InstalledSkillsView {
                     .listRowBackground(Color.clear)
                 }
             }
+            .listStyle(.inset(alternatesRowBackgrounds: false))
+            .scrollContentBackground(.hidden)
         }
+        .background(Color(NSColor.controlBackgroundColor))
+    }
+
+    private var installedListHeaderBar: some View {
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Results")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                Text("\(filteredSkills.count) installed skills")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+            }
+
+            Spacer(minLength: 12)
+
+            VStack(alignment: .trailing, spacing: 8) {
+                installedScopeControl
+                installedSourceControl
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color(NSColor.windowBackgroundColor).opacity(0.82))
+    }
+
+    private var installedScopeControl: some View {
+        HStack(spacing: 6) {
+            installedFilterButton(title: "All", systemImage: "square.stack.3d.up", isActive: scopeFilter == .allInstalled) {
+                scopeFilter = .allInstalled
+            }
+            installedFilterButton(title: "Global", systemImage: "globe", isActive: scopeFilter == .global) {
+                scopeFilter = .global
+            }
+            installedFilterButton(title: "Project", systemImage: "folder", isActive: scopeFilter == .project) {
+                scopeFilter = .project
+            }
+        }
+    }
+
+    private var installedSourceControl: some View {
+        HStack(spacing: 6) {
+            installedFilterButton(title: "Any Source", systemImage: "line.3.horizontal.decrease.circle", isActive: sourceFilter == .all) {
+                sourceFilter = .all
+            }
+            installedFilterButton(title: "External", systemImage: "wrench.and.screwdriver", isActive: sourceFilter == .external) {
+                sourceFilter = .external
+            }
+            installedFilterButton(title: "Local", systemImage: "laptopcomputer", isActive: sourceFilter == .localOnly) {
+                sourceFilter = .localOnly
+            }
+        }
+    }
+
+    private func installedFilterButton(title: String, systemImage: String, isActive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(isActive ? Color.accentColor : .secondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(isActive ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.06))
+                )
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(isActive ? Color.accentColor.opacity(0.45) : Color.clear, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -132,12 +196,12 @@ extension InstalledSkillsView {
 
     @ViewBuilder
     var nonFatalErrorBanner: some View {
-        if let error = errorMessage, !installedSkills.isEmpty {
+        if let error = installedWorkspaceStore.errorMessage, !installedSkills.isEmpty {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.orange)
                 Text(error).font(.caption).foregroundColor(.secondary)
                 Spacer()
-                Button("Dismiss") { withAnimation { errorMessage = nil } }
+                Button("Dismiss") { withAnimation { installedWorkspaceStore.setError(nil) } }
                     .font(.caption.bold()).buttonStyle(.plain)
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
