@@ -17,9 +17,6 @@
     "—" : {
 
     },
-    "·" : {
-
-    },
     "(Build %@)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -487,6 +484,9 @@
 
     },
     "Check all skills for available updates" : {
+
+    },
+    "Check for skill updates" : {
 
     },
     "Checking source…" : {
@@ -1486,6 +1486,9 @@
       }
     },
     "Import a local or private skill" : {
+
+    },
+    "Import skill" : {
 
     },
     "Import Status" : {

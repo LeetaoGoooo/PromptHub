@@ -93,8 +93,16 @@ struct PromptSideBar: View {
             .opacity(isSearchEnabled ? 1 : 0.72)
         }
         .padding(.horizontal, 12)
-        .padding(.top, 14)
-        .padding(.bottom, 8)
+        // Generous top inset so the title + search clear the macOS title bar
+        // / traffic-light area on initial display (NavigationSplitView's custom
+        // sidebar VStack doesn't auto-inset the toolbar safe area).
+        .padding(.top, 18)
+        .padding(.bottom, 10)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            // Reserve space equivalent to a unified title bar so traffic
+            // lights never overlap the PromptHub title row.
+            Color.clear.frame(height: 28)
+        }
     }
 
     private var promptsNavigationSection: some View {
