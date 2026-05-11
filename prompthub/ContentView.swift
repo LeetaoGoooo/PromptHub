@@ -76,6 +76,16 @@ struct ContentView: View {
             )
             .navigationSplitViewColumnWidth(min: 210, ideal: 235, max: 275)
             .frame(minWidth: 210)
+            // Declare an (empty) sidebar toolbar so SwiftUI reserves the
+            // window title-bar safe area for this column. Without it, the
+            // sidebar's custom VStack starts at window y=0 and content
+            // (PromptHub title + search) gets squeezed under the traffic
+            // lights when the window frame is restored from a prior session.
+            .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    Color.clear.frame(width: 1, height: 1)
+                }
+            }
         } detail: {
             NavigationStack {
                 switch promptSelection {
