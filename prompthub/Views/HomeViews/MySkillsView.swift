@@ -20,7 +20,27 @@ struct MySkillsView: View {
         SkillLibraryScreen(
             title: "My Skills",
             subtitle: "Write, version, and install first-class skill drafts. Prompts can graduate into reusable skills without leaving the authoring flow.",
-            metrics: headerMetrics
+            metrics: headerMetrics,
+            accessory: {
+                HStack(spacing: 8) {
+                    if !skillDrafts.isEmpty {
+                        Button(action: createSkillDraft) {
+                            Label("New Draft", systemImage: "plus")
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+
+                    Button {
+                        if let selectedSkill {
+                            copySkillMarkdown(for: selectedSkill)
+                        }
+                    } label: {
+                        Label("Copy SKILL.md", systemImage: "doc.on.doc")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(selectedSkill == nil)
+                }
+            }
         ) {
             mainContentView
         }

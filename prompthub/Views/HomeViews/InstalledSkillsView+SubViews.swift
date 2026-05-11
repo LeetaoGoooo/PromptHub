@@ -74,7 +74,7 @@ extension InstalledSkillsView {
     @ViewBuilder
     func installedSection(title: String, skills: [InstalledSkillSnapshot]) -> some View {
         if !skills.isEmpty {
-            Section(title) {
+            Section("\(title) (\(skills.count))") {
                 ForEach(skills) { skill in
                     InstalledSkillListRow(
                         skill: skill,

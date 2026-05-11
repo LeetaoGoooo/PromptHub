@@ -176,8 +176,8 @@ struct SkillLibraryBrowser<Sidebar: View, Detail: View>: View {
     @ViewBuilder let sidebar: () -> Sidebar
     @ViewBuilder let detail: () -> Detail
 
-    init(sidebarMinWidth: CGFloat = 280, sidebarIdealWidth: CGFloat = 310,
-         sidebarMaxWidth: CGFloat = 460, detailMinWidth: CGFloat = 520,
+            init(sidebarMinWidth: CGFloat = 260, sidebarIdealWidth: CGFloat = 292,
+                sidebarMaxWidth: CGFloat = 420, detailMinWidth: CGFloat = 540,
          @ViewBuilder sidebar: @escaping () -> Sidebar,
          @ViewBuilder detail: @escaping () -> Detail) {
         self.sidebarMinWidth = sidebarMinWidth

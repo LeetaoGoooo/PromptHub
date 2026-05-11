@@ -104,21 +104,25 @@ extension SkillStoreView {
                 .background(Color(NSColor.controlBackgroundColor))
             }
             List {
-                ForEach(availableSkills) { skill in
-                    let info = workspaceService.installationState(for: skill, registry: installationRegistry)
-                    Button { selectedSkillID = skill.id } label: {
-                        SkillStoreListRow(
-                            skill: skill,
-                            installationState: info,
-                            isInstalling: installingSkillIDs.contains(skill.id),
-                            justInstalled: recentlyInstalledIDs.contains(skill.id),
-                            isSelected: selectedSkillID == skill.id
-                        )
+                if !availableSkills.isEmpty {
+                    Section("Catalog (\(availableSkills.count))") {
+                        ForEach(availableSkills) { skill in
+                            let info = workspaceService.installationState(for: skill, registry: installationRegistry)
+                            Button { selectedSkillID = skill.id } label: {
+                                SkillStoreListRow(
+                                    skill: skill,
+                                    installationState: info,
+                                    isInstalling: installingSkillIDs.contains(skill.id),
+                                    justInstalled: recentlyInstalledIDs.contains(skill.id),
+                                    isSelected: selectedSkillID == skill.id
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
                 }
             }
             .listStyle(.inset(alternatesRowBackgrounds: false))

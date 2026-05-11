@@ -6,8 +6,10 @@ import SwiftUI
 extension MySkillsView {
 
     var headerMetrics: [SkillLibraryMetric] {
-        [
-            SkillLibraryMetric(value: "\(skillDrafts.count)", title: "Drafts", systemImage: "wand.and.stars"),
+        let visibleDraftCount = searchText.isEmpty ? skillDrafts.count : filteredSkills.count
+
+        return [
+            SkillLibraryMetric(value: "\(visibleDraftCount)", title: searchText.isEmpty ? "Drafts" : "Visible", systemImage: "wand.and.stars"),
             SkillLibraryMetric(value: "\(skillDrafts.filter { $0.lastInstalledAt != nil }.count)", title: "Installed", systemImage: "arrow.down.circle"),
             SkillLibraryMetric(value: "\(skillDrafts.reduce(0) { $0 + $1.sortedVersions.count })", title: "Versions", systemImage: "square.stack")
         ]
@@ -109,18 +111,20 @@ extension MySkillsView {
 
     var skillListPane: some View {
         List {
-            ForEach(filteredSkills) { skill in
-                Button { selectedSkillID = skill.id } label: {
-                    SkillDraftListRow(skill: skill, isSelected: selectedSkillID == skill.id)
+            Section("Drafts (\(filteredSkills.count))") {
+                ForEach(filteredSkills) { skill in
+                    Button { selectedSkillID = skill.id } label: {
+                        SkillDraftListRow(skill: skill, isSelected: selectedSkillID == skill.id)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button("Open Draft") { onSelectSkill(skill) }
+                        Button("Delete Draft", role: .destructive) { skillPendingDeletion = skill }
+                    }
+                    .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
                 }
-                .buttonStyle(.plain)
-                .contextMenu {
-                    Button("Open Draft") { onSelectSkill(skill) }
-                    Button("Delete Draft", role: .destructive) { skillPendingDeletion = skill }
-                }
-                .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
             }
         }
         .listStyle(.inset(alternatesRowBackgrounds: false))
