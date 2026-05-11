@@ -145,7 +145,7 @@ struct InstalledSkillDetailPane: View {
 
             if skill.package.remoteInstallDescriptor != nil {
                 Button { showingUpdateDiff = true }
-                label: { Label("Check for Update…", systemImage: "arrow.down.circle") }
+                label: { Label("Review Update…", systemImage: "arrow.triangle.2.circlepath") }
                 .buttonStyle(.bordered)
             }
         }

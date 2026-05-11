@@ -36,6 +36,7 @@ struct InstalledSkillsView: View {
     @State var showingAuditReport = false
     @State var skillsWithUpdates: Set<String> = []
     @State var isCheckingUpdates = false
+    @State var updatingSkill: InstalledSkillSnapshot?
 
     var installedSkills: [InstalledSkillSnapshot] { workspaceSnapshot.installedSkills }
 
@@ -101,7 +102,7 @@ struct InstalledSkillsView: View {
                 } else {
                     Button(action: checkAllUpdates) {
                         HStack(spacing: 4) {
-                            Image(systemName: "arrow.down.circle")
+                            Image(systemName: "arrow.triangle.2.circlepath")
                             if !skillsWithUpdates.isEmpty {
                                 Text("\(skillsWithUpdates.count)")
                                     .font(.caption2.weight(.bold))
@@ -137,6 +138,9 @@ struct InstalledSkillsView: View {
         }
         .sheet(isPresented: $showingAuditReport) {
             SkillAuditReportView(skills: installedSkills) { showingAuditReport = false }
+        }
+        .sheet(item: $updatingSkill) { skill in
+            SkillUpdateDiffSheet(skill: skill) { updatingSkill = nil }
         }
         .sheet(isPresented: $showingCLIAccessManager, onDismiss: { fetchInstalledSkills() }) {
             CLIAccessManagerView()

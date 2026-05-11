@@ -7,6 +7,8 @@ struct InstalledSkillListRow: View {
     let isRemoving: Bool
     let isSelected: Bool
     var hasUpdate: Bool = false
+    var onSelect: () -> Void = {}
+    var onUpdate: (() -> Void)?
     @State private var isHovered = false
 
     private var scopeColor: Color {
@@ -26,14 +28,27 @@ struct InstalledSkillListRow: View {
                 }
 
                 if hasUpdate {
-                    Text("Update")
-                        .font(.caption2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange)
-                        .clipShape(Capsule())
+                    if let onUpdate {
+                        Button(action: onUpdate) {
+                            Label("Update", systemImage: "arrow.triangle.2.circlepath")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.orange)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Text("Update")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.orange)
+                            .clipShape(Capsule())
+                    }
                 }
 
                 Spacer()
@@ -94,6 +109,9 @@ struct InstalledSkillListRow: View {
         .modifier(SkillLibraryRowCardStyle(isSelected: isSelected, isHovered: isHovered))
         .opacity(isRemoving ? 0.6 : 1)
         .animation(.easeInOut(duration: 0.14), value: isHovered)
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .onTapGesture(perform: onSelect)
+        .accessibilityAddTraits(.isButton)
         .onHover { hovering in
             isHovered = hovering
         }

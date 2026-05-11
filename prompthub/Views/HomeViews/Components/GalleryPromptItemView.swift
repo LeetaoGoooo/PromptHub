@@ -28,10 +28,24 @@ struct GalleryPromptItemView: View {
             iconTint: .primary,
             onTap: { showingPreviewSheet = true }
         ) {
-            PromptCollectionCardFooter(
-                leadingBadges: footerBadges,
-                trailingText: galleryPromptItem.link?.isEmpty == false ? "Link available" : "Built-in"
-            )
+            HStack(spacing: 6) {
+                PromptCollectionFooterButton(
+                    title: isAlreadySaved ? "Saved" : "Save to library",
+                    tint: isAlreadySaved ? .secondary : .green,
+                    isDisabled: isAlreadySaved,
+                    action: {
+                        Task { @MainActor in
+                            savePrompt()
+                        }
+                    }
+                )
+
+                Spacer(minLength: 0)
+
+                Text(galleryPromptItem.link?.isEmpty == false ? "Link available" : "Built-in")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .contextMenu {
             Button {

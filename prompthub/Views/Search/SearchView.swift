@@ -197,6 +197,16 @@ struct SearchView: View {
                         }
                         .padding(6)
                     }
+                    .onAppear {
+                        scrollToSelected(using: proxy)
+                    }
+                    .onChange(of: selectedIndex) { _, _ in
+                        scrollToSelected(using: proxy)
+                    }
+                    .onChange(of: searchText) { _, _ in
+                        selectedIndex = 0
+                        scrollToSelected(using: proxy)
+                    }
                 }
             }
         }
@@ -214,14 +224,12 @@ struct SearchView: View {
         .onKeyPress(.upArrow) {
             if allFilteredResults.count > 0 {
                 selectedIndex = max(0, selectedIndex - 1)
-                scrollToSelected()
             }
             return .handled
         }
         .onKeyPress(.downArrow) {
             if allFilteredResults.count > 0 {
                 selectedIndex = min(allFilteredResults.count - 1, selectedIndex + 1)
-                scrollToSelected()
             }
             return .handled
         }
@@ -233,8 +241,34 @@ struct SearchView: View {
             return .handled
         }
     }
-    
-    func scrollToSelected() { /* TODO: scroll to selectedIndex */ }
+
+    func scrollToSelected(using proxy: ScrollViewProxy) {
+        guard let rowID = rowID(for: selectedIndex) else { return }
+        withAnimation(.easeInOut(duration: 0.12)) {
+            proxy.scrollTo(rowID, anchor: .center)
+        }
+    }
+
+    func rowID(for index: Int) -> String? {
+        guard index >= 0, index < allFilteredResults.count else { return nil }
+
+        let userCount = filteredUserPrompts.count
+        if index < userCount { return "user_\(index)" }
+
+        let sharedStart = userCount
+        let sharedEnd = sharedStart + filteredSharedCreations.count
+        if index < sharedEnd { return "shared_\(index - sharedStart)" }
+
+        let galleryStart = sharedEnd
+        let galleryEnd = galleryStart + filteredGalleryPrompts.count
+        if index < galleryEnd { return "gallery_\(index - galleryStart)" }
+
+        let skillStart = galleryEnd
+        let skillEnd = skillStart + filteredSkillDrafts.count
+        if index < skillEnd { return "skill_\(index - skillStart)" }
+
+        return nil
+    }
 
     @ViewBuilder
     func searchSectionHeader(_ title: String) -> some View {

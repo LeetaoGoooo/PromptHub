@@ -20,9 +20,6 @@
     "·" : {
 
     },
-    "(%lld)" : {
-
-    },
     "(Build %@)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -573,9 +570,6 @@
           }
         }
       }
-    },
-    "Community Gallery" : {
-
     },
     "Community Shared Prompts" : {
       "extractionState" : "stale",
@@ -1811,6 +1805,7 @@
       }
     },
     "My Shared Prompts" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1969,9 +1964,6 @@
         }
       }
     },
-    "No prompts match \"%@\"" : {
-
-    },
     "No result" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2121,6 +2113,7 @@
 
     },
     "Personal Prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2333,6 +2326,9 @@
     "Prompts shared by others via CloudKit" : {
 
     },
+    "Public gallery is up to date." : {
+
+    },
     "Public prompt" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2345,6 +2341,7 @@
       }
     },
     "Public Shared Prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2435,7 +2432,16 @@
         }
       }
     },
+    "Refresh" : {
+
+    },
     "Refresh catalog" : {
+
+    },
+    "Refresh Community" : {
+
+    },
+    "Refresh Gallery" : {
 
     },
     "Refresh installed skills" : {
@@ -2448,6 +2454,9 @@
 
     },
     "Refreshing installations…" : {
+
+    },
+    "Refreshing public gallery…" : {
 
     },
     "Remove" : {
@@ -2721,6 +2730,7 @@
       }
     },
     "Shared Prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

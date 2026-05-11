@@ -57,43 +57,41 @@ struct CLIDashboardView: View {
     }
 
     var body: some View {
-        HSplitView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    headerSection
-                    CLIHowItWorksCard(onCopyCommand: copyCommand(_:), copiedCommand: copiedCommand)
-                    connectedAgentsSection
-                    installedSkillsSection(
-                        title: "Skills — Project Scope",
-                        subtitle: selectedProjectLabel + "  ·  ~/.agents/skills/",
-                        skills: projectSkills
-                    )
-                    installedSkillsSection(
-                        title: "Skills — Global Scope",
-                        subtitle: "~/Library/Application Support/PromptHub",
-                        skills: globalSkills
-                    )
+        GeometryReader { geometry in
+            Group {
+                if geometry.size.width >= 1180 {
+                    HStack(spacing: 0) {
+                        mainColumn(availableWidth: geometry.size.width - 320)
+                        Divider()
+                        inspectorColumn
+                    }
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            mainContent(availableWidth: geometry.size.width)
+                            Divider()
+                            CLIDashboardInspector(
+                                cliExecutablePath: cliExecutablePath,
+                                grantedDirectories: grantedDirectories,
+                                selectedProjectLabel: selectedProjectLabel,
+                                hasGeminiAccess: cliAccess.hasAccess(to: .gemini),
+                                onInstallSkill: { showingInstallHint = true },
+                                onGrantAccess: { showingAccessManager = true },
+                                onChangeProject: chooseProjectRoot,
+                                onCLISettings: { showingCLISettingsHint = true }
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                        }
+                        .padding(20)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
                 }
-                .padding(24)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(NSColor.windowBackgroundColor))
-
-            CLIDashboardInspector(
-                cliExecutablePath: cliExecutablePath,
-                grantedDirectories: grantedDirectories,
-                selectedProjectLabel: selectedProjectLabel,
-                hasGeminiAccess: cliAccess.hasAccess(to: .gemini),
-                onInstallSkill: { showingInstallHint = true },
-                onGrantAccess: { showingAccessManager = true },
-                onChangeProject: chooseProjectRoot,
-                onCLISettings: { showingCLISettingsHint = true }
-            )
-            .frame(minWidth: 290, idealWidth: 310, maxWidth: 340, maxHeight: .infinity)
-            .background(Color(NSColor.controlBackgroundColor))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(NSColor.windowBackgroundColor))
         .task { await loadSkills() }
         .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in
             Task { await loadSkills() }
@@ -110,6 +108,53 @@ struct CLIDashboardView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Manage CLI directories from Grant Agent Access, and select the active project folder here in the dashboard.")
+        }
+    }
+
+    @ViewBuilder
+    private func mainColumn(availableWidth: CGFloat) -> some View {
+        ScrollView {
+            mainContent(availableWidth: availableWidth)
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.windowBackgroundColor))
+        .layoutPriority(1)
+    }
+
+    @ViewBuilder
+    private var inspectorColumn: some View {
+        CLIDashboardInspector(
+            cliExecutablePath: cliExecutablePath,
+            grantedDirectories: grantedDirectories,
+            selectedProjectLabel: selectedProjectLabel,
+            hasGeminiAccess: cliAccess.hasAccess(to: .gemini),
+            onInstallSkill: { showingInstallHint = true },
+            onGrantAccess: { showingAccessManager = true },
+            onChangeProject: chooseProjectRoot,
+            onCLISettings: { showingCLISettingsHint = true }
+        )
+        .frame(minWidth: 290, idealWidth: 300, maxWidth: 320, maxHeight: .infinity)
+        .background(Color(NSColor.controlBackgroundColor))
+    }
+
+    @ViewBuilder
+    private func mainContent(availableWidth: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 24) {
+            headerSection
+            CLIHowItWorksCard(onCopyCommand: copyCommand(_:), copiedCommand: copiedCommand, availableWidth: availableWidth)
+            connectedAgentsSection
+            installedSkillsSection(
+                title: "Skills — Project Scope",
+                subtitle: selectedProjectLabel + "  ·  ~/.agents/skills/",
+                skills: projectSkills
+            )
+            installedSkillsSection(
+                title: "Skills — Global Scope",
+                subtitle: "~/Library/Application Support/PromptHub",
+                skills: globalSkills
+            )
         }
     }
 
@@ -174,7 +219,7 @@ struct CLIDashboardView: View {
             Text("Connected AI Agents")
                 .font(.headline)
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 14)], spacing: 14) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 240), spacing: 14)], spacing: 14) {
                 ForEach(sortedDirectories) { directory in
                     CLIAgentWorkspaceCard(
                         directory: directory,
@@ -579,8 +624,33 @@ private struct SetupStatusRow: View {
 struct CLIHowItWorksCard: View {
     let onCopyCommand: (String) -> Void
     let copiedCommand: String?
+    let availableWidth: CGFloat
+
+    private var usesVerticalLayout: Bool {
+        availableWidth < 860
+    }
 
     var body: some View {
+        Group {
+            if usesVerticalLayout {
+                VStack(alignment: .leading, spacing: 16) {
+                    introBlock
+                    commandBlock
+                }
+            } else {
+                HStack(alignment: .top, spacing: 16) {
+                    introBlock
+                    Spacer(minLength: 0)
+                    commandBlock
+                }
+            }
+        }
+        .padding(18)
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var introBlock: some View {
         HStack(alignment: .top, spacing: 16) {
             ZStack {
                 Circle()
@@ -598,19 +668,16 @@ struct CLIHowItWorksCard: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-
-            Spacer(minLength: 0)
-
-            VStack(alignment: .leading, spacing: 8) {
-                CLICommandRow(label: "Install", command: "brew install prompthub", copiedCommand: copiedCommand, onCopy: onCopyCommand)
-                CLICommandRow(label: "Add skill", command: "ph skill install owner/repo@commit-writer", copiedCommand: copiedCommand, onCopy: onCopyCommand)
-                CLICommandRow(label: "List", command: "ph skill list", copiedCommand: copiedCommand, onCopy: onCopyCommand)
-            }
-            .frame(minWidth: 290)
         }
-        .padding(18)
-        .background(Color(NSColor.controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var commandBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            CLICommandRow(label: "Install", command: "brew install prompthub", copiedCommand: copiedCommand, onCopy: onCopyCommand)
+            CLICommandRow(label: "Add skill", command: "ph skill install owner/repo@commit-writer", copiedCommand: copiedCommand, onCopy: onCopyCommand)
+            CLICommandRow(label: "List", command: "ph skill list", copiedCommand: copiedCommand, onCopy: onCopyCommand)
+        }
+        .frame(maxWidth: usesVerticalLayout ? .infinity : 320, alignment: .leading)
     }
 }
 

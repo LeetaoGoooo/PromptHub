@@ -76,17 +76,17 @@ extension InstalledSkillsView {
         if !skills.isEmpty {
             Section(title) {
                 ForEach(skills) { skill in
-                    Button {
-                        selectedSkillID = skill.id
-                    } label: {
-                        InstalledSkillListRow(
-                            skill: skill,
-                            isRemoving: removingSkillIDs.contains(skill.id),
-                            isSelected: selectedSkillID == skill.id,
-                            hasUpdate: skillsWithUpdates.contains(skill.id)
-                        )
-                    }
-                    .buttonStyle(.plain)
+                    InstalledSkillListRow(
+                        skill: skill,
+                        isRemoving: removingSkillIDs.contains(skill.id),
+                        isSelected: selectedSkillID == skill.id,
+                        hasUpdate: skillsWithUpdates.contains(skill.id),
+                        onSelect: { selectedSkillID = skill.id },
+                        onUpdate: skillsWithUpdates.contains(skill.id) ? {
+                            selectedSkillID = skill.id
+                            updatingSkill = skill
+                        } : nil
+                    )
                     .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)

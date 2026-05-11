@@ -197,48 +197,52 @@ struct PromptCollectionCard<Footer: View>: View {
     @State private var isHovering = false
 
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    Image(systemName: systemImage)
-                        .foregroundStyle(iconTint)
-                        .font(.headline)
-                        .frame(width: 26, height: 26)
-                        .background(iconTint.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+        VStack(alignment: .leading, spacing: 12) {
+            headerBlock
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                        if let description, !description.isEmpty {
-                            Text(description)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                footer()
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isHovering ? Color.accentColor.opacity(0.06) : Color(NSColor.controlBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isHovering ? Color.accentColor.opacity(0.25) : Color(NSColor.separatorColor).opacity(0.7), lineWidth: 1)
-            )
+            footer()
         }
-        .buttonStyle(.plain)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(isHovering ? Color.accentColor.opacity(0.06) : Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isHovering ? Color.accentColor.opacity(0.25) : Color(NSColor.separatorColor).opacity(0.7), lineWidth: 1)
+        )
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovering = hovering
             }
         }
+    }
+
+    private var headerBlock: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .foregroundStyle(iconTint)
+                .font(.headline)
+                .frame(width: 26, height: 26)
+                .background(iconTint.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                if let description, !description.isEmpty {
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -267,6 +271,28 @@ struct PromptCollectionCardFooter: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+struct PromptCollectionFooterButton: View {
+    let title: String
+    let tint: Color
+    let isDisabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundStyle(tint)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(tint.opacity(isDisabled ? 0.08 : 0.12))
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
     }
 }
 
