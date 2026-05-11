@@ -154,6 +154,7 @@ struct InstalledSkillsView: View {
                     }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
+                    .accessibilityLabel("Check for skill updates")
                     .help("Check all skills for available updates")
                 }
 

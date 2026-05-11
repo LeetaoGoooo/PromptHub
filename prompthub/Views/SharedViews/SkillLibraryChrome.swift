@@ -208,9 +208,10 @@ struct SkillLibraryScreen<Accessory: View, Content: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background {
-            // Window-spanning Liquid Glass underlayer so content inherits the
-            // same vibrancy as the header card instead of sitting on a flat fill.
-            LibraryGlassMaterial(material: .underWindowBackground, blendingMode: .behindWindow)
+            // In-window content vibrancy. Use .contentBackground + .withinWindow
+            // so the surface samples the window's own backdrop rather than the
+            // desktop wallpaper behind the window (which .behindWindow would do).
+            LibraryGlassMaterial(material: .contentBackground, blendingMode: .withinWindow)
                 .ignoresSafeArea()
         }
     }
