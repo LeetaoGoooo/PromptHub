@@ -103,10 +103,10 @@ struct InstalledSkillsView: View {
             subtitle: "Audit what is live in each CLI environment, remove it cleanly by scope, and keep project and global installations explicit.",
             metrics: headerMetrics
         ) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 SkillsWorkspacePicker(promptSelection: $promptSelection)
 
-                Divider().frame(height: 18)
+                Divider().frame(height: 14)
 
                 Menu {
                     Button { chooseProjectRoot() }
@@ -118,15 +118,20 @@ struct InstalledSkillsView: View {
                     }
                 } label: {
                     Label(workspaceService.selectedProjectDisplayName, systemImage: "folder")
+                        .labelStyle(.titleAndIcon)
                 }
-                .menuStyle(.borderedButton)
+                .menuStyle(.button)
+                .menuIndicator(.hidden)
+                .controlSize(.small)
+                .fixedSize()
 
-                Divider().frame(height: 16)
+                Divider().frame(height: 14)
 
                 Button(action: fetchInstalledSkills) {
                     Image(systemName: "arrow.clockwise")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
                 .help("Refresh installed skills")
 
                 if isCheckingUpdates {
@@ -146,17 +151,19 @@ struct InstalledSkillsView: View {
                             }
                         }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
                     .help("Check all skills for available updates")
                 }
 
                 Button(action: { showingAuditReport = true }) {
                     Image(systemName: "checklist")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
                 .help("Audit all installed skills")
 
-                Divider().frame(height: 16)
+                Divider().frame(height: 14)
 
                 CLIStatusIndicator(manager: cliAccessManager) {
                     showingCLIAccessManager = true

@@ -23,16 +23,17 @@ struct MySkillsView: View {
             subtitle: "Write, version, and install first-class skill drafts. Prompts can graduate into reusable skills without leaving the authoring flow.",
             metrics: headerMetrics,
             accessory: {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     SkillsWorkspacePicker(promptSelection: $promptSelection)
 
-                    Divider().frame(height: 18)
+                    Divider().frame(height: 14)
 
                     if !skillDrafts.isEmpty {
                         Button(action: createSkillDraft) {
                             Label("New Draft", systemImage: "plus")
                         }
                         .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
                     }
 
                     Button {
@@ -40,10 +41,12 @@ struct MySkillsView: View {
                             copySkillMarkdown(for: selectedSkill)
                         }
                     } label: {
-                        Label("Copy SKILL.md", systemImage: "doc.on.doc")
+                        Image(systemName: "doc.on.doc")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
                     .disabled(selectedSkill == nil)
+                    .help("Copy SKILL.md")
                 }
             }
         ) {

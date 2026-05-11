@@ -8,10 +8,10 @@ extension SkillStoreView {
 
     @ViewBuilder
     var accessoryBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             SkillsWorkspacePicker(promptSelection: $promptSelection)
 
-            Divider().frame(height: 18)
+            Divider().frame(height: 14)
 
             if isInstallingLocalSkill { ProgressView().controlSize(.small) }
 
@@ -25,11 +25,16 @@ extension SkillStoreView {
                 }
             } label: {
                 Label(workspaceService.selectedProjectDisplayName, systemImage: "folder")
+                    .labelStyle(.titleAndIcon)
             }
-            .menuStyle(.borderedButton)
+            .menuStyle(.button)
+            .menuIndicator(.hidden)
+            .controlSize(.small)
+            .fixedSize()
 
             Button { fetchSkills(query: searchText) } label: { Image(systemName: "arrow.clockwise") }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
                 .help("Refresh catalog")
 
             Menu {
@@ -45,10 +50,13 @@ extension SkillStoreView {
                     label: { Label("Install from Private Source…", systemImage: "lock.shield") }
                 }
             } label: { Image(systemName: "square.and.arrow.down") }
-            .menuStyle(.borderedButton)
+            .menuStyle(.button)
+            .menuIndicator(.hidden)
+            .controlSize(.small)
+            .fixedSize()
             .help("Import a local or private skill")
 
-            Divider().frame(height: 16)
+            Divider().frame(height: 14)
 
             CLIStatusIndicator(manager: cliAccessManager) {
                 showingCLIAccessManager = true
