@@ -7,6 +7,8 @@ struct SkillDraftSummaryPane: View {
     let onCopyMarkdown: () -> Void
     let onDeleteDraft: () -> Void
 
+    @State private var showingInstallSheet = false
+
     private let iconSymbols = ["wand.and.stars", "text.badge.star", "command.square", "slider.horizontal.below.square.and.square.filled", "sparkles.rectangle.stack"]
     private let iconColors: [Color] = [.pink, .blue, .orange, .mint, .indigo]
 
@@ -84,12 +86,19 @@ struct SkillDraftSummaryPane: View {
                 }
 
                 HStack(spacing: 10) {
+                    Button(action: { showingInstallSheet = true }) {
+                        Label("Install…", systemImage: "arrow.down.circle.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
                     Button(action: onOpenDraft) { Label("Open Draft", systemImage: "arrow.right.circle") }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.bordered)
                     Button(action: onCopyMarkdown) { Label("Copy SKILL.md", systemImage: "doc.on.doc") }
                         .buttonStyle(.bordered)
                     Button(role: .destructive, action: onDeleteDraft) { Label("Delete Draft", systemImage: "trash") }
                         .buttonStyle(.bordered)
+                }
+                .sheet(isPresented: $showingInstallSheet) {
+                    SkillDraftInstallSheet(skill: skill)
                 }
                 Spacer(minLength: 0)
             }
