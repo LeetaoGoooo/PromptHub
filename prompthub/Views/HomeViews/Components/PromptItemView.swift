@@ -9,94 +9,49 @@ import SwiftUI
 import SwiftData
 import AlertToast
 
+struct PromptItemSharingPresentation {
+    let iconName: String
+    let iconColor: Color
+    let footerBadges: [PromptCollectionFooterBadge]
+    let helpText: String
+    let sharedCreationID: UUID?
+
+    static let personal = PromptItemSharingPresentation(
+        iconName: "person.crop.circle.fill",
+        iconColor: .blue,
+        footerBadges: [],
+        helpText: "Personal Prompt",
+        sharedCreationID: nil
+    )
+}
+
 struct PromptItemView: View {
     let prompt: Prompt
+    let sharingPresentation: PromptItemSharingPresentation
     let showToastMsg: (_ msg: String, _ alertType: AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (_ prompt: String) -> Void
     @Environment(\.modelContext) private var modelContext
-    @State private var isHovering = false
     @State private var showingPreviewSheet = false
     @State private var showingDeleteAlert = false
-    
-    // Computed properties for sharing status
-    private var sharedCreation: SharedCreation? {
-        findExistingSharedCreation(for: prompt)
-    }
-    
-    private var isShared: Bool {
-        sharedCreation != nil
-    }
-    
-    private var isPublic: Bool {
-        sharedCreation?.isPublic ?? false
-    }
     
     private var promptContent: String {
         prompt.getLatestPromptContent()
     }
     
-    private var iconName: String {
-        if isPublic {
-          return  "shared.with.you"
-        }
-        if isShared {
-            return "shared.with.you.slash"
-        } else {
-            return "person.crop.circle.fill"
-        }
-    }
-    
-    private var iconColor: Color {
-        if isPublic {
-            return .green
-        } else if isShared {
-            return .orange
-        } else {
-            return .blue
-        }
-    }
-    
-    private var borderColor: Color {
-        iconColor.opacity(0.3)
-    }
-    
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                // Icon based on sharing status
-                Image(systemName: iconName)
-                    .foregroundColor(iconColor)
-                    .font(.headline)
-                    .frame(width: 24, height: 24)
-                    .background(iconColor.opacity(0.1))
-                    .cornerRadius(6)
-                    .help(isPublic ? "Public Shared Prompt" : isShared ? "Shared Prompt" : "Personal Prompt")
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(prompt.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                    
-                    if let desc = prompt.desc, !desc.isEmpty {
-                        Text(desc)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                
-                Spacer()
-            }
+        PromptCollectionCard(
+            title: prompt.name,
+            description: prompt.desc,
+            systemImage: sharingPresentation.iconName,
+            iconTint: sharingPresentation.iconColor,
+            onTap: { showingPreviewSheet = true }
+        ) {
+            PromptCollectionCardFooter(
+                leadingBadges: sharingPresentation.footerBadges,
+                trailingText: PromptViewHelpers.relativeDateString(from: prompt.lastEditedAt)
+            )
         }
-        .promptCardStyle(isHovering: $isHovering) {
-            copyPromptToClipboard(promptContent)
-            showToastMsg("Copied to clipboard", .complete(.green))
-        }
-        .onTapGesture {
-            showingPreviewSheet.toggle()
-        }
-        // Context menu remains the primary way to interact for quick actions
+        .help(sharingPresentation.helpText)
         .contextMenu {
             Button {
                 copyPromptToClipboard(promptContent)
@@ -104,7 +59,7 @@ struct PromptItemView: View {
                 Label("Copy Content", systemImage: "doc.on.doc")
             }
             
-            if isShared {
+            if sharingPresentation.sharedCreationID != nil {
                 Button {
                     copyShareLink()
                 } label: {
@@ -138,9 +93,9 @@ struct PromptItemView: View {
     }
     
     private func copyShareLink() {
-        guard let creation = sharedCreation else { return }
-        
-        let shareLink = "sharedprompt://creation/\(creation.id.uuidString)"
+        guard let sharedCreationID = sharingPresentation.sharedCreationID else { return }
+
+        let shareLink = "sharedprompt://creation/\(sharedCreationID.uuidString)"
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(shareLink, forType: .string)
@@ -154,33 +109,6 @@ struct PromptItemView: View {
             showToastMsg("Prompt deleted successfully", .complete(.green))
         } catch {
             showToastMsg("Failed to delete prompt", .error(.red))
-        }
-    }
-    
-    private func findExistingSharedCreation(for prompt: Prompt) -> SharedCreation? {
-        // Get the latest prompt content
-        let latestContent = prompt.getLatestPromptContent()
-        
-        // Capture the values as constants for the predicate
-        let promptName = prompt.name
-        let promptText = latestContent
-        let promptDesc = prompt.desc
-
-        let descriptor = FetchDescriptor<SharedCreation>(
-            predicate: #Predicate<SharedCreation> { sharedCreation in
-                sharedCreation.name == promptName &&
-                    sharedCreation.prompt == promptText &&
-                    sharedCreation.desc == promptDesc
-            }
-        )
-
-        do {
-            let results = try modelContext.fetch(descriptor)
-            // Return the most recently modified shared creation if multiple exist
-            return results.max(by: { ($0.lastModified ?? Date.distantPast) < ($1.lastModified ?? Date.distantPast) })
-        } catch {
-            print("Error fetching existing shared creations: \(error)")
-            return nil
         }
     }
 }

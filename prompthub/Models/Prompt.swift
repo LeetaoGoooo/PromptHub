@@ -65,5 +65,17 @@ extension Prompt {
         let sortedHistory = history?.sorted { $0.version > $1.version }
         return sortedHistory?.first?.promptText ?? ""
     }
+
+    var latestHistoryEntry: PromptHistory? {
+        history?.max(by: { $0.version < $1.version })
+    }
+
+    var latestVersionNumber: Int {
+        latestHistoryEntry?.version ?? 0
+    }
+
+    var lastEditedAt: Date? {
+        latestHistoryEntry?.updatedAt ?? latestHistoryEntry?.createdAt
+    }
 }
 

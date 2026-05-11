@@ -11,11 +11,11 @@ import AlertToast
 
 struct UserPromptItemView: View {
     let prompt: Prompt
+    let footerBadges: [PromptCollectionFooterBadge]
     let showToastMsg: (_ msg: String, _ alertType: AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (_ prompt: String) -> Void
+    let onOpen: () -> Void
     @Environment(\.modelContext) private var modelContext
-    @State private var isHovering = false
-    @State private var showingPreviewSheet = false
     @State private var showingDeleteAlert = false
     
     private var latestPromptContent: String {
@@ -33,36 +33,18 @@ struct UserPromptItemView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "person.crop.circle.fill")
-                    .foregroundColor(.blue)
-                    .font(.headline)
-                    .frame(width: 24, height: 24)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(6)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(prompt.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                    
-                    if let desc = prompt.desc, !desc.isEmpty {
-                        Text(desc)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                Spacer()
-            }
+        PromptCollectionCard(
+            title: prompt.name,
+            description: prompt.desc,
+            systemImage: "person",
+            iconTint: .blue,
+            onTap: onOpen
+        ) {
+            PromptCollectionCardFooter(
+                leadingBadges: footerBadges + [PromptCollectionFooterBadge(title: "v\(max(prompt.latestVersionNumber, 1))", tint: .secondary)],
+                trailingText: PromptViewHelpers.relativeDateString(from: prompt.lastEditedAt)
+            )
         }
-        .promptCardStyle(isHovering: $isHovering) {
-            copyPromptToClipboard(latestPromptContent)
-            showToastMsg("Copied to clipboard", .complete(.green))
-        }
-        // Context menu remains the primary way to interact without opening
         .contextMenu {
             Button {
                 copyPromptToClipboard(latestPromptContent)

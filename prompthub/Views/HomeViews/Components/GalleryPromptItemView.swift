@@ -6,6 +6,7 @@
 //
 
 import AlertToast
+import SwiftData
 import SwiftUI
 
 struct GalleryPromptItemView: View {
@@ -13,46 +14,32 @@ struct GalleryPromptItemView: View {
     let showToastMsg: (_ msg: String, _ alertType: AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (_ prompt: String) -> Void
     @Environment(\.modelContext) private var modelContext
-    @State private var isHovering = false
+    @Query private var savedPrompts: [Prompt]
     @State private var showingPreviewSheet = false
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Image(systemName: "globe")
-                    .foregroundColor(.accentColor)
-                    .font(.headline)
-                    .frame(width: 24, height: 24)
-                    .background(Color.accentColor.opacity(0.1))
-                    .cornerRadius(6)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(galleryPromptItem.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                    
-                    if let desc = galleryPromptItem.description, !desc.isEmpty {
-                        Text(desc)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                Spacer()
-            }
+    private var isAlreadySaved: Bool {
+        savedPrompts.contains {
+            $0.name == galleryPromptItem.name &&
+            $0.getLatestPromptContent() == galleryPromptItem.prompt
         }
-        .padding(12)
-        .background(isHovering ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(isHovering ? Color.accentColor.opacity(0.3) : Color(nsColor: .separatorColor), lineWidth: 1)
-        )
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                self.isHovering = hovering
-            }
+    }
+
+    private var footerBadges: [PromptCollectionFooterBadge] {
+        [PromptCollectionFooterBadge(title: isAlreadySaved ? "Saved" : "Save to library", tint: isAlreadySaved ? .secondary : .green)]
+    }
+
+    var body: some View {
+        PromptCollectionCard(
+            title: galleryPromptItem.name,
+            description: galleryPromptItem.description,
+            systemImage: "sparkles",
+            iconTint: .primary,
+            onTap: { showingPreviewSheet = true }
+        ) {
+            PromptCollectionCardFooter(
+                leadingBadges: footerBadges,
+                trailingText: galleryPromptItem.link?.isEmpty == false ? "Link available" : "Built-in"
+            )
         }
         .contextMenu {
             Button {
@@ -76,13 +63,15 @@ struct GalleryPromptItemView: View {
                 copyPromptToClipboard: copyPromptToClipboard
             )
         }
-        .onTapGesture {
-            showingPreviewSheet.toggle()
-        }
     }
 
     @MainActor
     func savePrompt() {
+        guard !isAlreadySaved else {
+            showToastMsg("Prompt already saved", .complete(.green))
+            return
+        }
+
         do {
             let newPrompt = Prompt(name: galleryPromptItem.name, desc: galleryPromptItem.description, link: galleryPromptItem.link)
             modelContext.insert(newPrompt)
@@ -92,6 +81,7 @@ struct GalleryPromptItemView: View {
 
             try modelContext.save()
             PromptHubBridge.shared.exportPrompt(newPrompt)
+            showToastMsg("Saved to My Prompts", .complete(.green))
 
         } catch {
             print("Failed to save prompt and PromptHistory transactionally: \(error)")

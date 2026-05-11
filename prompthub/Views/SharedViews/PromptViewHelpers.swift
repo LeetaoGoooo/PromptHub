@@ -26,7 +26,7 @@ struct PromptViewHelpers {
             .fill(Color(NSColor.controlBackgroundColor))
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                    .stroke(borderColor, lineWidth: 1)
             }
     }
     
@@ -49,5 +49,13 @@ struct PromptViewHelpers {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    static func relativeDateString(from date: Date?) -> String {
+        guard let date else { return "Just now" }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
