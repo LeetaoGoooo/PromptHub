@@ -149,4 +149,27 @@ extension InstalledSkillsView {
         }
         return "Failed to open \(skill.displayName) as a draft."
     }
+
+    /// Checks all remote-backed installed skills for available updates in parallel.
+    func checkAllUpdates() {
+        let remoteSkills = installedSkills.filter { $0.package.remoteInstallDescriptor != nil }
+        guard !remoteSkills.isEmpty else { return }
+        isCheckingUpdates = true
+        Task {
+            await withTaskGroup(of: (String, Bool).self) { group in
+                for skill in remoteSkills {
+                    group.addTask {
+                        let preview = await self.workspaceService.previewUpdate(for: skill)
+                        return (skill.id, preview.status == .updateAvailable)
+                    }
+                }
+                var updates: Set<String> = []
+                for await (id, hasUpdate) in group {
+                    if hasUpdate { updates.insert(id) }
+                }
+                skillsWithUpdates = updates
+            }
+            isCheckingUpdates = false
+        }
+    }
 }

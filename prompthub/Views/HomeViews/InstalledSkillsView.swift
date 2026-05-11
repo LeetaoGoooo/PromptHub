@@ -34,6 +34,8 @@ struct InstalledSkillsView: View {
     @ObservedObject var cliAccessManager = CLIDirectoryAccessManager.shared
     @State var showingCLIAccessManager = false
     @State var showingAuditReport = false
+    @State var skillsWithUpdates: Set<String> = []
+    @State var isCheckingUpdates = false
 
     var installedSkills: [InstalledSkillSnapshot] { workspaceSnapshot.installedSkills }
 
@@ -93,6 +95,27 @@ struct InstalledSkillsView: View {
                 }
                 .buttonStyle(.bordered)
                 .help("Refresh installed skills")
+
+                if isCheckingUpdates {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Button(action: checkAllUpdates) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.down.circle")
+                            if !skillsWithUpdates.isEmpty {
+                                Text("\(skillsWithUpdates.count)")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 1)
+                                    .background(Color.orange)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .help("Check all skills for available updates")
+                }
 
                 Button(action: { showingAuditReport = true }) {
                     Image(systemName: "checklist")

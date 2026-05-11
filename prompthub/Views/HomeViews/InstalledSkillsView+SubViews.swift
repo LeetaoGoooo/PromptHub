@@ -82,7 +82,8 @@ extension InstalledSkillsView {
                         InstalledSkillListRow(
                             skill: skill,
                             isRemoving: removingSkillIDs.contains(skill.id),
-                            isSelected: selectedSkillID == skill.id
+                            isSelected: selectedSkillID == skill.id,
+                            hasUpdate: skillsWithUpdates.contains(skill.id)
                         )
                     }
                     .buttonStyle(.plain)

@@ -6,6 +6,7 @@ struct InstalledSkillListRow: View {
     let skill: InstalledSkillSnapshot
     let isRemoving: Bool
     let isSelected: Bool
+    var hasUpdate: Bool = false
     @State private var isHovered = false
 
     private var scopeColor: Color {
@@ -22,6 +23,17 @@ struct InstalledSkillListRow: View {
                 if isRemoving {
                     ProgressView()
                         .controlSize(.small)
+                }
+
+                if hasUpdate {
+                    Text("Update")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange)
+                        .clipShape(Capsule())
                 }
 
                 Spacer()
