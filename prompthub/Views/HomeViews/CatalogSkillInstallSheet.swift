@@ -74,32 +74,78 @@ struct CatalogSkillInstallSheet: View {
 
     private var scopeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Scope").font(.headline)
-            Picker("Scope", selection: $selectedScope) {
-                Text("Project").tag(SkillInstallScope.project)
-                Text("Global").tag(SkillInstallScope.global)
+            Text("Installation Scope").font(.headline)
+            HStack(spacing: 10) {
+                ScopeCard(
+                    title: "Global",
+                    subtitle: "All projects",
+                    icon: "globe",
+                    pathExample: globalPathExample,
+                    isSelected: selectedScope == .global
+                ) { selectedScope = .global }
+
+                ScopeCard(
+                    title: "Project",
+                    subtitle: "This folder only",
+                    icon: "folder",
+                    pathExample: projectPathExample,
+                    isSelected: selectedScope == .project
+                ) { selectedScope = .project }
             }
-            .pickerStyle(.segmented)
-            Text("Project scope installs into the selected project's CLI skill roots.")
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
+    private var globalPathExample: String {
+        "~/.claude/agents/\(skill.package.skillName).md"
+    }
+
+    private var projectPathExample: String {
+        if let root = selectedProjectRootURL {
+            return "\(root.lastPathComponent)/.claude/agents/\(skill.package.skillName).md"
+        }
+        return "<project>/.claude/agents/\(skill.package.skillName).md"
+    }
+
     private var projectSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Project").font(.headline)
-            HStack(spacing: 10) {
-                Text(selectedProjectRootURL?.path ?? "No project selected")
-                    .font(.subheadline)
-                    .foregroundStyle(selectedProjectRootURL == nil ? .secondary : .primary)
-                    .lineLimit(2).textSelection(.enabled)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Project Folder", systemImage: "folder.badge.gearshape")
+                    .font(.headline)
                 Spacer()
-                Button("Choose…") { chooseProjectRoot() }.buttonStyle(.bordered)
+                Button("Choose\u{2026}") { chooseProjectRoot() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
             }
-            if selectedProjectRootURL == nil {
-                Label("Choose a writable project folder before installing in project scope.", systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundStyle(.orange)
+
+            if let url = selectedProjectRootURL {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.system(size: 13))
+                    Text(url.path)
+                        .font(.caption)
+                        .foregroundStyle(.primary)
+                        .fontDesign(.monospaced)
+                        .lineLimit(2)
+                        .textSelection(.enabled)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.green.opacity(0.07))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.system(size: 13))
+                    Text("No project selected. Skills will be installed relative to the project root.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.orange.opacity(0.07))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
     }
@@ -178,5 +224,59 @@ struct CatalogSkillInstallSheet: View {
     private static func missingAgents(for scope: SkillInstallScope, installationState: CatalogSkillInstallationState) -> [AgentWorkflow] {
         let installed = Set(installationState.agentsByScope[scope] ?? [])
         return AgentWorkflow.defaultTargets.filter { !installed.contains($0) }
+    }
+}
+
+// MARK: - Scope selection card
+
+private struct ScopeCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let pathExample: String
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(isSelected ? .white : .secondary)
+                        .frame(width: 22, height: 22)
+                        .background(isSelected ? Color.accentColor : Color(NSColor.separatorColor).opacity(0.4))
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(title)
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(isSelected ? .primary : .secondary)
+                        Text(subtitle)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Text(pathExample)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(isSelected ? Color.accentColor : Color(NSColor.separatorColor).opacity(0.4), lineWidth: isSelected ? 2 : 1)
+                    )
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
