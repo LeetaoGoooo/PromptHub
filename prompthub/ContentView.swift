@@ -46,14 +46,6 @@ struct ContentView: View {
         }
     }
 
-    private var isSkillsSelection: Bool {
-        if case .mySkills = promptSelection { return true }
-        if case .skillStore = promptSelection { return true }
-        if case .installedSkills = promptSelection { return true }
-        if case .skill = promptSelection { return true }
-        return false
-    }
-
     private var navigationTitle: String {
         switch promptSelection {
         case .settings:          return "Settings"
@@ -85,8 +77,19 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 210, ideal: 235, max: 275)
             .frame(minWidth: 210)
         } detail: {
-            Group {
-                if isSkillsSelection {
+            NavigationStack {
+                switch promptSelection {
+                case .settings:
+                    SettingsView()
+                case .cliDashboard:
+                    CLIDashboardView()
+                case .onboarding:
+                    OnboardingView(onFinish: { promptSelection = .allPrompts },
+                                   onCLI: { promptSelection = .cliDashboard },
+                                   onSettings: { promptSelection = .settings })
+                case .prompt(let selectedPrompt):
+                    PromptDetail(prompt: selectedPrompt, onPromoteToSkill: { skill in promptSelection = .skill(skill) })
+                case .mySkills, .skillStore, .installedSkills, .skill:
                     SkillsRootView(
                         installedWorkspaceStore: installedWorkspaceStore,
                         promptSelection: $promptSelection,
@@ -94,23 +97,8 @@ struct ContentView: View {
                         skillsScopeFilter: $skillsScopeFilter,
                         skillsSourceFilter: $skillsSourceFilter
                     )
-                } else {
-                    NavigationStack {
-                        switch promptSelection {
-                        case .settings:
-                            SettingsView()
-                        case .cliDashboard:
-                            CLIDashboardView()
-                        case .onboarding:
-                            OnboardingView(onFinish: { promptSelection = .allPrompts },
-                                           onCLI: { promptSelection = .cliDashboard },
-                                           onSettings: { promptSelection = .settings })
-                        case .prompt(let selectedPrompt):
-                            PromptDetail(prompt: selectedPrompt, onPromoteToSkill: { skill in promptSelection = .skill(skill) })
-                        default:
-                            contentForDefaultSelection
-                        }
-                    }
+                default:
+                    contentForDefaultSelection
                 }
             }
             .navigationTitle(navigationTitle)
