@@ -10,6 +10,7 @@ import SwiftData
 import SwiftUI
 
 struct ExploreView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query private var userPrompts: [Prompt]
 
     let searchText: String
@@ -18,8 +19,7 @@ struct ExploreView: View {
     let showToastMsg: (String, AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (String) -> Void
     let onRefreshGallery: () -> Void
-
-    private let gridColumns = [GridItem(.adaptive(minimum: 250, maximum: 320), spacing: 16, alignment: .top)]
+    @State private var selectedItemID: String?
     
     private var filteredGalleryPrompts: [GalleryPrompt] {
         if searchText.isEmpty {
@@ -48,6 +48,48 @@ struct ExploreView: View {
             ? "Browse public gallery prompts. Open any card to preview it, then save it to your library."
             : "Showing gallery prompts that match your current search."
     }
+
+    private var browserSections: [PromptBrowserSection] {
+        guard !filteredGalleryPrompts.isEmpty else { return [] }
+
+        return [
+            PromptBrowserSection(
+                id: "gallery",
+                title: "Gallery",
+                systemImage: "sparkles",
+                items: filteredGalleryPrompts.map { prompt in
+                    let isSaved = isGalleryPromptSaved(prompt)
+
+                    return PromptBrowserItem(
+                        id: "gallery-\(prompt.id)",
+                        title: prompt.name,
+                        summary: prompt.description ?? "No description",
+                        promptText: prompt.prompt,
+                        systemImage: "sparkles",
+                        iconTint: .primary,
+                        badges: [PromptCollectionFooterBadge(title: isSaved ? "Saved" : "Save to library", tint: isSaved ? .secondary : .green)],
+                        trailingDetail: prompt.link?.isEmpty == false ? "Link available" : "Built-in",
+                        metadata: [
+                            PromptBrowserMetadataRow(label: "Source", value: "Gallery"),
+                            PromptBrowserMetadataRow(label: "Saved", value: isSaved ? "Already in library" : "Not saved yet"),
+                            PromptBrowserMetadataRow(label: "Link", value: prompt.link?.isEmpty == false ? "Available" : "Built-in")
+                        ],
+                        primaryActionTitle: isSaved ? "Saved" : "Save to Library",
+                        primaryActionSystemImage: "square.and.arrow.down",
+                        isPrimaryActionDisabled: isSaved,
+                        onPrimaryAction: {
+                            Task { @MainActor in
+                                saveGalleryPrompt(prompt)
+                            }
+                        },
+                        secondaryActionTitle: "Copy Content",
+                        secondaryActionSystemImage: "doc.on.doc",
+                        onSecondaryAction: { copyPromptToClipboard(prompt.prompt) }
+                    )
+                }
+            )
+        ]
+    }
     
     var body: some View {
         if isLoading && galleryPrompts.isEmpty {
@@ -61,67 +103,32 @@ struct ExploreView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(NSColor.windowBackgroundColor))
         } else {
-            PromptCollectionWorkspace(
+            PromptBrowserScreen(
                 title: "Explore Gallery",
                 subtitle: summary,
                 systemImage: "sparkles",
                 metrics: metrics,
+                sections: browserSections,
+                selectedItemID: $selectedItemID,
                 actions: {
                     Button(action: onRefreshGallery) {
                         Label("Refresh", systemImage: "arrow.clockwise")
                     }
                     .buttonStyle(.bordered)
                 },
-                content: {
-                    VStack(alignment: .leading, spacing: 20) {
-                        if filteredGalleryPrompts.isEmpty && !searchText.isEmpty {
-                            PromptViewHelpers.emptyStateView(
-                                iconName: "magnifyingglass",
-                                title: "No matching content found",
-                                subtitle: "Try using different keywords or clear the search filter."
-                            )
-                            .frame(minHeight: 260)
-                        } else if filteredGalleryPrompts.isEmpty {
-                            PromptViewHelpers.emptyStateView(
-                                iconName: "sparkles",
-                                title: "No content available",
-                                subtitle: "Gallery prompts will appear here after a refresh."
-                            )
-                            .frame(minHeight: 260)
-                        } else {
-                            PromptCollectionSectionLabel(title: "Gallery", count: filteredGalleryPrompts.count, systemImage: "sparkles")
-                            LazyVGrid(columns: gridColumns, spacing: 16) {
-                                ForEach(filteredGalleryPrompts) { prompt in
-                                    GalleryPromptItemView(
-                                        galleryPromptItem: prompt,
-                                        isAlreadySaved: isGalleryPromptSaved(prompt),
-                                        showToastMsg: showToastMsg,
-                                        copyPromptToClipboard: copyPromptToClipboard
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
-                inspector: {
-                    VStack(alignment: .leading, spacing: 12) {
-                        PromptCollectionInspectorPanel(title: "Gallery Totals") {
-                            PromptCollectionKVList(items: [
-                                ("Available", "\(galleryPrompts.count)"),
-                                ("Visible", "\(filteredGalleryPrompts.count)"),
-                                ("Saved locally", "\(savedGalleryPromptCount)"),
-                                ("Filter", searchText.isEmpty ? "All prompts" : searchText)
-                            ])
-                        }
-
-                        PromptCollectionInspectorPanel(title: "Actions") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Button(action: onRefreshGallery) {
-                                    Label("Refresh Gallery", systemImage: "arrow.clockwise")
-                                }
-                                .buttonStyle(.borderedProminent)
-                            }
-                        }
+                emptyState: {
+                    if filteredGalleryPrompts.isEmpty && !searchText.isEmpty {
+                        PromptViewHelpers.emptyStateView(
+                            iconName: "magnifyingglass",
+                            title: "No matching content found",
+                            subtitle: "Try using different keywords or clear the search filter."
+                        )
+                    } else {
+                        PromptViewHelpers.emptyStateView(
+                            iconName: "sparkles",
+                            title: "No content available",
+                            subtitle: "Gallery prompts will appear here after a refresh."
+                        )
                     }
                 }
             )
@@ -132,6 +139,28 @@ struct ExploreView: View {
         userPrompts.contains {
             $0.name == galleryPrompt.name &&
             $0.getLatestPromptContent() == galleryPrompt.prompt
+        }
+    }
+
+    @MainActor
+    private func saveGalleryPrompt(_ galleryPrompt: GalleryPrompt) {
+        guard !isGalleryPromptSaved(galleryPrompt) else {
+            showToastMsg("Prompt already saved", .complete(.green))
+            return
+        }
+
+        do {
+            let newPrompt = Prompt(name: galleryPrompt.name, desc: galleryPrompt.description, link: galleryPrompt.link)
+            modelContext.insert(newPrompt)
+
+            let newPromptHistory = newPrompt.createHistory(prompt: galleryPrompt.prompt, version: 0)
+            modelContext.insert(newPromptHistory)
+
+            try modelContext.save()
+            PromptHubBridge.shared.exportPrompt(newPrompt)
+            showToastMsg("Saved to My Prompts", .complete(.green))
+        } catch {
+            showToastMsg("Failed to save prompt: \(error.localizedDescription)", .error(.red))
         }
     }
 }

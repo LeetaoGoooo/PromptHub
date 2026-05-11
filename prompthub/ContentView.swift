@@ -134,7 +134,7 @@ struct ContentView: View {
     private var contentForDefaultSelection: some View {
         switch promptSelection {
         case .allPrompts:
-            AllPromptsView(searchText: searchText, galleryPrompts: galleryPrompts, isLoading: isLoading, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard, onCreatePrompt: createNewPrompt, onRenderPrompt: { showingPromptRender = true })
+            AllPromptsView(searchText: searchText, galleryPrompts: galleryPrompts, isLoading: isLoading, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard, onSelectPrompt: { promptSelection = .prompt($0) }, onCreatePrompt: createNewPrompt, onRenderPrompt: { showingPromptRender = true })
         case .mine:
             MyPromptsView(searchText: searchText, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard, onSelectPrompt: { promptSelection = .prompt($0) }, onCreatePrompt: createNewPrompt, onRenderPrompt: { showingPromptRender = true })
         case .shared:

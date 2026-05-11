@@ -10,6 +10,7 @@ import SwiftData
 import SwiftUI
 
 struct AllPromptsView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query private var userPrompts: [Prompt]
     @Query private var sharedCreations: [SharedCreation]
 
@@ -18,10 +19,10 @@ struct AllPromptsView: View {
     let isLoading: Bool
     let showToastMsg: (String, AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (String) -> Void
+    let onSelectPrompt: (Prompt) -> Void
     let onCreatePrompt: () -> Void
     let onRenderPrompt: () -> Void
-
-    private let gridColumns = [GridItem(.adaptive(minimum: 250, maximum: 320), spacing: 16, alignment: .top)]
+    @State private var selectedItemID: String?
     
     private var filteredGalleryPrompts: [GalleryPrompt] {
         if searchText.isEmpty {
@@ -60,9 +61,83 @@ struct AllPromptsView: View {
             PromptCollectionMetric(title: "visible", value: "\(visiblePromptCount)", systemImage: "square.grid.2x2")
         ]
     }
+
+    private var browserSections: [PromptBrowserSection] {
+        var sections: [PromptBrowserSection] = []
+
+        if !filteredUserPrompts.isEmpty {
+            sections.append(
+                PromptBrowserSection(
+                    id: "user-prompts",
+                    title: "My Prompts",
+                    systemImage: "person",
+                    items: filteredUserPrompts.map { prompt in
+                        let sharing = sharingPresentation(for: prompt)
+
+                        return PromptBrowserItem(
+                            id: "prompt-\(prompt.id.uuidString)",
+                            title: prompt.name,
+                            summary: prompt.desc ?? "No description",
+                            promptText: prompt.getLatestPromptContent(),
+                            systemImage: sharing.iconName ?? "doc.text",
+                            iconTint: sharing.iconColor ?? .accentColor,
+                            badges: sharing.footerBadges + [PromptCollectionFooterBadge(title: "v\(max(prompt.latestVersionNumber, 1))", tint: .secondary)],
+                            trailingDetail: PromptViewHelpers.relativeDateString(from: prompt.lastEditedAt),
+                            metadata: promptMetadata(for: prompt, sharing: sharing),
+                            primaryActionTitle: "Open Prompt",
+                            primaryActionSystemImage: "arrow.right.circle",
+                            isPrimaryActionDisabled: false,
+                            onPrimaryAction: { onSelectPrompt(prompt) },
+                            secondaryActionTitle: "Copy Content",
+                            secondaryActionSystemImage: "doc.on.doc",
+                            onSecondaryAction: { copyPromptToClipboard(prompt.getLatestPromptContent()) }
+                        )
+                    }
+                )
+            )
+        }
+
+        if !filteredGalleryPrompts.isEmpty {
+            sections.append(
+                PromptBrowserSection(
+                    id: "gallery-prompts",
+                    title: "Gallery",
+                    systemImage: "sparkles",
+                    items: filteredGalleryPrompts.map { prompt in
+                        let isSaved = isGalleryPromptSaved(prompt)
+
+                        return PromptBrowserItem(
+                            id: "gallery-\(prompt.id)",
+                            title: prompt.name,
+                            summary: prompt.description ?? "No description",
+                            promptText: prompt.prompt,
+                            systemImage: "sparkles",
+                            iconTint: .primary,
+                            badges: [PromptCollectionFooterBadge(title: isSaved ? "Saved" : "Save to library", tint: isSaved ? .secondary : .green)],
+                            trailingDetail: prompt.link?.isEmpty == false ? "Link available" : "Built-in",
+                            metadata: galleryMetadata(for: prompt, isSaved: isSaved),
+                            primaryActionTitle: isSaved ? "Saved" : "Save to Library",
+                            primaryActionSystemImage: "square.and.arrow.down",
+                            isPrimaryActionDisabled: isSaved,
+                            onPrimaryAction: {
+                                Task { @MainActor in
+                                    saveGalleryPrompt(prompt)
+                                }
+                            },
+                            secondaryActionTitle: "Copy Content",
+                            secondaryActionSystemImage: "doc.on.doc",
+                            onSecondaryAction: { copyPromptToClipboard(prompt.prompt) }
+                        )
+                    }
+                )
+            )
+        }
+
+        return sections
+    }
     
     var body: some View {
-        if isLoading {
+        if isLoading && filteredUserPrompts.isEmpty && filteredGalleryPrompts.isEmpty {
             VStack {
                 ProgressView()
                     .controlSize(.large)
@@ -73,11 +148,13 @@ struct AllPromptsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(NSColor.windowBackgroundColor))
         } else {
-            PromptCollectionWorkspace(
+            PromptBrowserScreen(
                 title: "All Prompts",
                 subtitle: headerSummary,
                 systemImage: "archivebox",
                 metrics: libraryMetrics,
+                sections: browserSections,
+                selectedItemID: $selectedItemID,
                 actions: {
                     Button(action: onCreatePrompt) {
                         Label("New Prompt", systemImage: "wand.and.stars")
@@ -89,71 +166,12 @@ struct AllPromptsView: View {
                     }
                     .buttonStyle(.bordered)
                 },
-                content: {
-                    VStack(alignment: .leading, spacing: 20) {
-                        if filteredUserPrompts.isEmpty && filteredGalleryPrompts.isEmpty {
-                            PromptViewHelpers.emptyStateView(
-                                iconName: searchText.isEmpty ? "tray" : "magnifyingglass",
-                                title: searchText.isEmpty ? "No prompts available" : "No prompts match \"\(searchText)\"",
-                                subtitle: searchText.isEmpty ? "Create a prompt or save one from the gallery to start building your library." : "Try broader keywords or clear the current filter."
-                            )
-                            .frame(minHeight: 260)
-                        }
-
-                        if !filteredUserPrompts.isEmpty {
-                            PromptCollectionSectionLabel(title: "My Prompts", count: filteredUserPrompts.count, systemImage: "person")
-                            LazyVGrid(columns: gridColumns, spacing: 16) {
-                                ForEach(filteredUserPrompts) { prompt in
-                                    PromptItemView(
-                                        prompt: prompt,
-                                        sharingPresentation: sharingPresentation(for: prompt),
-                                        showToastMsg: showToastMsg,
-                                        copyPromptToClipboard: copyPromptToClipboard
-                                    )
-                                }
-                            }
-                        }
-
-                        if !filteredGalleryPrompts.isEmpty {
-                            PromptCollectionSectionLabel(title: "Gallery", count: filteredGalleryPrompts.count, systemImage: "sparkles")
-                            LazyVGrid(columns: gridColumns, spacing: 16) {
-                                ForEach(filteredGalleryPrompts) { prompt in
-                                    GalleryPromptItemView(
-                                        galleryPromptItem: prompt,
-                                        isAlreadySaved: isGalleryPromptSaved(prompt),
-                                        showToastMsg: showToastMsg,
-                                        copyPromptToClipboard: copyPromptToClipboard
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
-                inspector: {
-                    VStack(alignment: .leading, spacing: 12) {
-                        PromptCollectionInspectorPanel(title: "Library Totals") {
-                            PromptCollectionKVList(items: [
-                                ("My Prompts", "\(userPrompts.count)"),
-                                ("Gallery", "\(galleryPrompts.count)"),
-                                ("Showing", "\(visiblePromptCount)"),
-                                ("Filter", searchText.isEmpty ? "All items" : searchText)
-                            ])
-                        }
-
-                        PromptCollectionInspectorPanel(title: "Actions") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Button(action: onCreatePrompt) {
-                                    Label("New Prompt", systemImage: "plus")
-                                }
-                                .buttonStyle(.borderedProminent)
-
-                                Button(action: onRenderPrompt) {
-                                    Label("Render Prompt…", systemImage: "play.rectangle")
-                                }
-                                .buttonStyle(.bordered)
-                            }
-                        }
-                    }
+                emptyState: {
+                    PromptViewHelpers.emptyStateView(
+                        iconName: searchText.isEmpty ? "tray" : "magnifyingglass",
+                        title: searchText.isEmpty ? "No prompts available" : "No prompts match \"\(searchText)\"",
+                        subtitle: searchText.isEmpty ? "Create a prompt or save one from the gallery to start building your library." : "Try broader keywords or clear the current filter."
+                    )
                 }
             )
         }
@@ -201,6 +219,57 @@ struct AllPromptsView: View {
             $0.getLatestPromptContent() == galleryPrompt.prompt
         }
     }
+
+    private func promptMetadata(for prompt: Prompt, sharing: PromptItemSharingPresentation) -> [PromptBrowserMetadataRow] {
+        var rows: [PromptBrowserMetadataRow] = [
+            PromptBrowserMetadataRow(label: "Source", value: "My Library"),
+            PromptBrowserMetadataRow(label: "Version", value: "v\(max(prompt.latestVersionNumber, 1))")
+        ]
+
+        if let lastEdited = prompt.lastEditedAt {
+            rows.append(PromptBrowserMetadataRow(label: "Updated", value: PromptViewHelpers.relativeDateString(from: lastEdited)))
+        }
+
+        if !sharing.footerBadges.isEmpty {
+            rows.append(PromptBrowserMetadataRow(label: "Sharing", value: sharing.footerBadges.map(\.title).joined(separator: ", ")))
+        }
+
+        if !((prompt.externalSources?.isEmpty) ?? true) {
+            rows.append(PromptBrowserMetadataRow(label: "Sources", value: "Attached"))
+        }
+
+        return rows
+    }
+
+    private func galleryMetadata(for prompt: GalleryPrompt, isSaved: Bool) -> [PromptBrowserMetadataRow] {
+        [
+            PromptBrowserMetadataRow(label: "Source", value: "Gallery"),
+            PromptBrowserMetadataRow(label: "Saved", value: isSaved ? "Already in library" : "Not saved yet"),
+            PromptBrowserMetadataRow(label: "Link", value: prompt.link?.isEmpty == false ? "Available" : "Built-in")
+        ]
+    }
+
+    @MainActor
+    private func saveGalleryPrompt(_ galleryPrompt: GalleryPrompt) {
+        guard !isGalleryPromptSaved(galleryPrompt) else {
+            showToastMsg("Prompt already saved", .complete(.green))
+            return
+        }
+
+        do {
+            let newPrompt = Prompt(name: galleryPrompt.name, desc: galleryPrompt.description, link: galleryPrompt.link)
+            modelContext.insert(newPrompt)
+
+            let newPromptHistory = newPrompt.createHistory(prompt: galleryPrompt.prompt, version: 0)
+            modelContext.insert(newPromptHistory)
+
+            try modelContext.save()
+            PromptHubBridge.shared.exportPrompt(newPrompt)
+            showToastMsg("Saved to My Prompts", .complete(.green))
+        } catch {
+            showToastMsg("Failed to save prompt: \(error.localizedDescription)", .error(.red))
+        }
+    }
 }
 
 #Preview {
@@ -210,6 +279,7 @@ struct AllPromptsView: View {
         isLoading: false,
         showToastMsg: { _, _ in },
         copyPromptToClipboard: { _ in },
+        onSelectPrompt: { _ in },
         onCreatePrompt: { },
         onRenderPrompt: { }
     )

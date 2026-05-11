@@ -21,8 +21,7 @@ struct SharedCreationsView: View {
     @State private var publicSharedCreations: [SharedCreation] = []
     @State private var isLoading = false
     @State private var loadError: String?
-
-    private let gridColumns = [GridItem(.adaptive(minimum: 250, maximum: 320), spacing: 16, alignment: .top)]
+    @State private var selectedItemID: String?
 
     private var localSharedCreationIDs: Set<UUID> {
         Set(localSharedCreations.map(\.id))
@@ -58,6 +57,39 @@ struct SharedCreationsView: View {
             ? "Browse prompts shared from your library alongside creations published by the broader community."
             : "Showing shared creations that match your current search."
     }
+
+    private var browserSections: [PromptBrowserSection] {
+        let categorized = categorizedSharedCreations
+        var sections: [PromptBrowserSection] = []
+
+        if !categorized.userCreations.isEmpty {
+            sections.append(
+                PromptBrowserSection(
+                    id: "my-shared",
+                    title: "My Shared Prompts",
+                    systemImage: "person",
+                    items: categorized.userCreations.map { creation in
+                        browserItem(for: creation, isOwnedByCurrentUser: true)
+                    }
+                )
+            )
+        }
+
+        if !categorized.otherCreations.isEmpty {
+            sections.append(
+                PromptBrowserSection(
+                    id: "community-shared",
+                    title: "Community Gallery",
+                    systemImage: "person.3",
+                    items: categorized.otherCreations.map { creation in
+                        browserItem(for: creation, isOwnedByCurrentUser: false)
+                    }
+                )
+            )
+        }
+
+        return sections
+    }
     
     @MainActor
     private func loadPublicSharedCreations() async {
@@ -88,11 +120,13 @@ struct SharedCreationsView: View {
             PromptCollectionMetric(title: "visible", value: "\(visibleCount)", systemImage: "square.grid.2x2")
         ]
 
-        PromptCollectionWorkspace(
-            title: "Shared with Me",
+        PromptBrowserScreen(
+            title: "Shared Library",
             subtitle: summary,
             systemImage: "person.3",
             metrics: communityMetrics,
+            sections: browserSections,
+            selectedItemID: $selectedItemID,
             actions: {
                 Button {
                     Task {
@@ -103,120 +137,72 @@ struct SharedCreationsView: View {
                 }
                 .buttonStyle(.bordered)
             },
-            content: {
-                VStack(alignment: .leading, spacing: 20) {
-                    if isLoading && visibleCount == 0 {
-                        VStack(spacing: 12) {
-                            ProgressView("Loading public shared creations...")
-                            if let loadError {
-                                Text(loadError)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 260)
-                    } else if !isLoading && visibleCount == 0 && !searchText.isEmpty {
-                        PromptViewHelpers.emptyStateView(
-                            iconName: "magnifyingglass",
-                            title: "No matching shared creations found",
-                            subtitle: "Try broader keywords or clear the current filter."
-                        )
-                        .frame(minHeight: 260)
-                    } else if visibleCount == 0 {
-                        PromptViewHelpers.emptyStateView(
-                            iconName: "square.and.arrow.up",
-                            title: "No shared creations yet",
-                            subtitle: "Share your prompts or explore public creations from the community."
-                        )
-                        .frame(minHeight: 260)
-                    } else {
-                        if !categorized.userCreations.isEmpty {
-                            PromptCollectionSectionLabel(title: "My Shared Prompts", count: categorized.userCreations.count, systemImage: "person")
-                            LazyVGrid(columns: gridColumns, spacing: 16) {
-                                ForEach(categorized.userCreations, id: \.id) { creation in
-                                    SharedCreationItemView(
-                                        sharedCreation: creation,
-                                        isOwnedByCurrentUser: true,
-                                        showToastMsg: showToastMsg,
-                                        copyPromptToClipboard: copyPromptToClipboard,
-                                        onDeleted: {
-                                            Task {
-                                                await loadPublicSharedCreations()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        if !categorized.otherCreations.isEmpty {
-                            PromptCollectionSectionLabel(title: "Community Gallery", count: categorized.otherCreations.count, systemImage: "person.3")
-                            LazyVGrid(columns: gridColumns, spacing: 16) {
-                                ForEach(categorized.otherCreations, id: \.id) { creation in
-                                    SharedCreationItemView(
-                                        sharedCreation: creation,
-                                        isOwnedByCurrentUser: false,
-                                        showToastMsg: showToastMsg,
-                                        copyPromptToClipboard: copyPromptToClipboard,
-                                        onDeleted: nil
-                                    )
-                                }
-                            }
-                        }
-
-                        if isLoading {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Updating gallery...")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
+            emptyState: {
+                if isLoading && visibleCount == 0 {
+                    VStack(spacing: 12) {
+                        ProgressView("Loading public shared creations...")
+                        if let loadError {
+                            Text(loadError)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                }
-            },
-            inspector: {
-                VStack(alignment: .leading, spacing: 12) {
-                    PromptCollectionInspectorPanel(title: "Community Totals") {
-                        PromptCollectionKVList(items: [
-                            ("My Shared Prompts", "\(categorized.userCreations.count)"),
-                            ("Community Gallery", "\(categorized.otherCreations.count)"),
-                            ("Showing", "\(visibleCount)"),
-                            ("Filter", searchText.isEmpty ? "All creations" : searchText)
-                        ])
-                    }
-
-                    PromptCollectionInspectorPanel(title: "Sync Status") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(isLoading ? "Refreshing public gallery…" : "Public gallery is up to date.")
-                                .font(.callout)
-                            if let loadError {
-                                Text(loadError)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-
-                    PromptCollectionInspectorPanel(title: "Actions") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Button {
-                                Task {
-                                    await loadPublicSharedCreations()
-                                }
-                            } label: {
-                                Label("Refresh Community", systemImage: "arrow.clockwise")
-                            }
-                            .buttonStyle(.borderedProminent)
-                        }
-                    }
+                } else if !isLoading && visibleCount == 0 && !searchText.isEmpty {
+                    PromptViewHelpers.emptyStateView(
+                        iconName: "magnifyingglass",
+                        title: "No matching shared creations found",
+                        subtitle: "Try broader keywords or clear the current filter."
+                    )
+                } else {
+                    PromptViewHelpers.emptyStateView(
+                        iconName: "square.and.arrow.up",
+                        title: "No shared creations yet",
+                        subtitle: "Share your prompts or explore public creations from the community."
+                    )
                 }
             }
         )
         .task {
-            await loadPublicSharedCreations()
+            if publicSharedCreations.isEmpty {
+                await loadPublicSharedCreations()
+            }
         }
+    }
+
+    private func browserItem(for creation: SharedCreation, isOwnedByCurrentUser: Bool) -> PromptBrowserItem {
+        PromptBrowserItem(
+            id: "shared-\(creation.id.uuidString)",
+            title: creation.name,
+            summary: creation.desc ?? "No description",
+            promptText: creation.prompt,
+            systemImage: creation.isPublic ? "shared.with.you" : "shared.with.you.slash",
+            iconTint: creation.isPublic ? .green : .orange,
+            badges: [
+                PromptCollectionFooterBadge(title: creation.isPublic ? "Public" : "Shared", tint: creation.isPublic ? .green : .orange),
+                PromptCollectionFooterBadge(title: isOwnedByCurrentUser ? "Mine" : "Community", tint: isOwnedByCurrentUser ? .accentColor : .secondary)
+            ],
+            trailingDetail: PromptViewHelpers.relativeDateString(from: creation.lastModified),
+            metadata: [
+                PromptBrowserMetadataRow(label: "Source", value: isOwnedByCurrentUser ? "My Shared Prompt" : "Community Gallery"),
+                PromptBrowserMetadataRow(label: "Visibility", value: creation.isPublic ? "Public" : "Shared"),
+                PromptBrowserMetadataRow(label: "Updated", value: PromptViewHelpers.relativeDateString(from: creation.lastModified))
+            ],
+            primaryActionTitle: "Copy Share Link",
+            primaryActionSystemImage: "link",
+            isPrimaryActionDisabled: false,
+            onPrimaryAction: { copyShareLink(for: creation) },
+            secondaryActionTitle: "Copy Content",
+            secondaryActionSystemImage: "doc.on.doc",
+            onSecondaryAction: { copyPromptToClipboard(creation.prompt) }
+        )
+    }
+
+    private func copyShareLink(for creation: SharedCreation) {
+        let shareLink = "sharedprompt://creation/\(creation.id.uuidString)"
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(shareLink, forType: .string)
+        showToastMsg("Share link copied to clipboard", .complete(.green))
     }
 }
 

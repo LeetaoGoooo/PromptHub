@@ -19,8 +19,7 @@ struct MyPromptsView: View {
     let onSelectPrompt: (Prompt) -> Void
     let onCreatePrompt: () -> Void
     let onRenderPrompt: () -> Void
-
-    private let gridColumns = [GridItem(.adaptive(minimum: 250, maximum: 320), spacing: 16, alignment: .top)]
+    @State private var selectedItemID: String?
 
     private func navigateToPrompt(_ prompt: Prompt) {
         onSelectPrompt(prompt)
@@ -64,13 +63,47 @@ struct MyPromptsView: View {
             PromptCollectionMetric(title: "shared", value: "\(sharedPromptCount)", systemImage: "shared.with.you")
         ]
     }
+
+    private var browserSections: [PromptBrowserSection] {
+        guard !filteredUserPrompts.isEmpty else { return [] }
+
+        return [
+            PromptBrowserSection(
+                id: "my-prompts",
+                title: "My Prompts",
+                systemImage: "person",
+                items: filteredUserPrompts.map { prompt in
+                    PromptBrowserItem(
+                        id: "prompt-\(prompt.id.uuidString)",
+                        title: prompt.name,
+                        summary: prompt.desc ?? "No description",
+                        promptText: prompt.getLatestPromptContent(),
+                        systemImage: "doc.text",
+                        iconTint: .accentColor,
+                        badges: badges(for: prompt) + [PromptCollectionFooterBadge(title: "v\(max(prompt.latestVersionNumber, 1))", tint: .secondary)],
+                        trailingDetail: PromptViewHelpers.relativeDateString(from: prompt.lastEditedAt),
+                        metadata: metadataRows(for: prompt),
+                        primaryActionTitle: "Open Prompt",
+                        primaryActionSystemImage: "arrow.right.circle",
+                        isPrimaryActionDisabled: false,
+                        onPrimaryAction: { navigateToPrompt(prompt) },
+                        secondaryActionTitle: "Copy Content",
+                        secondaryActionSystemImage: "doc.on.doc",
+                        onSecondaryAction: { copyPromptToClipboard(prompt.getLatestPromptContent()) }
+                    )
+                }
+            )
+        ]
+    }
     
     var body: some View {
-        PromptCollectionWorkspace(
+        PromptBrowserScreen(
             title: "My Prompts",
             subtitle: headerSummary,
             systemImage: "person",
             metrics: metrics,
+            sections: browserSections,
+            selectedItemID: $selectedItemID,
             actions: {
                 Button(action: onCreatePrompt) {
                     Label("New Prompt", systemImage: "wand.and.stars")
@@ -82,59 +115,19 @@ struct MyPromptsView: View {
                 }
                 .buttonStyle(.bordered)
             },
-            content: {
+            emptyState: {
                 if filteredUserPrompts.isEmpty && !searchText.isEmpty {
                     PromptViewHelpers.emptyStateView(
                         iconName: "magnifyingglass",
                         title: "No matching prompts found",
                         subtitle: "Try broader keywords or clear the current search filter."
                     )
-                    .frame(minHeight: 260)
-                } else if filteredUserPrompts.isEmpty {
+                } else {
                     PromptViewHelpers.emptyStateView(
                         iconName: "doc.text",
                         title: "No custom prompts yet",
                         subtitle: "Create your first prompt to start building a private library."
                     )
-                    .frame(minHeight: 260)
-                } else {
-                    LazyVGrid(columns: gridColumns, spacing: 16) {
-                        ForEach(filteredUserPrompts) { prompt in
-                            UserPromptItemView(
-                                prompt: prompt,
-                                footerBadges: badges(for: prompt),
-                                showToastMsg: showToastMsg,
-                                copyPromptToClipboard: copyPromptToClipboard,
-                                onOpen: { navigateToPrompt(prompt) }
-                            )
-                        }
-                    }
-                }
-            },
-            inspector: {
-                VStack(alignment: .leading, spacing: 12) {
-                    PromptCollectionInspectorPanel(title: "Private Scope") {
-                        PromptCollectionKVList(items: [
-                            ("Prompts", "\(userPrompts.count) owned"),
-                            ("Edited this week", "\(editedThisWeekCount)"),
-                            ("Shared", "\(sharedPromptCount)"),
-                            ("Linked to sources", "\(sourceLinkedCount)")
-                        ])
-                    }
-
-                    PromptCollectionInspectorPanel(title: "Actions") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Button(action: onCreatePrompt) {
-                                Label("New Prompt", systemImage: "plus")
-                            }
-                            .buttonStyle(.borderedProminent)
-
-                            Button(action: onRenderPrompt) {
-                                Label("Render Prompt…", systemImage: "play.rectangle")
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    }
                 }
             }
         )
@@ -173,6 +166,27 @@ struct MyPromptsView: View {
                 $0.desc == prompt.desc
             }
             .max(by: { ($0.lastModified ?? Date.distantPast) < ($1.lastModified ?? Date.distantPast) })
+    }
+
+    private func metadataRows(for prompt: Prompt) -> [PromptBrowserMetadataRow] {
+        var rows: [PromptBrowserMetadataRow] = [
+            PromptBrowserMetadataRow(label: "Source", value: "Private Library"),
+            PromptBrowserMetadataRow(label: "Version", value: "v\(max(prompt.latestVersionNumber, 1))")
+        ]
+
+        if let lastEditedAt = prompt.lastEditedAt {
+            rows.append(PromptBrowserMetadataRow(label: "Updated", value: PromptViewHelpers.relativeDateString(from: lastEditedAt)))
+        }
+
+        if let sharedCreation = matchingSharedCreation(for: prompt) {
+            rows.append(PromptBrowserMetadataRow(label: "Sharing", value: sharedCreation.isPublic ? "Public" : "Shared"))
+        }
+
+        if !((prompt.externalSources?.isEmpty) ?? true) {
+            rows.append(PromptBrowserMetadataRow(label: "Sources", value: "Attached"))
+        }
+
+        return rows
     }
 }
 
