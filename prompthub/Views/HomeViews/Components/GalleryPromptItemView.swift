@@ -6,23 +6,15 @@
 //
 
 import AlertToast
-import SwiftData
 import SwiftUI
 
 struct GalleryPromptItemView: View {
     let galleryPromptItem: GalleryPrompt
+    let isAlreadySaved: Bool
     let showToastMsg: (_ msg: String, _ alertType: AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (_ prompt: String) -> Void
     @Environment(\.modelContext) private var modelContext
-    @Query private var savedPrompts: [Prompt]
     @State private var showingPreviewSheet = false
-
-    private var isAlreadySaved: Bool {
-        savedPrompts.contains {
-            $0.name == galleryPromptItem.name &&
-            $0.getLatestPromptContent() == galleryPromptItem.prompt
-        }
-    }
 
     private var footerBadges: [PromptCollectionFooterBadge] {
         [PromptCollectionFooterBadge(title: isAlreadySaved ? "Saved" : "Save to library", tint: isAlreadySaved ? .secondary : .green)]
@@ -91,7 +83,7 @@ struct GalleryPromptItemView: View {
 }
 
 #Preview {
-    GalleryPromptItemView(galleryPromptItem: GalleryPrompt(id:"1", name: "Test", description: "It makes your UI look great and it doesn't require a lot of effort. \n It's easy to implement and looks much better than a flat design.", prompt: "I like to use this type of card view in my designs."), showToastMsg: { message, alertType in
+    GalleryPromptItemView(galleryPromptItem: GalleryPrompt(id:"1", name: "Test", description: "It makes your UI look great and it doesn't require a lot of effort. \n It's easy to implement and looks much better than a flat design.", prompt: "I like to use this type of card view in my designs."), isAlreadySaved: false, showToastMsg: { message, alertType in
         // This is a dummy implementation for the SwiftUI Preview.
         // In a real app, this closure would be provided by a parent view
         // and would trigger an actual toast message.

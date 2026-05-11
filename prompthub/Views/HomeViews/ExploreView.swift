@@ -10,15 +10,16 @@ import SwiftData
 import SwiftUI
 
 struct ExploreView: View {
+    @Query private var userPrompts: [Prompt]
+
     let searchText: String
     let galleryPrompts: [GalleryPrompt]
     let isLoading: Bool
     let showToastMsg: (String, AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (String) -> Void
-    
-    private func columns(for width: CGFloat) -> [GridItem] {
-        return PromptViewHelpers.columns(for: width)
-    }
+    let onRefreshGallery: () -> Void
+
+    private let gridColumns = [GridItem(.adaptive(minimum: 250, maximum: 320), spacing: 16, alignment: .top)]
     
     private var filteredGalleryPrompts: [GalleryPrompt] {
         if searchText.isEmpty {
@@ -29,9 +30,27 @@ struct ExploreView: View {
             (prompt.description?.localizedCaseInsensitiveContains(searchText) ?? false)
         }
     }
+
+    private var savedGalleryPromptCount: Int {
+        filteredGalleryPrompts.filter(isGalleryPromptSaved).count
+    }
+
+    private var metrics: [PromptCollectionMetric] {
+        [
+            PromptCollectionMetric(title: "available", value: "\(galleryPrompts.count)", systemImage: "sparkles"),
+            PromptCollectionMetric(title: "saved locally", value: "\(savedGalleryPromptCount)", systemImage: "square.and.arrow.down"),
+            PromptCollectionMetric(title: "showing", value: "\(filteredGalleryPrompts.count)", systemImage: "square.grid.2x2")
+        ]
+    }
+
+    private var summary: String {
+        searchText.isEmpty
+            ? "Browse public gallery prompts. Open any card to preview it, then save it to your library."
+            : "Showing gallery prompts that match your current search."
+    }
     
     var body: some View {
-        if isLoading {
+        if isLoading && galleryPrompts.isEmpty {
             VStack {
                 ProgressView()
                     .controlSize(.large)
@@ -41,37 +60,78 @@ struct ExploreView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(NSColor.windowBackgroundColor))
-        } else if filteredGalleryPrompts.isEmpty && !searchText.isEmpty {
-            PromptViewHelpers.emptyStateView(
-                iconName: "magnifyingglass",
-                title: "No matching content found",
-                subtitle: "Try using different keywords"
-            )
-            .background(Color(NSColor.windowBackgroundColor))
-        } else if filteredGalleryPrompts.isEmpty {
-            PromptViewHelpers.emptyStateView(
-                iconName: "globe",
-                title: "No content available",
-                subtitle: "Gallery prompts will appear here"
-            )
-            .background(Color(NSColor.windowBackgroundColor))
         } else {
-            GeometryReader { geometry in
-                ScrollView {
-                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
-                        // Gallery prompts
-                        ForEach(filteredGalleryPrompts) { prompt in
-                            GalleryPromptItemView(
-                                galleryPromptItem: prompt,
-                                showToastMsg: showToastMsg,
-                                copyPromptToClipboard: copyPromptToClipboard
+            PromptCollectionWorkspace(
+                title: "Explore Gallery",
+                subtitle: summary,
+                systemImage: "sparkles",
+                metrics: metrics,
+                actions: {
+                    Button(action: onRefreshGallery) {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+                },
+                content: {
+                    VStack(alignment: .leading, spacing: 20) {
+                        if filteredGalleryPrompts.isEmpty && !searchText.isEmpty {
+                            PromptViewHelpers.emptyStateView(
+                                iconName: "magnifyingglass",
+                                title: "No matching content found",
+                                subtitle: "Try using different keywords or clear the search filter."
                             )
+                            .frame(minHeight: 260)
+                        } else if filteredGalleryPrompts.isEmpty {
+                            PromptViewHelpers.emptyStateView(
+                                iconName: "sparkles",
+                                title: "No content available",
+                                subtitle: "Gallery prompts will appear here after a refresh."
+                            )
+                            .frame(minHeight: 260)
+                        } else {
+                            PromptCollectionSectionLabel(title: "Gallery", count: filteredGalleryPrompts.count, systemImage: "sparkles")
+                            LazyVGrid(columns: gridColumns, spacing: 16) {
+                                ForEach(filteredGalleryPrompts) { prompt in
+                                    GalleryPromptItemView(
+                                        galleryPromptItem: prompt,
+                                        isAlreadySaved: isGalleryPromptSaved(prompt),
+                                        showToastMsg: showToastMsg,
+                                        copyPromptToClipboard: copyPromptToClipboard
+                                    )
+                                }
+                            }
                         }
                     }
-                    .padding(20)
+                },
+                inspector: {
+                    VStack(alignment: .leading, spacing: 12) {
+                        PromptCollectionInspectorPanel(title: "Gallery Totals") {
+                            PromptCollectionKVList(items: [
+                                ("Available", "\(galleryPrompts.count)"),
+                                ("Visible", "\(filteredGalleryPrompts.count)"),
+                                ("Saved locally", "\(savedGalleryPromptCount)"),
+                                ("Filter", searchText.isEmpty ? "All prompts" : searchText)
+                            ])
+                        }
+
+                        PromptCollectionInspectorPanel(title: "Actions") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Button(action: onRefreshGallery) {
+                                    Label("Refresh Gallery", systemImage: "arrow.clockwise")
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+                        }
+                    }
                 }
-                .background(Color(NSColor.windowBackgroundColor))
-            }
+            )
+        }
+    }
+
+    private func isGalleryPromptSaved(_ galleryPrompt: GalleryPrompt) -> Bool {
+        userPrompts.contains {
+            $0.name == galleryPrompt.name &&
+            $0.getLatestPromptContent() == galleryPrompt.prompt
         }
     }
 }
@@ -82,7 +142,8 @@ struct ExploreView: View {
         galleryPrompts: [],
         isLoading: false,
         showToastMsg: { _, _ in },
-        copyPromptToClipboard: { _ in }
+        copyPromptToClipboard: { _ in },
+        onRefreshGallery: { }
     )
     .modelContainer(for: [Prompt.self, PromptHistory.self, SharedCreation.self])
 }

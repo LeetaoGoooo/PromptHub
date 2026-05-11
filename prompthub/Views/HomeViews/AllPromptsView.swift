@@ -120,6 +120,7 @@ struct AllPromptsView: View {
                                 ForEach(filteredGalleryPrompts) { prompt in
                                     GalleryPromptItemView(
                                         galleryPromptItem: prompt,
+                                        isAlreadySaved: isGalleryPromptSaved(prompt),
                                         showToastMsg: showToastMsg,
                                         copyPromptToClipboard: copyPromptToClipboard
                                     )
@@ -192,6 +193,13 @@ struct AllPromptsView: View {
                 $0.desc == prompt.desc
             }
             .max(by: { ($0.lastModified ?? Date.distantPast) < ($1.lastModified ?? Date.distantPast) })
+    }
+
+    private func isGalleryPromptSaved(_ galleryPrompt: GalleryPrompt) -> Bool {
+        userPrompts.contains {
+            $0.name == galleryPrompt.name &&
+            $0.getLatestPromptContent() == galleryPrompt.prompt
+        }
     }
 }
 

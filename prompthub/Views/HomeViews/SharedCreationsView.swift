@@ -12,6 +12,7 @@ import SwiftUI
 
 struct SharedCreationsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var localSharedCreations: [SharedCreation]
     
     let searchText: String
     let showToastMsg: (String, AlertToast.AlertType) -> Void
@@ -20,9 +21,11 @@ struct SharedCreationsView: View {
     @State private var publicSharedCreations: [SharedCreation] = []
     @State private var isLoading = false
     @State private var loadError: String?
-    
-    private func columns(for width: CGFloat) -> [GridItem] {
-        return PromptViewHelpers.columns(for: width)
+
+    private let gridColumns = [GridItem(.adaptive(minimum: 250, maximum: 320), spacing: 16, alignment: .top)]
+
+    private var localSharedCreationIDs: Set<UUID> {
+        Set(localSharedCreations.map(\.id))
     }
     
     // Combine and categorize shared creations based on whether they exist locally
@@ -40,15 +43,9 @@ struct SharedCreationsView: View {
         }
         
         // Categorize into user's and others' based on local existence
-        let userCreations = filteredCreations.filter { creation in
-            // If this SharedCreation exists locally (has been pushed from this device), it's user's creation
-            SharedCreation.isCreatedByCurrentUser(id: creation.id, modelContext: modelContext)
-        }
-        
-        let otherCreations = filteredCreations.filter { creation in
-            // If this SharedCreation doesn't exist locally, it's from other users
-            !SharedCreation.isCreatedByCurrentUser(id: creation.id, modelContext: modelContext)
-        }
+        let userCreations = filteredCreations.filter { localSharedCreationIDs.contains($0.id) }
+
+        let otherCreations = filteredCreations.filter { !localSharedCreationIDs.contains($0.id) }
         
         return (
             userCreations: userCreations.sorted { $0.lastModified ?? Date.distantPast > $1.lastModified ?? Date.distantPast },
@@ -56,9 +53,10 @@ struct SharedCreationsView: View {
         )
     }
     
-    private var filteredSharedCreations: [SharedCreation] {
-        let categorized = categorizedSharedCreations
-        return categorized.userCreations + categorized.otherCreations
+    private var summary: String {
+        searchText.isEmpty
+            ? "Browse prompts shared from your library alongside creations published by the broader community."
+            : "Showing shared creations that match your current search."
     }
     
     @MainActor
@@ -82,125 +80,140 @@ struct SharedCreationsView: View {
     }
     
     var body: some View {
-        VStack {
-            let categorized = categorizedSharedCreations
-            
-            if categorized.userCreations.isEmpty && categorized.otherCreations.isEmpty && !searchText.isEmpty {
-                PromptViewHelpers.emptyStateView(
-                    iconName: "magnifyingglass",
-                    title: "No matching shared creations found",
-                    subtitle: "Try using different keywords"
-                )
-            } else if categorized.userCreations.isEmpty && categorized.otherCreations.isEmpty {
-                VStack(spacing: 20) {
-                    if isLoading {
-                        ProgressView("Loading public shared creations...")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
+        let categorized = categorizedSharedCreations
+        let visibleCount = categorized.userCreations.count + categorized.otherCreations.count
+        let communityMetrics = [
+            PromptCollectionMetric(title: "mine", value: "\(categorized.userCreations.count)", systemImage: "person"),
+            PromptCollectionMetric(title: "community", value: "\(categorized.otherCreations.count)", systemImage: "person.3"),
+            PromptCollectionMetric(title: "visible", value: "\(visibleCount)", systemImage: "square.grid.2x2")
+        ]
+
+        PromptCollectionWorkspace(
+            title: "Shared with Me",
+            subtitle: summary,
+            systemImage: "person.3",
+            metrics: communityMetrics,
+            actions: {
+                Button {
+                    Task {
+                        await loadPublicSharedCreations()
+                    }
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+            },
+            content: {
+                VStack(alignment: .leading, spacing: 20) {
+                    if isLoading && visibleCount == 0 {
+                        VStack(spacing: 12) {
+                            ProgressView("Loading public shared creations...")
+                            if let loadError {
+                                Text(loadError)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 260)
+                    } else if !isLoading && visibleCount == 0 && !searchText.isEmpty {
+                        PromptViewHelpers.emptyStateView(
+                            iconName: "magnifyingglass",
+                            title: "No matching shared creations found",
+                            subtitle: "Try broader keywords or clear the current filter."
+                        )
+                        .frame(minHeight: 260)
+                    } else if visibleCount == 0 {
                         PromptViewHelpers.emptyStateView(
                             iconName: "square.and.arrow.up",
                             title: "No shared creations yet",
-                            subtitle: "Share your prompts or explore public creations"
+                            subtitle: "Share your prompts or explore public creations from the community."
                         )
-                    }
-                }
-            } else {
-                GeometryReader { geometry in
-                    ScrollView {
-                        LazyVStack(spacing: 32) {
-                            // User's own shared creations section
-                            if !categorized.userCreations.isEmpty {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    HStack(alignment: .firstTextBaseline) {
-                                        Image(systemName: "person.circle.fill")
-                                            .foregroundColor(.blue)
-                                        Text("My Shared Prompts")
-                                            .font(.title3)
-                                            .fontWeight(.bold)
-                                        
-                                        Spacer()
-                                        
-                                        Text("\(categorized.userCreations.count)")
-                                            .font(.caption.monospacedDigit())
-                                            .foregroundColor(.secondary)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.secondary.opacity(0.1))
-                                            .cornerRadius(4)
-                                    }
-                                    
-                                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
-                                        ForEach(categorized.userCreations, id: \.id) { creation in
-                                            SharedCreationItemView(
-                                                sharedCreation: creation,
-                                                showToastMsg: showToastMsg,
-                                                copyPromptToClipboard: copyPromptToClipboard,
-                                                onDeleted: {
-                                                    Task {
-                                                        await loadPublicSharedCreations()
-                                                    }
-                                                }
-                                            )
+                        .frame(minHeight: 260)
+                    } else {
+                        if !categorized.userCreations.isEmpty {
+                            PromptCollectionSectionLabel(title: "My Shared Prompts", count: categorized.userCreations.count, systemImage: "person")
+                            LazyVGrid(columns: gridColumns, spacing: 16) {
+                                ForEach(categorized.userCreations, id: \.id) { creation in
+                                    SharedCreationItemView(
+                                        sharedCreation: creation,
+                                        isOwnedByCurrentUser: true,
+                                        showToastMsg: showToastMsg,
+                                        copyPromptToClipboard: copyPromptToClipboard,
+                                        onDeleted: {
+                                            Task {
+                                                await loadPublicSharedCreations()
+                                            }
                                         }
-                                    }
+                                    )
                                 }
-                            }
-                            
-                            // Public shared creations from others section
-                            if !categorized.otherCreations.isEmpty {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    HStack(alignment: .firstTextBaseline) {
-                                        Image(systemName: "person.3.fill")
-                                            .foregroundColor(.green)
-                                        Text("Community Gallery")
-                                            .font(.title3)
-                                            .fontWeight(.bold)
-                                        
-                                        Spacer()
-                                        
-                                        Text("\(categorized.otherCreations.count)")
-                                            .font(.caption.monospacedDigit())
-                                            .foregroundColor(.secondary)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.secondary.opacity(0.1))
-                                            .cornerRadius(4)
-                                    }
-                                    
-                                    LazyVGrid(columns: columns(for: geometry.size.width), spacing: 20) {
-                                        ForEach(categorized.otherCreations, id: \.id) { creation in
-                                            SharedCreationItemView(
-                                                sharedCreation: creation,
-                                                showToastMsg: showToastMsg,
-                                                copyPromptToClipboard: copyPromptToClipboard,
-                                                onDeleted:nil
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            // Loading indicator for public creations
-                            if isLoading {
-                                HStack {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                    Text("Updating gallery...")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                .padding()
                             }
                         }
-                        .padding(24)
+
+                        if !categorized.otherCreations.isEmpty {
+                            PromptCollectionSectionLabel(title: "Community Gallery", count: categorized.otherCreations.count, systemImage: "person.3")
+                            LazyVGrid(columns: gridColumns, spacing: 16) {
+                                ForEach(categorized.otherCreations, id: \.id) { creation in
+                                    SharedCreationItemView(
+                                        sharedCreation: creation,
+                                        isOwnedByCurrentUser: false,
+                                        showToastMsg: showToastMsg,
+                                        copyPromptToClipboard: copyPromptToClipboard,
+                                        onDeleted: nil
+                                    )
+                                }
+                            }
+                        }
+
+                        if isLoading {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Updating gallery...")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
-                    .background(Color(NSColor.windowBackgroundColor))
-                    .refreshable {
-                        await loadPublicSharedCreations()
+                }
+            },
+            inspector: {
+                VStack(alignment: .leading, spacing: 12) {
+                    PromptCollectionInspectorPanel(title: "Community Totals") {
+                        PromptCollectionKVList(items: [
+                            ("My Shared Prompts", "\(categorized.userCreations.count)"),
+                            ("Community Gallery", "\(categorized.otherCreations.count)"),
+                            ("Showing", "\(visibleCount)"),
+                            ("Filter", searchText.isEmpty ? "All creations" : searchText)
+                        ])
+                    }
+
+                    PromptCollectionInspectorPanel(title: "Sync Status") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(isLoading ? "Refreshing public gallery…" : "Public gallery is up to date.")
+                                .font(.callout)
+                            if let loadError {
+                                Text(loadError)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
+                    PromptCollectionInspectorPanel(title: "Actions") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Button {
+                                Task {
+                                    await loadPublicSharedCreations()
+                                }
+                            } label: {
+                                Label("Refresh Community", systemImage: "arrow.clockwise")
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
                     }
                 }
             }
-        }
+        )
         .task {
             await loadPublicSharedCreations()
         }

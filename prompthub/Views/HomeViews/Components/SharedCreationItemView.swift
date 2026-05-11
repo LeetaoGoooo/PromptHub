@@ -11,11 +11,11 @@ import OSLog
 
 struct SharedCreationItemView: View {
     let sharedCreation: SharedCreation
+    let isOwnedByCurrentUser: Bool
     let showToastMsg: (_ msg: String, _ alertType: AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (_ prompt: String) -> Void
     let onDeleted: (() -> Void)?
     @Environment(\.modelContext) private var modelContext
-    @State private var isHovering = false
     @State private var showingPreviewSheet = false
     @State private var showingDeleteConfirmation = false
     @State private var isDeleting = false
@@ -25,43 +25,31 @@ struct SharedCreationItemView: View {
         category: "SharedCreationItemView"
     )
 
+    private var footerBadges: [PromptCollectionFooterBadge] {
+        [
+            PromptCollectionFooterBadge(
+                title: sharedCreation.isPublic ? "Public" : "Shared",
+                tint: sharedCreation.isPublic ? .green : .orange
+            ),
+            PromptCollectionFooterBadge(
+                title: isOwnedByCurrentUser ? "Mine" : "Community",
+                tint: isOwnedByCurrentUser ? .accentColor : .secondary
+            )
+        ]
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Image(systemName: sharedCreation.isPublic ? "shared.with.you": "shared.with.you.slash" )
-                    .foregroundColor(sharedCreation.isPublic ? .green : .orange)
-                    .font(.headline)
-                    .frame(width: 24, height: 24)
-                    .background((sharedCreation.isPublic ? Color.green : Color.orange).opacity(0.1))
-                    .cornerRadius(6)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(sharedCreation.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                    
-                    if let desc = sharedCreation.desc, !desc.isEmpty {
-                        Text(desc)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                Spacer()
-            }
-        }
-        .padding(12)
-        .background(isHovering ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(isHovering ? Color.accentColor.opacity(0.3) : Color(nsColor: .separatorColor), lineWidth: 1)
-        )
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                self.isHovering = hovering
-            }
+        PromptCollectionCard(
+            title: sharedCreation.name,
+            description: sharedCreation.desc,
+            systemImage: sharedCreation.isPublic ? "shared.with.you" : "shared.with.you.slash",
+            iconTint: sharedCreation.isPublic ? .green : .orange,
+            onTap: { showingPreviewSheet = true }
+        ) {
+            PromptCollectionCardFooter(
+                leadingBadges: footerBadges,
+                trailingText: PromptViewHelpers.relativeDateString(from: sharedCreation.lastModified)
+            )
         }
         .contextMenu {
             Button {
@@ -70,7 +58,7 @@ struct SharedCreationItemView: View {
                 Label("Copy Share Link", systemImage: "link")
             }
             
-            if canDeleteThisCreation() {
+            if isOwnedByCurrentUser {
                 Divider()
                 Button(role: .destructive) {
                     showingDeleteConfirmation = true
@@ -85,9 +73,6 @@ struct SharedCreationItemView: View {
                 promptContent: sharedCreation.prompt,
                 copyPromptToClipboard: copyPromptToClipboard
             )
-        }
-        .onTapGesture {
-            showingPreviewSheet.toggle()
         }
         .confirmationDialog(
             "Delete Shared Creation",
@@ -114,10 +99,6 @@ struct SharedCreationItemView: View {
         pasteboard.clearContents()
         pasteboard.setString(shareLink, forType: .string)
         showToastMsg("Share link copied to clipboard", .complete(.green))
-    }
-    
-    private func canDeleteThisCreation() -> Bool {
-        return SharedCreation.isCreatedByCurrentUser(id: sharedCreation.id, modelContext: modelContext)
     }
     
     private func deleteSharedCreation() async {

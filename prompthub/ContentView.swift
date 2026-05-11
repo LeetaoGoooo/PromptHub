@@ -122,7 +122,7 @@ struct ContentView: View {
         case .shared:
             SharedCreationsView(searchText: searchText, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard)
         case .explore:
-            ExploreView(searchText: searchText, galleryPrompts: galleryPrompts, isLoading: isLoading, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard)
+            ExploreView(searchText: searchText, galleryPrompts: galleryPrompts, isLoading: isLoading, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard, onRefreshGallery: loadGalleryPrompts)
         default:
             EmptyView()
         }
