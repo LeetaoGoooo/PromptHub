@@ -40,25 +40,13 @@ struct LatestVersionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
                 if isShowingDiff {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Review Changes")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            Spacer()
-                            Button("Discard") { undoChanges() }
-                                .buttonStyle(.plain)
-                                .foregroundColor(.red)
-                            Button("Keep Changes") { keepChanges() }
-                                .buttonStyle(.borderedProminent)
-                        }
-
-                        DiffRenderer(diffResults: diffResults)
-                    }
-                    .padding(16)
-                    .background(Color(NSColor.textBackgroundColor))
-                    .cornerRadius(12)
-                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                    AIOptimizeDiffPanel(
+                        diffResults: diffResults,
+                        originalText: originalText,
+                        modifiedText: modifiedText,
+                        onKeep: keepChanges,
+                        onDiscard: undoChanges
+                    )
                     .padding(16)
                 } else {
                     ZStack(alignment: .bottomTrailing) {
@@ -90,13 +78,33 @@ struct LatestVersionView: View {
                                 .padding([.bottom, .trailing], 40)
                         }
 
+                        // Floating AI Optimize pill button
                         Button {
                             Task { await modifyPromptWithOpenAIStreamAndShowDiff() }
                         } label: {
-                            Image(systemName: "wand.and.stars")
+                            HStack(spacing: 5) {
+                                Image(systemName: isGenerating ? "ellipsis" : "wand.and.stars")
+                                    .symbolEffect(.pulse, isActive: isGenerating)
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text(isGenerating ? "Optimizing…" : "AI Optimize")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.purple, Color.accentColor],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(Capsule())
+                            .shadow(color: Color.purple.opacity(0.35), radius: 6, x: 0, y: 3)
                         }
-                        .padding(8)
+                        .buttonStyle(.plain)
                         .disabled(isGenerating)
+                        .padding([.bottom, .trailing], 14)
                     }
                     .background(Color(NSColor.textBackgroundColor))
                     .cornerRadius(12)
