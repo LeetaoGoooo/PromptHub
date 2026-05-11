@@ -23,7 +23,7 @@ struct AIOptimizeDiffPanel: View {
                     .foregroundStyle(.purple)
                     .font(.system(size: 15))
 
-                Text("AI Suggestions")
+                Text("Review AI Changes")
                     .font(.headline)
 
                 Spacer()
@@ -32,7 +32,7 @@ struct AIOptimizeDiffPanel: View {
                 if addedLines > 0 || removedLines > 0 {
                     HStack(spacing: 8) {
                         if addedLines > 0 {
-                            Label("+\(addedLines)", systemImage: "plus")
+                            Text("+\(addedLines)")
                                 .font(.caption)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.green)
@@ -42,7 +42,7 @@ struct AIOptimizeDiffPanel: View {
                                 .clipShape(Capsule())
                         }
                         if removedLines > 0 {
-                            Label("-\(removedLines)", systemImage: "minus")
+                            Text("-\(removedLines)")
                                 .font(.caption)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.red)
@@ -70,7 +70,7 @@ struct AIOptimizeDiffPanel: View {
                 Button {
                     onKeep()
                 } label: {
-                    Label("Keep Changes", systemImage: "checkmark")
+                    Label("Keep & Save", systemImage: "checkmark")
                         .font(.callout)
                         .fontWeight(.semibold)
                 }
@@ -85,10 +85,8 @@ struct AIOptimizeDiffPanel: View {
             Divider()
 
             // ── Diff content ─────────────────────────────────────────────
-            ScrollView {
-                DiffRenderer(diffResults: diffResults)
-                    .padding(.vertical, 8)
-            }
+            DiffRenderer(diffResults: diffResults)
+                .padding(.vertical, 8)
         }
         .background(Color(NSColor.textBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 12))

@@ -1,18 +1,25 @@
+import SwiftData
 import SwiftUI
 
-/// Onboarding view — guides new users through 4 setup steps.
-/// Full implementation: UI-4 task.
 struct OnboardingView: View {
     let onFinish: () -> Void
     let onCLI: () -> Void
+    let onSettings: () -> Void
 
     @AppStorage("onboardingCompleted") private var onboardingCompleted = false
-    @AppStorage("onboarding.aiServiceConnected") private var aiServiceConnected = false
-    @AppStorage("onboarding.firstPromptCreated") private var firstPromptCreated = false
-    @AppStorage("onboarding.cliSetupSeen") private var cliSetupSeen = false
     @ObservedObject private var cliAccess = CLIDirectoryAccessManager.shared
+    @Environment(ServicesManager.self) private var servicesManager
+    @Query private var prompts: [Prompt]
+    @Query(sort: \Skill.updatedAt, order: .reverse) private var skillDrafts: [Skill]
 
+    private var configuredServiceName: String? {
+        servicesManager.services.first(where: { !$0.token.isEmpty })?.name
+    }
+
+    private var aiServiceConnected: Bool { configuredServiceName != nil }
     private var cliConnected: Bool { cliAccess.grantedDirectories.count > 0 }
+    private var hasPrompt: Bool { !prompts.isEmpty }
+    private var hasSkillDraft: Bool { !skillDrafts.isEmpty }
 
     private func finish() {
         onboardingCompleted = true
@@ -20,164 +27,209 @@ struct OnboardingView: View {
     }
 
     private func goToCLI() {
-        cliSetupSeen = true
         onCLI()
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                // ── Hero ────────────────────────────────────────────────
-                VStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.tint)
-                    Text("Welcome to PromptHub")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    Text("Your AI prompt and skills workspace. Let's get you set up in 4 steps.")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 24)
+        HSplitView {
+            ScrollView {
+                VStack(spacing: 28) {
+                    heroSection
 
-                // ── Steps ───────────────────────────────────────────────
-                VStack(spacing: 12) {
-                    OnboardingStepCard(
-                        number: 1,
-                        title: "Connect AI Service",
-                        description: "Link your OpenAI, Anthropic, or Ollama API key so prompts can run live previews and tests.",
-                        isDone: aiServiceConnected,
-                        ctaLabel: "Open Settings",
-                        ctaAction: { aiServiceConnected = true }
-                    )
-                    OnboardingStepCard(
-                        number: 2,
-                        title: "Create Your First Prompt",
-                        description: "Start with a template or write from scratch. Add variables with {{placeholders}} to make prompts reusable.",
-                        isDone: firstPromptCreated,
-                        ctaLabel: "Go to Library",
-                        ctaAction: { firstPromptCreated = true; finish() }
-                    )
-                    OnboardingStepCard(
-                        number: 3,
-                        title: "Set Up CLI Integration",
-                        description: "This is what makes PromptHub different. Install skills directly into Claude Code, Cursor, Codex — no copy-paste.",
-                        isDone: cliConnected,
-                        ctaLabel: "Set Up CLI",
-                        isHighlighted: true,
-                        ctaAction: goToCLI
-                    )
-                    OnboardingStepCard(
-                        number: 4,
-                        title: "Build Your First Skill",
-                        description: "Promote a prompt into a reusable Skill — a structured agent instruction that installs into any AI coding agent.",
-                        isDone: false,
-                        ctaLabel: "Start Building",
-                        ctaAction: finish
-                    )
-                }
-                .frame(maxWidth: 560)
-
-                // ── Actions ─────────────────────────────────────────────
-                HStack(spacing: 12) {
-                    Button(action: finish) {
-                        Label("Go to Library", systemImage: "tray.full")
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
+                        OnboardingStepTile(
+                            number: 1,
+                            title: "Connect AI Service",
+                            description: "Link your OpenAI, Anthropic, or Ollama API key so prompts can run live previews and tests.",
+                            isDone: aiServiceConnected,
+                            ctaText: aiServiceConnected ? "Connected to \(configuredServiceName ?? "service")" : "Open Settings",
+                            ctaAction: {
+                                if aiServiceConnected {
+                                    finish()
+                                } else {
+                                    onSettings()
+                                }
+                            }
+                        )
+                        OnboardingStepTile(
+                            number: 2,
+                            title: "Create Your First Prompt",
+                            description: "Start with a template or write from scratch. Add variables with {{placeholders}} to make prompts reusable.",
+                            isDone: hasPrompt,
+                            ctaText: hasPrompt ? "\(prompts.count) prompts created" : "Go to Library",
+                            ctaAction: finish
+                        )
+                        OnboardingStepTile(
+                            number: 3,
+                            title: "Set Up CLI Integration",
+                            description: "This is what makes PromptHub different. Run brew install prompthub, then grant PromptHub access to your agent directories so skills are injected into Claude Code, Cursor, Codex and more.",
+                            isDone: cliConnected,
+                            ctaText: cliConnected ? "CLI connected" : "Set up now",
+                            isHighlighted: true,
+                            ctaAction: goToCLI
+                        )
+                        OnboardingStepTile(
+                            number: 4,
+                            title: "Build Your First Skill",
+                            description: "Promote a prompt into a reusable Skill that can be installed globally or scoped to a project.",
+                            isDone: hasSkillDraft,
+                            ctaText: hasSkillDraft ? "\(skillDrafts.count) skills drafted" : "Start building",
+                            ctaAction: finish
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
 
-                    Button(action: goToCLI) {
-                        Label("Set Up CLI", systemImage: "terminal")
+                    HStack(spacing: 12) {
+                        Button(action: finish) {
+                            Label("Go to Library", systemImage: "checkmark")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+
+                        Button(action: goToCLI) {
+                            Label("Set Up CLI", systemImage: "terminal")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
                 }
-                .padding(.bottom, 32)
+                .padding(28)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 24)
+            .background(Color(NSColor.windowBackgroundColor))
+
+            OnboardingProgressSidebar(
+                aiServiceConnected: aiServiceConnected,
+                hasPrompt: hasPrompt,
+                cliConnected: cliConnected,
+                hasSkillDraft: hasSkillDraft
+            )
+            .frame(minWidth: 280, idealWidth: 300, maxWidth: 320, maxHeight: .infinity)
+            .background(Color(NSColor.controlBackgroundColor))
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    private var heroSection: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "wand.and.stars")
+                .font(.system(size: 38, weight: .semibold))
+                .foregroundStyle(.accent)
+            Text("Welcome to PromptHub")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            Text("Your AI prompt and skills workspace. Let's get you set up in 4 steps — it only takes a few minutes.")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 760)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
     }
 }
 
-// MARK: - Step Card
-
-private struct OnboardingStepCard: View {
+private struct OnboardingStepTile: View {
     let number: Int
     let title: String
     let description: String
     let isDone: Bool
-    let ctaLabel: String
+    let ctaText: String
     var isHighlighted: Bool = false
     let ctaAction: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Step number / checkmark
-            ZStack {
-                Circle()
-                    .fill(isDone ? Color.green : (isHighlighted ? Color.accentColor : Color(NSColor.separatorColor)))
-                    .frame(width: 32, height: 32)
-                if isDone {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
-                } else {
-                    Text("\(number)")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(isHighlighted ? .white : .primary)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(title)
-                        .font(.headline)
-                    if isHighlighted && !isDone {
-                        Text("RECOMMENDED")
-                            .font(.caption2)
-                            .fontWeight(.bold)
+        Button(action: ctaAction) {
+            VStack(alignment: .leading, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(isDone ? Color.green : (isHighlighted ? Color.accentColor : Color(NSColor.separatorColor).opacity(0.7)))
+                        .frame(width: 34, height: 34)
+                    if isDone {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.accentColor)
-                            .clipShape(Capsule())
+                    } else {
+                        Text("\(number)")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(isHighlighted ? .white : .primary)
                     }
                 }
+
+                Text(title)
+                    .font(.headline)
+                    .multilineTextAlignment(.leading)
+
                 Text(description)
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                if isDone {
-                    Label("Done", systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                } else {
-                    Button(ctaLabel, action: ctaAction)
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .tint(isHighlighted ? .accentColor : nil)
+                HStack(spacing: 6) {
+                    Image(systemName: isDone ? "checkmark" : "arrow.right")
+                    Text(ctaText)
                 }
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundStyle(isDone ? .green : .accent)
             }
+            .padding(18)
+            .frame(maxWidth: .infinity, minHeight: 210, alignment: .topLeading)
+            .background(Color(NSColor.controlBackgroundColor))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isHighlighted && !isDone ? Color.accentColor.opacity(0.35) : Color(NSColor.separatorColor).opacity(0.28), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
         }
-        .padding(16)
+        .buttonStyle(.plain)
+    }
+}
+
+private struct OnboardingProgressSidebar: View {
+    let aiServiceConnected: Bool
+    let hasPrompt: Bool
+    let cliConnected: Bool
+    let hasSkillDraft: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Setup Progress")
+                .font(.headline)
+
+            ProgressItem(title: "Welcome", isDone: true)
+            ProgressItem(title: "Connect AI Service", isDone: aiServiceConnected)
+            ProgressItem(title: "Create First Prompt", isDone: hasPrompt)
+            ProgressItem(title: "Set Up CLI", isDone: cliConnected)
+            ProgressItem(title: "Build First Skill", isDone: hasSkillDraft)
+
+            Spacer()
+        }
+        .padding(18)
+    }
+}
+
+private struct ProgressItem: View {
+    let title: String
+    let isDone: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(isDone ? .green : .secondary)
+            Text(title)
+                .font(.callout)
+            Spacer()
+        }
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(NSColor.controlBackgroundColor))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(isHighlighted && !isDone ? Color.accentColor.opacity(0.4) : Color.clear, lineWidth: 1.5)
-                )
-        )
+        .background(Color(NSColor.windowBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 
 #Preview {
-    OnboardingView(onFinish: {}, onCLI: {})
-        .frame(width: 700, height: 600)
+    OnboardingView(onFinish: {}, onCLI: {}, onSettings: {})
+        .frame(width: 1080, height: 760)
+    .modelContainer(PreviewData.previewContainer)
 }

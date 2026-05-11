@@ -16,7 +16,7 @@ struct DiffRenderer: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(diffResults) { line in
+                ForEach(Array(diffResults.enumerated()), id: \.offset) { _, line in
                     DiffLineView(line: line)
                 }
             }
@@ -75,16 +75,6 @@ private struct DiffLineView: View {
         }
     }
     
-    private var prefixSymbol: String {
-        switch line {
-        case .added:
-            return "+"
-        case .removed:
-            return "-"
-        case .common:
-            return " "
-        }
-    }
 }
 
 

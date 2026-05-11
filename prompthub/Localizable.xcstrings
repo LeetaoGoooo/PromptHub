@@ -11,6 +11,9 @@
         }
       }
     },
+    "-%lld" : {
+
+    },
     "—" : {
 
     },
@@ -33,6 +36,16 @@
     },
     "/Volumes/teamshare/skills" : {
 
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
     },
     "%@:" : {
       "extractionState" : "stale",
@@ -97,12 +110,25 @@
         }
       }
     },
+    "%lld skills" : {
+
+    },
     "%lld/%lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld/%lld Authorized" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld Authorized"
           }
         }
       }
@@ -116,7 +142,10 @@
     "+%lld" : {
 
     },
-    "~/%@" : {
+    "+%lld more" : {
+
+    },
+    "~/%@/" : {
 
     },
     "About" : {
@@ -382,6 +411,9 @@
     "Author and manage your own skill drafts" : {
 
     },
+    "Authorize All" : {
+
+    },
     "Base URL (OpenAI API)" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -435,13 +467,16 @@
     "Category" : {
 
     },
+    "Change Project Folder" : {
+
+    },
+    "Check all skills for available updates" : {
+
+    },
     "Check for Update…" : {
 
     },
     "Checking source…" : {
-
-    },
-    "Choose a writable project folder before installing in project scope." : {
 
     },
     "Choose one or more models to test" : {
@@ -455,6 +490,9 @@
       }
     },
     "Choose Project…" : {
+
+    },
+    "Choose where and for which agents this skill will be installed." : {
 
     },
     "Choose where this skill should live first, then select the CLI environments that should receive it." : {
@@ -483,6 +521,12 @@
 
     },
     "CLI File Access" : {
+
+    },
+    "CLI Integration" : {
+
+    },
+    "CLI Settings" : {
 
     },
     "CLI Targets" : {
@@ -629,6 +673,9 @@
       }
     },
     "Connect a **private GitHub repo** (e.g. `owner/repo` → `SKILL.md` files inside) to install your team's internal skills." : {
+
+    },
+    "Connected AI Agents" : {
 
     },
     "Copied to clipboard" : {
@@ -836,6 +883,9 @@
           }
         }
       }
+    },
+    "Default" : {
+
     },
     "Deletable Image Demo" : {
       "localizations" : {
@@ -1298,6 +1348,9 @@
         }
       }
     },
+    "Get Started Guide" : {
+
+    },
     "ghp_…" : {
 
     },
@@ -1321,10 +1374,16 @@
     "Global" : {
 
     },
+    "global scope" : {
+
+    },
     "Global Scope" : {
 
     },
     "Global skill" : {
+
+    },
+    "Go to Library" : {
 
     },
     "Got It!" : {
@@ -1339,6 +1398,12 @@
       }
     },
     "Grant Access" : {
+
+    },
+    "Grant Agent Access" : {
+
+    },
+    "Grant folder access to connect" : {
 
     },
     "Hide" : {
@@ -1376,6 +1441,9 @@
           }
         }
       }
+    },
+    "How Skills Get Into Your AI Agents" : {
+
     },
     "How Skills Work" : {
 
@@ -1426,6 +1494,12 @@
     "Input Schema" : {
 
     },
+    "Install" : {
+
+    },
+    "Install \"%@\"" : {
+
+    },
     "Install a skill from a private GitHub repo or local directory (Settings → Sources to configure)" : {
 
     },
@@ -1444,10 +1518,25 @@
     "Install Local Skill" : {
 
     },
+    "Install Path Preview" : {
+
+    },
     "Install Selected" : {
 
     },
+    "Install Skill" : {
+
+    },
+    "Install Skill…" : {
+
+    },
+    "Install your Skills into any AI coding agent so they become part of every conversation automatically." : {
+
+    },
     "Install…" : {
+
+    },
+    "Installation Scope" : {
 
     },
     "Installed" : {
@@ -1512,7 +1601,11 @@
         }
       }
     },
+    "Keep & Save" : {
+
+    },
     "Keep Changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1639,6 +1732,15 @@
           }
         }
       }
+    },
+    "Manage Access" : {
+
+    },
+    "Manage CLI agent connections and installed skills" : {
+
+    },
+    "Manage CLI directories from Grant Agent Access, and select the active project folder here in the dashboard." : {
+
     },
     "Manage CLIs" : {
 
@@ -1833,6 +1935,9 @@
         }
       }
     },
+    "No installed skills in this scope yet." : {
+
+    },
     "No matching prompts found" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1848,6 +1953,9 @@
 
     },
     "No Private Sources Configured" : {
+
+    },
+    "No project selected. Skills will be installed relative to the project root." : {
 
     },
     "No prompts available" : {
@@ -1933,6 +2041,9 @@
     "Not shared yet" : {
 
     },
+    "Not yet installed" : {
+
+    },
     "Note: Dropped item is an alias or symbolic link. URL should be to the target if resolved from a bookmark." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1973,6 +2084,9 @@
     "Open Source Page" : {
 
     },
+    "Open the onboarding guide" : {
+
+    },
     "OpenAI Configuration" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1983,6 +2097,12 @@
           }
         }
       }
+    },
+    "Optimize with AI" : {
+
+    },
+    "Optimizing…" : {
+
     },
     "Or point to a **local directory** on disk that contains `SKILL.md` files — great for monorepos." : {
 
@@ -2072,10 +2192,13 @@
     "Project" : {
 
     },
-    "Project Scope" : {
+    "Project Folder" : {
 
     },
-    "Project scope installs into the selected project's CLI skill roots." : {
+    "project scope" : {
+
+    },
+    "Project Scope" : {
 
     },
     "Project skill" : {
@@ -2197,6 +2320,12 @@
           }
         }
       }
+    },
+    "PromptHub needs permission to read and write each agent's config directory. Press **Cmd+Shift+.** in the Finder panel to show hidden folders." : {
+
+    },
+    "PromptHub writes SKILL.md files into each agent's config directory. Next time you open Cursor, Claude Code, or Codex, those skills are already loaded and ready to use." : {
+
     },
     "Prompts created by you" : {
 
@@ -2378,7 +2507,11 @@
         }
       }
     },
+    "Review AI Changes" : {
+
+    },
     "Review Changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2502,6 +2635,9 @@
         }
       }
     },
+    "Select which AI agents should receive this skill." : {
+
+    },
     "Service" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2512,6 +2648,9 @@
         }
       }
     },
+    "Set Up CLI" : {
+
+    },
     "Settings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2521,6 +2660,9 @@
           }
         }
       }
+    },
+    "Setup Progress" : {
+
     },
     "Share" : {
       "localizations" : {
@@ -2813,9 +2955,6 @@
         }
       }
     },
-    "To manage agent skills, PromptHub needs your permission to read and write to specific hidden configuration folders in your Home directory." : {
-
-    },
     "Toggle Diff View" : {
 
     },
@@ -2906,6 +3045,9 @@
         }
       }
     },
+    "Update" : {
+
+    },
     "Update %@" : {
 
     },
@@ -2933,6 +3075,9 @@
 
     },
     "Updating gallery..." : {
+
+    },
+    "Use Discover or My Skills to install a skill, then return here to verify which agents received it." : {
 
     },
     "v%@" : {
@@ -3033,7 +3178,13 @@
         }
       }
     },
+    "Welcome to PromptHub" : {
+
+    },
     "What are Private Sources?" : {
+
+    },
+    "Your AI prompt and skills workspace. Let's get you set up in 4 steps — it only takes a few minutes." : {
 
     }
   },

@@ -8,21 +8,10 @@
 import Foundation
 
 // Represents a single line in the diff output
-enum DiffResult: Hashable, Identifiable {
+enum DiffResult: Hashable {
     case added(String)
     case removed(String)
     case common(String)
-
-    var id: String {
-        switch self {
-        case .added(let line):
-            return "add:\(line.hashValue)"
-        case .removed(let line):
-            return "rem:\(line.hashValue)"
-        case .common(let line):
-            return "com:\(line.hashValue)"
-        }
-    }
 
     var text: String {
         switch self {

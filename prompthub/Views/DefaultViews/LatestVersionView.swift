@@ -37,6 +37,22 @@ struct LatestVersionView: View {
 
     @State private var mainContentHeight: CGFloat?
 
+    private var promptVariables: [String] {
+        let pattern = #"\{\{[^{}]+\}\}"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let text = editablePrompt as NSString
+        let matches = regex.matches(in: editablePrompt, range: NSRange(location: 0, length: text.length))
+        var seen = Set<String>()
+        var ordered: [String] = []
+        for match in matches {
+            let variable = text.substring(with: match.range)
+            if seen.insert(variable).inserted {
+                ordered.append(variable)
+            }
+        }
+        return ordered
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
                 if isShowingDiff {
@@ -49,62 +65,85 @@ struct LatestVersionView: View {
                     )
                     .padding(16)
                 } else {
-                    ZStack(alignment: .bottomTrailing) {
-                        NoScrollBarTextEditor(text: $editablePrompt, font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular), autoScroll: isGenerating)
-                            .frame(minHeight: 300)
-                            .padding(10)
-                            .background(Color(NSColor.textBackgroundColor))
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(borderColor, lineWidth: 1)
-                                    .opacity(0.1)
-                            )
-                            .onChange(of: editablePrompt) { _, newValue in
-                                if !isPreviewingOldVersion && !isShowingDiff {
-                                    latestHistory.promptText = newValue
-                                    latestHistory.updatedAt = Date()
-                                    try? modelContext.save()
-                                    PromptHubBridge.shared.exportPrompt(prompt)
+                    VStack(alignment: .leading, spacing: 14) {
+                        if !promptVariables.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Variables")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.secondary)
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(promptVariables, id: \.self) { variable in
+                                            Text(variable)
+                                                .font(.system(.caption, design: .monospaced))
+                                                .foregroundStyle(.accent)
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(Color.accentColor.opacity(0.08))
+                                                .clipShape(Capsule())
+                                        }
+                                    }
                                 }
                             }
+                        }
 
-                        if isGenerating {
-                            ProgressView()
-                                .scaleEffect(0.7)
-                                .padding(8)
-                                .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
+                        ZStack(alignment: .bottomTrailing) {
+                            NoScrollBarTextEditor(text: $editablePrompt, font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular), autoScroll: isGenerating)
+                                .frame(minHeight: 300)
+                                .padding(10)
+                                .background(Color(NSColor.textBackgroundColor))
                                 .cornerRadius(8)
-                                .padding([.bottom, .trailing], 40)
-                        }
-
-                        // Floating AI Optimize pill button
-                        Button {
-                            Task { await modifyPromptWithOpenAIStreamAndShowDiff() }
-                        } label: {
-                            HStack(spacing: 5) {
-                                Image(systemName: isGenerating ? "ellipsis" : "wand.and.stars")
-                                    .symbolEffect(.pulse, isActive: isGenerating)
-                                    .font(.system(size: 12, weight: .semibold))
-                                Text(isGenerating ? "Optimizing…" : "AI Optimize")
-                                    .font(.system(size: 12, weight: .semibold))
-                            }
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.purple, Color.accentColor],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(borderColor, lineWidth: 1)
+                                        .opacity(0.1)
                                 )
-                            )
-                            .clipShape(Capsule())
-                            .shadow(color: Color.purple.opacity(0.35), radius: 6, x: 0, y: 3)
+                                .onChange(of: editablePrompt) { _, newValue in
+                                    if !isPreviewingOldVersion && !isShowingDiff {
+                                        latestHistory.promptText = newValue
+                                        latestHistory.updatedAt = Date()
+                                        try? modelContext.save()
+                                        PromptHubBridge.shared.exportPrompt(prompt)
+                                    }
+                                }
+
+                            if isGenerating {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                                    .padding(8)
+                                    .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
+                                    .cornerRadius(8)
+                                    .padding([.bottom, .trailing], 40)
+                            }
+
+                            Button {
+                                Task { await modifyPromptWithOpenAIStreamAndShowDiff() }
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Image(systemName: isGenerating ? "ellipsis" : "wand.and.stars")
+                                        .symbolEffect(.pulse, isActive: isGenerating)
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text(isGenerating ? "Optimizing…" : "Optimize with AI")
+                                        .font(.system(size: 12, weight: .semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 7)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.purple, Color.accentColor],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .clipShape(Capsule())
+                                .shadow(color: Color.purple.opacity(0.35), radius: 6, x: 0, y: 3)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isGenerating)
+                            .padding([.bottom, .trailing], 14)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(isGenerating)
-                        .padding([.bottom, .trailing], 14)
                     }
                     .background(Color(NSColor.textBackgroundColor))
                     .cornerRadius(12)
@@ -131,6 +170,11 @@ struct LatestVersionView: View {
         modifiedText = editablePrompt
 
         generateDiff()
+
+        guard originalText != modifiedText, !diffResults.isEmpty else {
+            showToastMsg(msg: "No changes suggested", alertType: .complete(Color.orange))
+            return
+        }
 
         isShowingDiff = true
     }

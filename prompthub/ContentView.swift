@@ -75,7 +75,8 @@ struct ContentView: View {
                             CLIDashboardView()
                         case .onboarding:
                             OnboardingView(onFinish: { promptSelection = .allPrompts },
-                                           onCLI: { promptSelection = .cliDashboard })
+                                           onCLI: { promptSelection = .cliDashboard },
+                                           onSettings: { promptSelection = .settings })
                         case .prompt(let selectedPrompt):
                             PromptDetail(prompt: selectedPrompt, onPromoteToSkill: { skill in promptSelection = .skill(skill) })
                         default:
