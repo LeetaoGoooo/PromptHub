@@ -158,7 +158,7 @@ struct ContentView: View {
             case .mySkills:
                 Button(action: createNewSkillDraft) { Label("New Skill Draft", systemImage: "plus") }
                     .keyboardShortcut("n", modifiers: .command).help("Create a new skill draft (Cmd+N)")
-            case .skillStore, .installedSkills:
+            case .skillStore, .installedSkills, .skill, .settings, .cliDashboard, .onboarding:
                 EmptyView()
             default:
                 Button(action: createNewPrompt) { Label("New Prompt", systemImage: "plus") }
