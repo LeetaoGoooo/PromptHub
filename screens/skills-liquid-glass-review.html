@@ -1,0 +1,3889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptHub Workspace</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --wallpaper-top: #a8c4e8;
+      --wallpaper-bottom: #7aa6d4;
+      --window-bg: rgba(226, 238, 252, 0.46);
+      --sidebar-bg: rgba(206, 222, 244, 0.34);
+      --content-bg: rgba(234, 243, 254, 0.42);
+      --inspector-bg: rgba(214, 228, 248, 0.38);
+      --surface: rgba(255, 255, 255, 0.72);
+      --surface-soft: rgba(255, 255, 255, 0.44);
+      --editor: rgba(250, 251, 253, 0.92);
+      --selection: rgba(54, 94, 208, 0.88);
+      --selection-soft: rgba(54, 94, 208, 0.12);
+      --stroke: rgba(30, 41, 64, 0.10);
+      --stroke-soft: rgba(30, 41, 64, 0.06);
+      --stroke-toolbar: rgba(30, 41, 64, 0.07);
+      --text-0: #1a2232;
+      --text-1: #4e5e78;
+      --text-2: #7e899e;
+      --accent: #3c68d8;
+      --good: #1f7b58;
+      --warn: #9b6619;
+      --danger: #a24a57;
+      --shadow-window: 0 32px 80px rgba(18, 32, 60, 0.28), 0 8px 24px rgba(18, 32, 60, 0.14);
+      --shadow-surface: 0 2px 8px rgba(26, 37, 59, 0.04);
+      --radius-window: 18px;
+      --radius-surface: 10px;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text-0);
+      background:
+        radial-gradient(ellipse at 30% 15%, rgba(190,220,255,0.65), transparent 40%),
+        radial-gradient(ellipse at 80% 80%, rgba(140,190,240,0.50), transparent 40%),
+        linear-gradient(160deg, var(--wallpaper-top) 0%, #91b8da 50%, var(--wallpaper-bottom) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .window {
+      width: min(1480px, 100%);
+      height: min(920px, calc(100vh - 48px));
+      background: var(--window-bg);
+      border-radius: var(--radius-window);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.56);
+      box-shadow:
+        var(--shadow-window),
+        inset 0 1px 0 rgba(255,255,255,0.78),
+        inset 0 -1px 0 rgba(18,32,60,0.06);
+      backdrop-filter: blur(52px) saturate(180%) brightness(1.02);
+      -webkit-backdrop-filter: blur(52px) saturate(180%) brightness(1.02);
+      display: grid;
+      grid-template-rows: 54px 1fr;
+    }
+
+    .titlebar {
+      display: grid;
+      grid-template-columns: 92px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.62), rgba(235,244,255,0.28));
+      border-bottom: 1px solid rgba(255,255,255,0.32);
+      backdrop-filter: blur(56px) saturate(200%) brightness(1.04);
+      -webkit-backdrop-filter: blur(56px) saturate(200%) brightness(1.04);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.36), inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    .traffic {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .traffic span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
+    }
+
+    .traffic .red { background: #ff5f57; }
+    .traffic .yellow { background: #febc2e; }
+    .traffic .green { background: #28c840; }
+
+    .titlebar-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      position: relative;
+    }
+
+    .searchbar,
+    .tool-btn,
+    .kbd,
+    .badge,
+    .toggle {
+      border: 1px solid var(--stroke-toolbar);
+      box-shadow: inset 0 0 0 1px rgba(30, 41, 64, 0.04);
+    }
+
+    .searchbar,
+    .tool-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 7px;
+      background: rgba(255,255,255,0.34);
+      color: var(--text-1);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .app-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+      color: var(--text-1);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .searchbar {
+      color: var(--text-2);
+      justify-content: flex-start;
+      background: rgba(255,255,255,0.36);
+      border-color: rgba(255,255,255,0.6);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.72),
+        0 1px 4px rgba(18,32,60,0.08);
+      backdrop-filter: blur(20px) saturate(150%);
+      -webkit-backdrop-filter: blur(20px) saturate(150%);
+      flex: 0 1 520px;
+      min-width: 280px;
+      cursor: text;
+    }
+    .searchbar:focus-within {
+      background: rgba(255,255,255,0.60);
+      border-color: rgba(60,104,216,0.45);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.80),
+        0 0 0 3px rgba(60,104,216,0.12);
+    }
+
+    .titlebar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      min-height: 30px;
+      padding: 0 12px;
+      background: rgba(255,255,255,0.42);
+      border-color: rgba(255,255,255,0.62);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.78),
+        0 1px 3px rgba(18,32,60,0.06);
+      backdrop-filter: blur(14px) saturate(150%);
+      -webkit-backdrop-filter: blur(14px) saturate(150%);
+      cursor: pointer;
+    }
+
+    .tool-btn.primary {
+      background: rgba(60, 104, 216, 0.96);
+      border-color: rgba(60, 104, 216, 0.96);
+      color: white;
+    }
+
+    .tool-btn.icon-only {
+      width: 30px;
+      justify-content: center;
+      padding: 0;
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      color: var(--text-1);
+    }
+
+    .icon {
+      width: 15px;
+      height: 15px;
+      flex: 0 0 15px;
+      color: currentColor;
+      stroke-width: 1.75;
+    }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr) 272px;
+      background: rgba(240,246,255,0.82);
+    }
+
+    .sidebar,
+    .content,
+    .inspector {
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, rgba(218,232,252,0.48), rgba(205,222,248,0.36));
+      border-right: 1px solid rgba(255,255,255,0.42);
+      padding: 6px 8px 14px;
+      backdrop-filter: blur(44px) saturate(170%) brightness(1.01);
+      -webkit-backdrop-filter: blur(44px) saturate(170%) brightness(1.01);
+      box-shadow: inset -1px 0 0 rgba(18,32,60,0.04);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .inspector {
+      background: rgba(232,242,255,0.72);
+      border-left: 1px solid rgba(200,220,248,0.55);
+      padding: 14px 12px;
+      box-shadow: inset 1px 0 0 rgba(18,32,60,0.04);
+    }
+
+    .sidebar-header {
+      padding: 6px 10px 8px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--stroke-soft);
+    }
+
+    .sidebar-kicker,
+    .section-meta,
+    .document-label,
+    .inspector-title,
+    .note-strip {
+      font-size: 11px;
+      color: var(--text-2);
+    }
+
+    .sidebar-kicker,
+    .section-meta,
+    .document-label,
+    .inspector-title {
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-weight: 700;
+    }
+
+    .sidebar-title {
+      margin-top: 1px;
+      font-size: 15px;
+      font-weight: 670;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-subtitle {
+      display: none;
+    }
+
+    .sidebar-header {
+      display: none;
+    }
+
+    .section-meta {
+      display: none;
+    }
+
+    .section-copy {
+      display: none;
+    }
+
+    .nav-row:not(.active):hover {
+      background: rgba(30, 41, 64, 0.05);
+    }
+
+    .nav-row:not(.active):active {
+      background: rgba(30, 41, 64, 0.08);
+    }
+
+    .sidebar-section { margin-top: 4px; }
+    .sidebar-section:first-child { margin-top: 0; }
+
+    /* CLI block — featured sidebar section */
+    .sidebar-cli-block {
+      margin-top: 8px;
+      padding: 10px 10px 6px;
+      background: rgba(60,104,216,0.07);
+      border: 1px solid rgba(60,104,216,0.18);
+      border-radius: 10px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .cli-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+    .cli-block-title {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+    .cli-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-2);
+    }
+    .cli-status-dot.active {
+      background: var(--good);
+      box-shadow: 0 0 0 2px rgba(31,123,88,0.20);
+    }
+    .cli-block-status {
+      font-size: 11px;
+      color: var(--text-2);
+      padding: 0 2px;
+      margin-bottom: 4px;
+    }
+
+    /* Sidebar footer */
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 10px;
+      padding: 10px 0 2px;
+    }
+    .sidebar-onboarding-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(60,104,216,0.22);
+      background: rgba(60,104,216,0.06);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 590;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .sidebar-onboarding-btn:hover {
+      background: rgba(60,104,216,0.12);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px 4px;
+    }
+
+    .section-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-2);
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 1px;
+    }
+
+    .nav-row {
+      display: grid;
+      grid-template-columns: 16px minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      color: var(--text-1);
+      cursor: pointer;
+    }
+
+    .nav-row.active {
+      background: rgba(60, 104, 216, 0.80);
+      color: white;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.30),
+        0 2px 8px rgba(60, 104, 216, 0.22);
+      backdrop-filter: blur(12px) saturate(160%);
+      -webkit-backdrop-filter: blur(12px) saturate(160%);
+    }
+
+    .nav-meta {
+      min-width: 0;
+    }
+
+    .nav-title {
+      font-size: 13px;
+      font-weight: 590;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-sub {
+      display: none;
+    }
+
+    .row-meta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: rgba(30, 41, 64, 0.06);
+      font-size: 11px;
+      color: var(--text-2);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nav-row.active .row-meta {
+      background: rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.96);
+    }
+
+    .status-tag,
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 20px;
+      padding: 0 8px;
+      border-radius: 6px;
+      background: rgba(30, 41, 64, 0.05);
+      color: var(--text-1);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge {
+      min-width: 24px;
+      justify-self: start;
+      justify-content: center;
+      font-variant-numeric: tabular-nums;
+      width: fit-content;
+    }
+
+    .status-tag.accent { color: var(--accent); }
+    .status-tag.good { color: var(--good); }
+    .status-tag.issue { color: var(--warn); }
+    .status-tag.danger { color: var(--danger); }
+
+    .section-note {
+      display: none;
+    }
+
+    .document {
+      flex: 1;
+      min-height: 0;
+      background: transparent;
+      border-radius: 0;
+      box-shadow: none;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .document-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: start;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--stroke-soft);
+      background: transparent;
+    }
+
+    .document-label {
+      display: none;
+    }
+
+    .document-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .document-title {
+      margin: 0;
+      font-size: 23px;
+      font-weight: 690;
+      letter-spacing: -0.035em;
+    }
+
+    .document-summary {
+      margin-top: 6px;
+      max-width: 68ch;
+      font-size: 12px;
+      line-height: 1.52;
+      color: var(--text-1);
+    }
+
+    .meta-line {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 12px;
+      color: var(--text-2);
+    }
+
+    .meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      padding-top: 8px;
+    }
+
+    .document-body {
+      padding: 0 20px 20px;
+    }
+
+    /* Two-column layout: used for list/table views (all-prompts, etc.) */
+    .document-section {
+      display: grid;
+      grid-template-columns: 170px minmax(0, 1fr);
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--stroke-soft);
+    }
+
+    .document-section:last-child {
+      border-bottom: 0;
+      padding-bottom: 10px;
+    }
+
+    /* Full-width layout: used for document/editor views (prompt detail) */
+    .doc-block {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--stroke-soft);
+      display: grid;
+      gap: 10px;
+    }
+
+    .doc-block:last-child {
+      border-bottom: 0;
+      padding-bottom: 6px;
+    }
+
+    .doc-block-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--text-2);
+    }
+
+    .vars-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 0 4px;
+    }
+
+    .var-chip {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 5px;
+      background: rgba(54, 94, 208, 0.08);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+
+    .version-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .version-row {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) 100px;
+      gap: 10px;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--stroke-soft);
+      font-size: 12px;
+    }
+
+    .version-row:last-child { border-bottom: 0; }
+
+    .version-id {
+      font-weight: 700;
+      color: var(--text-2);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .version-desc {
+      color: var(--text-1);
+      line-height: 1.4;
+    }
+
+    .version-when {
+      color: var(--text-2);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .section-heading {
+      display: grid;
+      gap: 6px;
+      align-content: start;
+    }
+
+    .section-title-large {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--text-0);
+    }
+
+    .section-title-large .icon {
+      color: var(--text-2);
+    }
+
+    .section-copy {
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-2);
+    }
+
+    .section-content {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .table {
+      border: 1px solid rgba(30, 41, 64, 0.06);
+      border-radius: 7px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.22);
+    }
+
+    .table-head,
+    .table-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.3fr) minmax(160px, 1fr) 110px 110px;
+      gap: 14px;
+      align-items: center;
+      padding: 10px 12px;
+    }
+
+    .table-head {
+      background: rgba(255,255,255,0.18);
+      border-bottom: 1px solid var(--stroke-soft);
+      font-size: 11px;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .table-row {
+      font-size: 12px;
+      color: var(--text-1);
+      border-bottom: 1px solid var(--stroke-soft);
+    }
+
+    .table-row:last-child { border-bottom: 0; }
+
+    .table-primary {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .table-primary strong {
+      font-size: 13px;
+      font-weight: 630;
+      color: var(--text-0);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .table-secondary {
+      font-size: 11px;
+      color: var(--text-2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .detail-card {
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(30, 41, 64, 0.06);
+      border-radius: 7px;
+      padding: 12px 13px;
+    }
+
+    .detail-name {
+      font-size: 13px;
+      font-weight: 640;
+      color: var(--text-0);
+    }
+
+    .detail-copy {
+      margin-top: 5px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-1);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .kv-list,
+    .history-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .kv-row,
+    .history-row {
+      display: grid;
+      grid-template-columns: 132px 1fr;
+      gap: 14px;
+      align-items: start;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .inspector-panel .kv-row {
+      grid-template-columns: 100px 1fr;
+      gap: 10px;
+    }
+
+    .kv-label {
+      color: var(--text-2);
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .kv-value {
+      color: var(--text-0);
+    }
+
+    .editor-surface {
+      border-radius: 7px;
+      border: 1px solid rgba(30, 41, 64, 0.06);
+      background: var(--editor);
+      padding: 14px 15px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.62;
+      color: #2d3647;
+      white-space: pre-wrap;
+    }
+
+    /* === AI Optimize floating button === */
+    .editor-wrap {
+      position: relative;
+    }
+    .ai-optimize-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(60,104,216,0.35);
+      background: rgba(60,104,216,0.12);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background 0.15s;
+    }
+    .ai-optimize-btn:hover { background: rgba(60,104,216,0.22); }
+    .ai-optimize-btn img { width: 13px; height: 13px; opacity: 0.85; }
+    .ai-optimize-btn.generating { opacity: 0.6; pointer-events: none; }
+
+    /* === Diff review block === */
+    .diff-review-block {
+      border-radius: 10px;
+      border: 1px solid rgba(60,104,216,0.18);
+      background: rgba(240,246,255,0.7);
+      overflow: hidden;
+    }
+    .diff-review-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(30,41,64,0.07);
+      background: rgba(60,104,216,0.06);
+    }
+    .diff-review-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .diff-review-title img { width: 13px; height: 13px; }
+    .diff-review-actions { display: flex; gap: 6px; }
+    .diff-keep-btn {
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .diff-discard-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(192,57,43,0.3);
+      background: rgba(192,57,43,0.07);
+      color: var(--danger);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .diff-body {
+      padding: 12px 14px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+      color: #2d3647;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .diff-line { display: flex; align-items: flex-start; gap: 6px; border-radius: 3px; padding: 0 4px; }
+    .diff-line.removed { background: rgba(192,57,43,0.08); color: var(--danger); text-decoration: line-through; }
+    .diff-line.added   { background: rgba(31,123,88,0.09); color: var(--good); }
+    .diff-line.context { color: var(--text-2); }
+    .diff-gutter { min-width: 16px; font-size: 10px; font-weight: 700; padding-top: 1px; opacity: 0.7; }
+    .diff-line.removed .diff-gutter { color: var(--danger); }
+    .diff-line.added   .diff-gutter { color: var(--good); }
+    .diff-line-text { white-space: pre-wrap; flex: 1; }
+    .diff-saved-banner {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 14px;
+      background: rgba(31,123,88,0.09);
+      border-radius: 8px;
+      border: 1px solid rgba(31,123,88,0.2);
+      font-size: 12px;
+      color: var(--good);
+      font-weight: 500;
+    }
+    .diff-saved-banner img { width: 14px; height: 14px; }
+
+    /* === CLI workspace scope badges === */
+    .ws-scope-global { background: rgba(31,123,88,0.1); color: var(--good); border: 1px solid rgba(31,123,88,0.2); }
+    .ws-scope-project { background: rgba(60,104,216,0.1); color: var(--accent); border: 1px solid rgba(60,104,216,0.2); }
+
+    .note-strip {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 8px 0 0;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      line-height: 1.45;
+    }
+
+    .inspector-panel {
+      background: transparent;
+      border-radius: 0;
+      border: 0;
+      border-bottom: 1px solid var(--stroke-soft);
+      overflow: hidden;
+      margin-bottom: 0;
+    }
+
+    .inspector-head {
+      padding: 11px 0 10px;
+      border-bottom: 0;
+    }
+
+    .inspector-body {
+      padding: 0 0 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .inspector-number {
+      font-size: 15px;
+      font-weight: 660;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-0);
+    }
+
+    .inspector-copy,
+    .inspector-list {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-1);
+    }
+
+    .inspector-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .inspector-item {
+      display: grid;
+      grid-template-columns: 14px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-0);
+    }
+
+    .toggle-meta {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .toggle-title {
+      font-size: 12px;
+      font-weight: 590;
+      color: var(--text-0);
+    }
+
+    .toggle-subtitle {
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--text-2);
+    }
+
+    .toggle {
+      position: relative;
+      width: 34px;
+      height: 20px;
+      border-radius: 999px;
+      background: rgba(54, 94, 208, 0.92);
+      border-color: rgba(54, 94, 208, 0.78);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+      flex: 0 0 auto;
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 16px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 1px 2px rgba(30, 41, 64, 0.16);
+    }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.84);
+      color: var(--text-1);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    /* ── Prompt grid ── */
+    .prompt-grid-body { overflow-y: auto; flex: 1; padding: 16px 20px 20px; }
+    .grid-section-label { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; margin-top: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-2); }
+    .grid-section-label .icon { color: var(--text-2); }
+    .prompt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: 12px; margin-bottom: 22px; }
+    .prompt-card { display: flex; flex-direction: column; gap: 8px; padding: 13px 14px; border-radius: 10px; background: rgba(255,255,255,0.44); border: 1px solid rgba(30,41,64,0.08); cursor: pointer; user-select: none; transition: background 0.12s, border-color 0.12s; }
+    .prompt-card:hover { background: rgba(54,94,208,0.06); border-color: rgba(54,94,208,0.16); }
+    .prompt-card-head { display: flex; align-items: flex-start; gap: 10px; }
+    .prompt-card-icon { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; background: rgba(54,94,208,0.1); color: var(--accent); }
+    .prompt-card-icon.gallery { background: rgba(30,41,64,0.06); color: var(--text-1); }
+    .prompt-card-icon.shared { background: rgba(31,123,88,0.1); color: var(--good); }
+    .prompt-card-body { flex: 1; min-width: 0; }
+    .prompt-card-name { font-size: 13px; font-weight: 630; color: var(--text-0); line-height: 1.3; }
+    .prompt-card-desc { font-size: 11px; color: var(--text-2); margin-top: 2px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .prompt-card-footer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .prompt-card-time { font-size: 11px; color: var(--text-2); margin-left: auto; }
+
+    /* ── Skill browser split pane ── */
+    .skill-browser { flex: 1; min-height: 0; display: grid; grid-template-columns: 264px minmax(0, 1fr); }
+    .skill-list-pane { border-right: 1px solid var(--stroke-soft); background: rgba(241,244,248,0.4); overflow-y: auto; display: flex; flex-direction: column; }
+    .skill-detail-pane { overflow-y: auto; }
+    .skill-list-group { padding: 6px 6px 2px; }
+    .skill-list-group-label { padding: 5px 8px 3px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-2); position: sticky; top: 0; background: rgba(241,244,248,0.94); backdrop-filter: blur(8px); }
+    .skill-row { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; cursor: pointer; margin: 1px 0; }
+    .skill-row:hover { background: rgba(30,41,64,0.04); }
+    .skill-row.active { background: var(--selection); color: white; }
+    .skill-row-icon { flex: 0 0 14px; color: var(--text-2); }
+    .skill-row.active .skill-row-icon { color: rgba(255,255,255,0.8); }
+    .skill-row-meta { flex: 1; min-width: 0; }
+    .skill-row-name { font-size: 13px; font-weight: 590; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .skill-row-sub { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .skill-row.active .skill-row-sub { color: rgba(255,255,255,0.7); }
+    .skill-install-badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+    .skill-install-badge.installed { background: rgba(31,123,88,0.1); color: var(--good); }
+    .skill-install-badge.partial { background: rgba(155,102,25,0.1); color: var(--warn); }
+    .skill-install-badge.available { background: rgba(30,41,64,0.06); color: var(--text-2); }
+    .skill-row.active .skill-install-badge { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.9); }
+    .skill-private-tip { margin-top: auto; padding: 10px 14px; border-top: 1px solid var(--stroke-soft); font-size: 11px; color: var(--text-2); display: flex; align-items: center; gap: 7px; }
+
+    /* ── Skill detail cards ── */
+    .skill-detail-content { padding: 20px 22px 28px; }
+    .skill-card { background: rgba(255,255,255,0.5); border: 1px solid rgba(30,41,64,0.07); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+    .skill-card-title { font-size: 15px; font-weight: 650; color: var(--text-0); }
+    .skill-card-subtitle { font-size: 12px; color: var(--text-2); margin-top: 3px; line-height: 1.45; margin-bottom: 14px; }
+    .skill-field { margin-bottom: 10px; }
+    .skill-field:last-child { margin-bottom: 0; }
+    .skill-field-label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 3px; }
+    .skill-textfield { width: 100%; padding: 5px 8px; border: 1px solid var(--stroke); border-radius: 5px; background: rgba(255,255,255,0.6); font-size: 12px; color: var(--text-0); font-family: var(--font); }
+    .skill-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .skill-code-editor { width: 100%; min-height: 180px; padding: 12px; border: 1px solid var(--stroke); border-radius: 7px; background: var(--editor); font-family: var(--mono); font-size: 11.5px; line-height: 1.6; color: #2d3647; white-space: pre-wrap; }
+    .skill-code-preview { padding: 12px; border: 1px solid var(--stroke); border-radius: 7px; background: var(--editor); font-family: var(--mono); font-size: 10.5px; line-height: 1.6; color: var(--text-1); white-space: pre; overflow-x: auto; max-height: 200px; overflow-y: auto; }
+    .seg-control { display: flex; border: 1px solid var(--stroke); border-radius: 7px; overflow: hidden; background: rgba(255,255,255,0.4); }
+    .seg-btn { flex: 1; padding: 5px 10px; font-size: 12px; font-weight: 590; border: 0; border-right: 1px solid var(--stroke); background: transparent; cursor: pointer; color: var(--text-1); font-family: var(--font); }
+    .seg-btn:last-child { border-right: 0; }
+    .seg-btn.active { background: rgba(54,94,208,0.12); color: var(--accent); font-weight: 640; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-1); padding: 3px 0; }
+    .checkbox { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid rgba(30,41,64,0.3); background: rgba(255,255,255,0.6); flex: 0 0 14px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; }
+    .checkbox.checked { background: var(--accent); border-color: var(--accent); }
+    .version-card-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--stroke-soft); }
+    .version-card-row:last-child { border-bottom: 0; }
+    .version-card-id { font-size: 12px; font-weight: 700; color: var(--text-2); font-family: var(--mono); min-width: 48px; }
+    .version-card-date { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+    .version-card-body { flex: 1; }
+    .version-card-desc { font-size: 12px; color: var(--text-1); line-height: 1.4; }
+    .version-card-action { font-size: 11px; color: var(--accent); cursor: pointer; white-space: nowrap; }
+
+    /* ── Inspector GroupBox ── */
+    .insp-group { border: 1px solid var(--stroke-soft); border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+    .insp-group-label { padding: 6px 10px 5px; background: rgba(255,255,255,0.18); border-bottom: 1px solid var(--stroke-soft); display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 640; color: var(--text-1); }
+    .insp-group-body { padding: 10px; display: grid; gap: 8px; }
+    .insp-field-label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 2px; }
+    .insp-textfield { width: 100%; padding: 4px 7px; border: 1px solid var(--stroke); border-radius: 5px; background: rgba(255,255,255,0.5); font-size: 12px; color: var(--text-0); font-family: var(--font); }
+    .insp-labeled-content { display: grid; grid-template-columns: 80px 1fr; gap: 6px; font-size: 12px; align-items: baseline; }
+    .insp-labeled-content .label { color: var(--text-2); font-size: 11.5px; }
+    .insp-labeled-content .value { color: var(--text-0); }
+    .insp-divider { height: 1px; background: var(--stroke-soft); }
+
+    /* ── Skill metrics bar ── */
+    .skill-metrics { display: flex; gap: 0; border-bottom: 1px solid var(--stroke-soft); }
+    .skill-metric { flex: 1; display: grid; gap: 1px; padding: 10px 14px; border-right: 1px solid var(--stroke-soft); }
+    .skill-metric:last-child { border-right: 0; }
+    .skill-metric-value { font-size: 20px; font-weight: 660; letter-spacing: -0.03em; color: var(--text-0); font-variant-numeric: tabular-nums; }
+    .skill-metric-label { font-size: 11px; color: var(--text-2); }
+
+    /* ── Skill accessory bar ── */
+    .skill-accessory { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--stroke-soft); background: rgba(255,255,255,0.12); }
+
+    /* ── Prompt detail header (editable) ── */
+    .prompt-title-field { font-size: 26px; font-weight: 690; letter-spacing: -0.03em; color: var(--text-0); border: 0; background: transparent; width: 100%; font-family: var(--font); outline: none; padding: 0; }
+    .prompt-desc-field { font-size: 12.5px; color: var(--text-1); border: 0; background: transparent; width: 100%; font-family: var(--font); outline: none; padding: 0; margin-top: 4px; }
+
+    @media (max-width: 1260px) {
+      .workspace { grid-template-columns: 242px minmax(0, 1fr); }
+      .inspector { display: none; }
+    }
+
+    @media (max-width: 920px) {
+      body { padding: 10px; }
+
+      .window {
+        height: auto;
+        min-height: calc(100vh - 20px);
+      }
+
+      .titlebar {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .titlebar-center {
+        grid-template-columns: 1fr;
+        justify-content: stretch;
+      }
+
+      .workspace { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--stroke-soft); }
+      .document-header { grid-template-columns: 1fr; }
+      .header-actions { justify-content: flex-start; padding-top: 0; }
+      .document-section { grid-template-columns: 1fr; gap: 10px; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .kv-row,
+      .history-row { grid-template-columns: 1fr; gap: 4px; }
+      .table-head,
+      .table-row { grid-template-columns: 1fr; gap: 4px; }
+    }
+
+    /* ── Settings Modal ─────────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(14, 24, 48, 0.28);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .settings-modal {
+      width: 660px; max-width: 94vw;
+      background: rgba(224, 237, 254, 0.72);
+      border: 1px solid rgba(255,255,255,0.70);
+      border-radius: 18px;
+      box-shadow:
+        0 32px 90px rgba(14,24,60,0.28),
+        0 8px 24px rgba(14,24,60,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.90);
+      backdrop-filter: blur(52px) saturate(180%) brightness(1.04);
+      -webkit-backdrop-filter: blur(52px) saturate(180%) brightness(1.04);
+      display: flex; flex-direction: column;
+      max-height: 82vh;
+      transform: scale(0.96); transition: transform 0.18s ease;
+    }
+    .modal-overlay.open .settings-modal { transform: scale(1); }
+
+    /* ── CLI Integration Status Checklist ──────────────────────────────── */
+    .cli-todo-list { display: flex; flex-direction: column; }
+    .cli-todo-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--stroke-soft);
+    }
+    .cli-todo-item:last-child { border-bottom: none; }
+    .cli-todo-icon {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; flex-shrink: 0; margin-top: 1px;
+      transition: background 0.2s;
+    }
+    .cli-todo-item.done .cli-todo-icon {
+      background: rgba(31, 123, 88, 0.14);
+      color: var(--good);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+    }
+    .cli-todo-item.pending .cli-todo-icon {
+      background: rgba(30, 41, 64, 0.07);
+      color: var(--text-2);
+      font-size: 14px; font-weight: 400;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+    .cli-todo-body { flex: 1; min-width: 0; }
+    .cli-todo-title { font-size: 13px; font-weight: 590; line-height: 1.3; }
+    .cli-todo-item.done .cli-todo-title { color: var(--text-0); }
+    .cli-todo-item.pending .cli-todo-title { color: var(--text-1); }
+    .cli-todo-agents {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px;
+    }
+    .cli-todo-chip {
+      font-size: 10px; font-weight: 600; padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .cli-todo-item.done .cli-todo-chip {
+      background: rgba(31, 123, 88, 0.10);
+      color: var(--good);
+      border: 1px solid rgba(31,123,88,0.18);
+    }
+    .cli-todo-item.pending .cli-todo-chip {
+      background: rgba(30,41,64,0.06);
+      color: var(--text-2);
+      border: 1px solid rgba(30,41,64,0.10);
+    }
+    .cli-todo-list { display: flex; flex-direction: column; }
+    .cli-todo-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--stroke-soft);
+    }
+    .cli-todo-item:last-child { border-bottom: none; }
+    .cli-todo-icon {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; flex-shrink: 0; margin-top: 1px;
+      transition: background 0.2s;
+    }
+    .cli-todo-item.done .cli-todo-icon {
+      background: rgba(31, 123, 88, 0.14);
+      color: var(--good);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+    }
+    .cli-todo-item.pending .cli-todo-icon {
+      background: rgba(30, 41, 64, 0.07);
+      color: var(--text-2);
+      font-size: 14px; font-weight: 400;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+    .cli-todo-body { flex: 1; min-width: 0; }
+    .cli-todo-title { font-size: 13px; font-weight: 590; line-height: 1.3; }
+    .cli-todo-desc { font-size: 11px; color: var(--text-2); margin-top: 2px; line-height: 1.4; }
+    .cli-todo-item.done .cli-todo-title { color: var(--text-0); }
+    .cli-todo-item.pending .cli-todo-title { color: var(--text-1); }
+    .cli-todo-agents {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px;
+    }
+    .cli-todo-chip {
+      font-size: 10px; font-weight: 600; padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .cli-todo-item.done .cli-todo-chip {
+      background: rgba(31, 123, 88, 0.10);
+      color: var(--good);
+      border: 1px solid rgba(31,123,88,0.18);
+    }
+    .cli-todo-item.pending .cli-todo-chip {
+      background: rgba(30,41,64,0.06);
+      color: var(--text-2);
+      border: 1px solid rgba(30,41,64,0.10);
+    }
+
+    /* CLI Dashboard */
+    .cli-dashboard-body {
+      padding: 20px 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .cli-howto-banner {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 16px;
+      align-items: start;
+      background: rgba(60,104,216,0.07);
+      border: 1px solid rgba(60,104,216,0.18);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .cli-howto-icon {
+      width: 44px; height: 44px;
+      background: rgba(60,104,216,0.12);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent);
+    }
+    .cli-howto-title { font-size: 14px; font-weight: 650; color: var(--text-0); margin-bottom: 4px; }
+    .cli-howto-desc { font-size: 12px; color: var(--text-1); line-height: 1.5; }
+    .cli-howto-desc code { background: rgba(30,41,64,0.08); border-radius: 4px; padding: 1px 5px; font-family: var(--mono); font-size: 11px; }
+    .cli-howto-cmds {
+      display: flex; flex-direction: column; gap: 6px; min-width: 320px;
+    }
+    .cli-cmd-row { display: flex; align-items: center; gap: 10px; }
+    .cli-cmd-label { font-size: 10px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; width: 68px; flex-shrink: 0; }
+    .cli-cmd { display: block; background: rgba(18,28,52,0.08); border-radius: 6px; padding: 5px 10px; font-family: var(--mono); font-size: 11.5px; color: var(--text-0); border: 1px solid rgba(30,41,64,0.10); }
+    .cli-section-head { font-size: 12px; font-weight: 700; color: var(--text-1); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+    .cli-workspace-list { display: flex; flex-direction: column; gap: 10px; }
+    .cli-workspace-card {
+      background: rgba(255,255,255,0.58);
+      border: 1px solid rgba(200,218,248,0.7);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cli-workspace-card.active {
+      border-color: rgba(60,104,216,0.30);
+      background: rgba(60,104,216,0.04);
+    }
+    .cli-ws-header { display: flex; align-items: flex-start; justify-content: space-between; }
+    .cli-ws-name { font-size: 14px; font-weight: 650; color: var(--text-0); }
+    .cli-ws-path { font-size: 11px; color: var(--text-2); font-family: var(--mono); margin-top: 2px; }
+    .cli-ws-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .cli-ws-badge.good { background: rgba(31,123,88,0.10); color: var(--good); border: 1px solid rgba(31,123,88,0.18); }
+    .cli-ws-badge.accent { background: rgba(60,104,216,0.10); color: var(--accent); border: 1px solid rgba(60,104,216,0.18); }
+    .cli-ws-meta { display: flex; gap: 12px; }
+    .cli-ws-stat { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-2); }
+    .cli-ws-skills { display: flex; flex-wrap: wrap; gap: 5px; }
+    .skill-chip { font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 999px; background: rgba(30,41,64,0.06); color: var(--text-1); border: 1px solid rgba(30,41,64,0.09); }
+    .cli-activity-list { display: flex; flex-direction: column; gap: 6px; }
+    .cli-activity-row {
+      display: grid;
+      grid-template-columns: 26px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(200,218,248,0.60);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+    .cli-activity-icon {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .cli-activity-icon.success { background: rgba(31,123,88,0.12); color: var(--good); }
+    .cli-activity-icon.warn { background: rgba(190,120,0,0.12); color: var(--warn); }
+    .cli-activity-content { flex: 1; min-width: 0; }
+    .cli-activity-cmd { font-size: 12.5px; font-weight: 500; color: var(--text-0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cli-activity-cmd code { font-family: var(--mono); font-size: 11.5px; color: var(--text-0); }
+    .cli-activity-meta { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+    .cli-activity-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .cli-activity-badge.good { background: rgba(31,123,88,0.10); color: var(--good); border: 1px solid rgba(31,123,88,0.18); }
+    .cli-activity-badge.warn { background: rgba(190,120,0,0.10); color: var(--warn); border: 1px solid rgba(190,120,0,0.20); }
+
+    /* Onboarding view */
+    .onboarding-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+      padding: 40px 24px;
+      gap: 32px;
+    }
+    .onboarding-hero {
+      text-align: center;
+      max-width: 480px;
+    }
+    .onboarding-logo {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, #3c68d8, #5b8ef5);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 24px rgba(60,104,216,0.32), inset 0 1px 0 rgba(255,255,255,0.35);
+      color: white;
+    }
+    .onboarding-title { font-size: 26px; font-weight: 760; color: var(--text-0); margin-bottom: 8px; letter-spacing: -0.3px; }
+    .onboarding-sub { font-size: 14px; color: var(--text-1); line-height: 1.6; }
+    .onboarding-steps {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 680px;
+    }
+    .onboarding-step {
+      background: rgba(255,255,255,0.70);
+      border: 1px solid rgba(200,218,248,0.75);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .onboarding-step:hover { background: rgba(255,255,255,0.90); border-color: rgba(60,104,216,0.30); }
+    .onboarding-step.done { border-color: rgba(31,123,88,0.28); background: rgba(31,123,88,0.04); }
+    .onboarding-step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      background: rgba(60,104,216,0.10); color: var(--accent);
+    }
+    .onboarding-step.done .onboarding-step-num {
+      background: rgba(31,123,88,0.14); color: var(--good);
+    }
+    .onboarding-step-title { font-size: 14px; font-weight: 650; color: var(--text-0); }
+    .onboarding-step-desc { font-size: 12px; color: var(--text-1); line-height: 1.5; }
+    .onboarding-step-cta {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 4px;
+    }
+    .onboarding-step.done .onboarding-step-cta { color: var(--good); }
+    .onboarding-actions { display: flex; gap: 10px; }
+
+    .settings-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 0;
+    }
+    .settings-modal-title { font-size: 14px; font-weight: 620; color: var(--text-0); }
+    .modal-close-btn {
+      width: 22px; height: 22px; border-radius: 50%; border: none;
+      background: rgba(128,128,128,0.2); color: var(--text-2);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; line-height: 1; transition: background 0.12s;
+    }
+    .modal-close-btn:hover { background: rgba(128,128,128,0.35); }
+    .settings-tabs {
+      display: flex; gap: 2px; padding: 12px 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-tab-btn {
+      padding: 6px 14px; border: none; background: none;
+      color: var(--text-2); font-size: 12px; font-weight: 500;
+      cursor: pointer; border-radius: 7px 7px 0 0;
+      border-bottom: 2px solid transparent; transition: all 0.12s;
+    }
+    .settings-tab-btn:hover { color: var(--text-0); background: rgba(128,128,128,0.08); }
+    .settings-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: none; }
+    .settings-tab-content {
+      flex: 1; overflow-y: auto;
+      padding: 20px 22px 24px;
+      display: none;
+    }
+    .settings-tab-content.active { display: block; }
+    .settings-section { margin-bottom: 22px; }
+    .settings-section-title {
+      font-size: 11px; font-weight: 620; color: var(--text-2);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+    }
+    .settings-card {
+      background: rgba(128,128,128,0.07);
+      border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .settings-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-meta { flex: 1; }
+    .settings-row-label { font-size: 13px; font-weight: 500; color: var(--text-0); }
+    .settings-row-desc { font-size: 11px; color: var(--text-2); margin-top: 1px; }
+    .settings-row-ctrl { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+    .toggle-switch {
+      width: 36px; height: 20px; border-radius: 10px;
+      background: var(--accent); border: none; cursor: pointer;
+      position: relative; transition: background 0.15s;
+    }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 2px; right: 2px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: white; transition: all 0.15s;
+    }
+    .toggle-switch.off { background: rgba(128,128,128,0.3); }
+    .toggle-switch.off::after { right: auto; left: 2px; }
+    .kbd-chip {
+      font-family: 'SF Mono', monospace; font-size: 11px;
+      background: rgba(128,128,128,0.15); border: 1px solid var(--border);
+      border-radius: 5px; padding: 2px 7px; color: var(--text-1);
+    }
+    .service-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .service-chip {
+      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border); background: rgba(128,128,128,0.08);
+      color: var(--text-1); cursor: pointer; transition: all 0.12s;
+    }
+    .service-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .service-form { display: flex; flex-direction: column; gap: 12px; }
+    .service-field label {
+      font-size: 11px; font-weight: 620; color: var(--text-2);
+      text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;
+    }
+    .service-field .insp-textfield { width: 100%; box-sizing: border-box; }
+    .sources-callout {
+      background: rgba(160,100,220,0.07); border: 1px solid rgba(160,100,220,0.18);
+      border-radius: 10px; padding: 14px; margin-bottom: 16px;
+    }
+    .sources-callout-title {
+      font-size: 13px; font-weight: 620; color: var(--text-0); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sources-tip {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12px; color: var(--text-1); line-height: 1.55; margin-bottom: 6px;
+    }
+    .sources-tip-icon { flex-shrink: 0; color: var(--text-2); margin-top: 1px; }
+    .cli-step {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 16px 0; border-bottom: 1px solid var(--border);
+    }
+    .cli-step:last-child { border-bottom: none; }
+    .cli-step-num {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      background: var(--accent); color: #fff; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; margin-top: 2px;
+    }
+    .cli-step-body { flex: 1; }
+    .cli-step-title { font-size: 13px; font-weight: 620; color: var(--text-0); margin-bottom: 4px; }
+    .cli-step-desc { font-size: 12px; color: var(--text-2); line-height: 1.55; margin-bottom: 10px; }
+    .cli-code {
+      font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 12px;
+      background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 13px; color: #b3e0b3; line-height: 1.7;
+      white-space: pre; overflow-x: auto; display: block; margin-bottom: 0;
+    }
+    .cli-code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.18); border: 1px solid var(--border);
+      border-bottom: none; border-radius: 8px 8px 0 0; padding: 5px 12px;
+      font-size: 10px; color: var(--text-2); font-family: 'SF Mono', monospace;
+    }
+    .cli-code-header + .cli-code { border-radius: 0 0 8px 8px; }
+    .cli-copy-btn {
+      padding: 2px 8px; border-radius: 5px; border: 1px solid var(--border);
+      background: rgba(128,128,128,0.15); color: var(--text-2);
+      font-size: 10px; cursor: pointer; transition: background 0.12s;
+    }
+    .cli-copy-btn:hover { background: rgba(128,128,128,0.28); color: var(--text-0); }
+    .cli-agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .cli-agent-row {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border-radius: 8px; background: rgba(128,128,128,0.06); border: 1px solid var(--border);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .cli-agent-row:hover { background: rgba(128,128,128,0.12); }
+    .cli-agent-info { flex: 1; min-width: 0; }
+    .cli-agent-name { font-size: 12px; font-weight: 500; color: var(--text-1); }
+    .cli-agent-path { font-size: 10px; color: var(--text-2); font-family: 'SF Mono', monospace; margin-top: 1px; }
+    .cli-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .cli-status-dot.granted { background: var(--good); }
+    .cli-status-dot.pending { background: rgba(128,128,128,0.35); }
+    .about-center { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0 8px; }
+    .about-logo {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: linear-gradient(135deg, #4a7ec8 0%, #2d5fa8 100%);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 4px;
+      box-shadow: 0 4px 16px rgba(60,104,216,0.30), inset 0 1px 0 rgba(255,255,255,0.28);
+    }
+    .about-app-name { font-size: 22px; font-weight: 700; color: var(--text-0); letter-spacing: -0.02em; }
+    .about-version { font-size: 13px; color: var(--text-2); }
+    .about-copy { font-size: 12px; color: var(--text-2); }
+    .about-links { display: flex; gap: 16px; margin-top: 6px; }
+    .about-link { font-size: 12px; color: var(--accent); text-decoration: none; cursor: pointer; }
+    .about-link:hover { text-decoration: underline; }
+    .about-communities { display: flex; gap: 10px; margin-top: 10px; }
+    .community-chip {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px;
+      border: 1px solid var(--border); background: rgba(128,128,128,0.07);
+      color: var(--text-1); cursor: pointer; text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <header class="titlebar">
+      <div class="traffic" aria-hidden="true">
+        <span class="red"></span>
+        <span class="yellow"></span>
+        <span class="green"></span>
+      </div>
+
+      <div class="titlebar-center">
+        <div class="searchbar" id="searchbarWrap">
+          <span id="searchIconEl" style="display:flex;align-items:center;flex-shrink:0;"></span>
+          <input type="text" id="searchInput" autocomplete="off" spellcheck="false"
+            placeholder="Search prompts, skills, tags, or actions"
+            style="flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:12px;color:var(--text-0);min-width:0;"
+          />
+          <kbd id="searchKbd" style="display:inline-flex;align-items:center;font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(30,41,64,0.07);color:var(--text-2);border:1px solid rgba(30,41,64,0.10);white-space:nowrap;pointer-events:none;">⌥ Space</kbd>
+        </div>
+      </div>
+
+      <div class="titlebar-actions">
+        <button class="tool-btn icon-only" id="settingsButton" aria-label="Settings"></button>
+        <button class="tool-btn icon-only" id="inspectorButton" aria-label="Toggle Inspector"></button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="content" id="main"></main>
+      <aside class="inspector" id="inspector"></aside>
+    </div>
+  </div>
+  <div id="searchDropdown" style="position:fixed;top:58px;left:50%;transform:translateX(-50%);width:560px;max-width:92vw;background:#dce9fc;border:1px solid rgba(255,255,255,0.82);border-radius:14px;box-shadow:0 20px 56px rgba(14,24,60,0.28),inset 0 1px 0 rgba(255,255,255,0.90);z-index:9000;display:none;overflow:hidden;max-height:420px;overflow-y:auto;padding-bottom:6px;"></div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsOverlay">
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Settings">
+      <div class="settings-modal-header">
+        <span class="settings-modal-title">Settings</span>
+        <button class="modal-close-btn" id="settingsClose" aria-label="Close">×</button>
+      </div>
+      <div class="settings-tabs">
+        <button class="settings-tab-btn active" data-tab="general">General</button>
+        <button class="settings-tab-btn" data-tab="ai-service">AI Service</button>
+        <button class="settings-tab-btn" data-tab="sources">Private Sources</button>
+        <button class="settings-tab-btn" data-tab="cli">CLI &amp; Integration</button>
+        <button class="settings-tab-btn" data-tab="about">About</button>
+      </div>
+
+      <!-- General Tab -->
+      <div class="settings-tab-content active" id="tab-general">
+        <div class="settings-section">
+          <div class="settings-section-title">Startup</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-meta">
+                <div class="settings-row-label">Launch at Login</div>
+                <div class="settings-row-desc">Start PromptHub automatically when you log in.</div>
+              </div>
+              <div class="settings-row-ctrl">
+                <button class="toggle-switch" data-toggle="launch-login" aria-label="Launch at login"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Keyboard Shortcuts</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-meta">
+                <div class="settings-row-label">Quick Search</div>
+                <div class="settings-row-desc">Search prompts from anywhere on your Mac.</div>
+              </div>
+              <div class="settings-row-ctrl">
+                <span class="kbd-chip">⌥ Space</span>
+                <button class="tool-btn" style="font-size:11px;padding:3px 9px;">Change…</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-meta">
+                <div class="settings-row-label">New Prompt</div>
+                <div class="settings-row-desc">Open a new prompt editor from any app.</div>
+              </div>
+              <div class="settings-row-ctrl">
+                <span class="kbd-chip">⌥ N</span>
+                <button class="tool-btn" style="font-size:11px;padding:3px 9px;">Change…</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Prompt Template</div>
+          <div class="settings-card">
+            <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+              <div class="settings-row-label">Default Render Template</div>
+              <div class="settings-row-desc">Used when rendering prompts. Supports <code>{{variables}}</code>.</div>
+              <textarea class="skill-code-editor" style="min-height:80px;font-family:'SF Mono',monospace;font-size:11px;">{{prompt}}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Service Tab -->
+      <div class="settings-tab-content" id="tab-ai-service">
+        <div class="settings-section">
+          <div class="settings-section-title">Active Service</div>
+          <div class="service-picker" id="servicePicker">
+            <button class="service-chip active" data-service="openai">OpenAI</button>
+            <button class="service-chip" data-service="anthropic">Anthropic</button>
+            <button class="service-chip" data-service="ollama">Ollama</button>
+            <button class="service-chip" data-service="mistral">Mistral</button>
+            <button class="service-chip" data-service="perplexity">Perplexity</button>
+            <button class="service-chip" data-service="custom">Custom</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Service Configuration</div>
+          <div class="settings-card" style="padding:14px;">
+            <div class="service-form" id="serviceForm">
+              <div class="service-field">
+                <label>Host</label>
+                <input class="insp-textfield" type="text" id="svc-host" value="https://api.openai.com/v1" placeholder="https://api.openai.com/v1" />
+              </div>
+              <div class="service-field">
+                <label>Token</label>
+                <div style="display:flex;gap:8px;">
+                  <input class="insp-textfield" type="password" id="svc-token" value="sk-••••••••••••••••••" placeholder="sk-..." style="flex:1;" />
+                  <button class="tool-btn icon-only" title="Show/hide token" id="tokenToggle"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="8" rx="5.5" ry="3.5"/><circle cx="8" cy="8" r="1.6"/></svg></button>
+                </div>
+              </div>
+              <div class="service-field">
+                <label>Preferred Model</label>
+                <div style="display:flex;gap:8px;">
+                  <input class="insp-textfield" type="text" id="svc-model" value="gpt-4o" placeholder="gpt-4o" style="flex:1;" />
+                  <button class="tool-btn" style="font-size:11px;padding:4px 10px;">Load Models</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Saved Services</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-meta"><div class="settings-row-label">OpenAI</div><div class="settings-row-desc">gpt-4o · api.openai.com</div></div>
+              <div class="settings-row-ctrl"><span class="status-tag good">Active</span></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-meta"><div class="settings-row-label">Ollama (local)</div><div class="settings-row-desc">llama3.1:8b · localhost:11434</div></div>
+              <div class="settings-row-ctrl"><span class="status-tag">Configured</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Private Sources Tab -->
+      <div class="settings-tab-content" id="tab-sources">
+        <div class="sources-callout">
+          <div class="sources-callout-title">🔒 What are Private Sources?</div>
+          <div class="sources-tip">
+            <span class="sources-tip-icon">🏢</span>
+            <span>Connect a <strong>private GitHub repo</strong> (e.g. <code>owner/repo</code> containing <code>SKILL.md</code> files) to install your team's internal skills.</span>
+          </div>
+          <div class="sources-tip">
+            <span class="sources-tip-icon">📁</span>
+            <span>Or point to a <strong>local directory</strong> on disk that contains <code>SKILL.md</code> files — ideal for monorepos.</span>
+          </div>
+          <div class="sources-tip">
+            <span class="sources-tip-icon">🔑</span>
+            <span>GitHub private repos require a <strong>Personal Access Token</strong> with <code>repo</code> (read) scope. Tokens are stored in the macOS Keychain.</span>
+          </div>
+          <div class="sources-tip">
+            <span class="sources-tip-icon">⬇</span>
+            <span>Once added, install skills from private sources via <strong>Skill Store → Import…</strong></span>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="settings-section-title" style="margin-bottom:0;">Private Skill Sources</div>
+            <button class="tool-btn" style="font-size:11px;padding:4px 10px;">+ Add Source…</button>
+          </div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-meta">
+                <div class="settings-row-label">acme-corp/agent-skills</div>
+                <div class="settings-row-desc">GitHub · Private · Token stored in Keychain</div>
+              </div>
+              <div class="settings-row-ctrl">
+                <span class="status-tag good">Accessible</span>
+                <button class="tool-btn" style="font-size:11px;padding:3px 8px;">Edit</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-meta">
+                <div class="settings-row-label">~/repos/platform-skills</div>
+                <div class="settings-row-desc">Local directory · 12 SKILL.md files found</div>
+              </div>
+              <div class="settings-row-ctrl">
+                <span class="status-tag good">Accessible</span>
+                <button class="tool-btn" style="font-size:11px;padding:3px 8px;">Edit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLI & Integration Tab -->
+      <div class="settings-tab-content" id="tab-cli">
+        <div class="settings-section">
+          <div class="settings-section-title">PromptHub CLI</div>
+          <div style="font-size:13px;color:var(--text-1);line-height:1.6;margin-bottom:18px;">
+            The PromptHub CLI bridges the app with your AI agents (Claude Code, Cursor, Codex, and more). 
+            It reads and writes <code>SKILL.md</code> files in each agent's configuration directory, keeping your installed skills in sync without manual file management.
+          </div>
+          <div class="settings-card" style="padding:0 14px;">
+            <div class="cli-step">
+              <div class="cli-step-num">1</div>
+              <div class="cli-step-body">
+                <div class="cli-step-title">Install via Homebrew <span style="font-size:11px;color:var(--text-2);font-weight:400;margin-left:6px;">Recommended</span></div>
+                <div class="cli-step-desc">Install the PromptHub CLI with one command. Requires <a class="about-link" href="#">Homebrew</a> (brew.sh).</div>
+                <div class="cli-code-header">
+                  <span>Terminal</span>
+                  <button class="cli-copy-btn" onclick="navigator.clipboard.writeText('brew install prompthub/tap/prompthub-cli')">Copy</button>
+                </div>
+                <code class="cli-code">brew install prompthub/tap/prompthub-cli</code>
+              </div>
+            </div>
+            <div class="cli-step">
+              <div class="cli-step-num">2</div>
+              <div class="cli-step-body">
+                <div class="cli-step-title">Manual install <span style="font-size:11px;color:var(--text-2);font-weight:400;margin-left:6px;">Alternative</span></div>
+                <div class="cli-step-desc">Download the binary directly and move it into your PATH.</div>
+                <div class="cli-code-header">
+                  <span>Terminal</span>
+                  <button class="cli-copy-btn" onclick="navigator.clipboard.writeText('curl -fsSL https://prompthub.app/install.sh | sh')">Copy</button>
+                </div>
+                <code class="cli-code">curl -fsSL https://prompthub.app/install.sh | sh</code>
+              </div>
+            </div>
+            <div class="cli-step">
+              <div class="cli-step-num">3</div>
+              <div class="cli-step-body">
+                <div class="cli-step-title">Verify installation</div>
+                <div class="cli-step-desc">Confirm the CLI is on your PATH and shows the expected version.</div>
+                <div class="cli-code-header">
+                  <span>Terminal</span>
+                  <button class="cli-copy-btn" onclick="navigator.clipboard.writeText('prompthub --version')">Copy</button>
+                </div>
+                <code class="cli-code">prompthub --version
+# prompthub-cli 1.4.2 (darwin/arm64)</code>
+              </div>
+            </div>
+            <div class="cli-step">
+              <div class="cli-step-num">4</div>
+              <div class="cli-step-body">
+                <div class="cli-step-title">Grant file access for your agents</div>
+                <div class="cli-step-desc">PromptHub needs your permission to read and write each agent's hidden configuration folder. Click <strong>Grant Access</strong> for the agents you use. Permissions are stored as macOS security-scoped bookmarks.</div>
+                <div class="cli-agent-grid">
+                  <div class="cli-agent-row" data-agent="agents">
+                    <div class="cli-status-dot granted"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">PromptHub (.agents)</div>
+                      <div class="cli-agent-path">~/.agents</div>
+                    </div>
+                    <span class="status-tag good" style="font-size:10px;padding:2px 7px;">Granted</span>
+                  </div>
+                  <div class="cli-agent-row" data-agent="claude">
+                    <div class="cli-status-dot granted"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">Claude Code</div>
+                      <div class="cli-agent-path">~/.claude</div>
+                    </div>
+                    <span class="status-tag good" style="font-size:10px;padding:2px 7px;">Granted</span>
+                  </div>
+                  <div class="cli-agent-row" data-agent="codex">
+                    <div class="cli-status-dot granted"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">Codex</div>
+                      <div class="cli-agent-path">~/.codex</div>
+                    </div>
+                    <span class="status-tag good" style="font-size:10px;padding:2px 7px;">Granted</span>
+                  </div>
+                  <div class="cli-agent-row" data-agent="cursor">
+                    <div class="cli-status-dot granted"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">Cursor</div>
+                      <div class="cli-agent-path">~/.cursor</div>
+                    </div>
+                    <span class="status-tag good" style="font-size:10px;padding:2px 7px;">Granted</span>
+                  </div>
+                  <div class="cli-agent-row" data-agent="gemini">
+                    <div class="cli-status-dot pending"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">Gemini CLI</div>
+                      <div class="cli-agent-path">~/.gemini</div>
+                    </div>
+                    <button class="tool-btn" style="font-size:10px;padding:2px 8px;">Grant</button>
+                  </div>
+                  <div class="cli-agent-row" data-agent="opencode">
+                    <div class="cli-status-dot pending"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">OpenCode</div>
+                      <div class="cli-agent-path">~/.config/opencode</div>
+                    </div>
+                    <button class="tool-btn" style="font-size:10px;padding:2px 8px;">Grant</button>
+                  </div>
+                  <div class="cli-agent-row" data-agent="qoder">
+                    <div class="cli-status-dot pending"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">Qoder</div>
+                      <div class="cli-agent-path">~/.qoder</div>
+                    </div>
+                    <button class="tool-btn" style="font-size:10px;padding:2px 8px;">Grant</button>
+                  </div>
+                  <div class="cli-agent-row" data-agent="iflow">
+                    <div class="cli-status-dot pending"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">iFlow CLI</div>
+                      <div class="cli-agent-path">~/.iflow</div>
+                    </div>
+                    <button class="tool-btn" style="font-size:10px;padding:2px 8px;">Grant</button>
+                  </div>
+                  <div class="cli-agent-row" data-agent="qwen">
+                    <div class="cli-status-dot pending"></div>
+                    <div class="cli-agent-info">
+                      <div class="cli-agent-name">Qwen</div>
+                      <div class="cli-agent-path">~/.qwen</div>
+                    </div>
+                    <button class="tool-btn" style="font-size:10px;padding:2px 8px;">Grant</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="cli-step">
+              <div class="cli-step-num">5</div>
+              <div class="cli-step-body">
+                <div class="cli-step-title">Test connection</div>
+                <div class="cli-step-desc">Verify the CLI can reach PromptHub's local socket and list installed skills.</div>
+                <div class="cli-code-header">
+                  <span>Terminal</span>
+                  <button class="cli-copy-btn" onclick="navigator.clipboard.writeText('prompthub skills list')">Copy</button>
+                </div>
+                <code class="cli-code">prompthub skills list
+# ✓ Connected to PromptHub (v1.4.2)
+# Project scope: 9 skills
+# Global scope:  5 skills</code>
+                <button class="tool-btn" style="margin-top:10px;font-size:12px;" id="testCliBtn">Run Check Now</button>
+                <div id="cliCheckResult" style="display:none;margin-top:8px;font-size:12px;color:var(--good);display:flex;align-items:center;gap:6px;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Integration Status</div>
+          <div class="settings-card" style="padding:0;overflow:hidden;">
+            <div class="cli-todo-list" id="cliStatusList">
+              <div class="cli-todo-item done">
+                <div class="cli-todo-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2 6.8-6.8"/></svg></div>
+                <div class="cli-todo-body">
+                  <div class="cli-todo-title">CLI Installed</div>
+                  <div class="cli-todo-agents">
+                    <span class="cli-todo-chip">prompthub-cli 1.4.2</span>
+                    <span class="cli-todo-chip">darwin/arm64</span>
+                  </div>
+                </div>
+              </div>
+              <div class="cli-todo-item done">
+                <div class="cli-todo-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2 6.8-6.8"/></svg></div>
+                <div class="cli-todo-body">
+                  <div class="cli-todo-title">App Socket Connected</div>
+                  <div class="cli-todo-agents">
+                    <span class="cli-todo-chip">PromptHub v1.4.2 running</span>
+                  </div>
+                </div>
+              </div>
+              <div class="cli-todo-item done" id="cliGrantedRow">
+                <div class="cli-todo-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2 6.8-6.8"/></svg></div>
+                <div class="cli-todo-body">
+                  <div class="cli-todo-title">4 agents granted access</div>
+                  <div class="cli-todo-agents">
+                    <span class="cli-todo-chip">PromptHub</span>
+                    <span class="cli-todo-chip">Claude Code</span>
+                    <span class="cli-todo-chip">Codex</span>
+                    <span class="cli-todo-chip">Cursor</span>
+                  </div>
+                </div>
+              </div>
+              <div class="cli-todo-item pending" id="cliPendingRow">
+                <div class="cli-todo-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"/></svg></div>
+                <div class="cli-todo-body">
+                  <div class="cli-todo-title">5 agents pending</div>
+                  <div class="cli-todo-agents">
+                    <span class="cli-todo-chip">Gemini CLI</span>
+                    <span class="cli-todo-chip">OpenCode</span>
+                    <span class="cli-todo-chip">Qoder</span>
+                    <span class="cli-todo-chip">iFlow</span>
+                    <span class="cli-todo-chip">Qwen</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- About Tab -->
+      <div class="settings-tab-content" id="tab-about">
+        <div class="about-center">
+          <div class="about-logo"><svg width="34" height="34" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="url(#wg)"/><path d="M9 30c0-6 3.5-11 9-13 1-3 3.5-5 7-5 3.5 0 6 2 7 5 5.5 2 9 7 9 13H9z" fill="rgba(255,255,255,0.90)"/><path d="M37 30c1-1.5 3-2 4-1.5" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="20" cy="22" rx="1.4" ry="1.4" fill="rgba(60,104,216,0.8)"/><defs><linearGradient id="wg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stop-color="#5b9bd5"/><stop offset="1" stop-color="#2d5fa8"/></linearGradient></defs></svg></div>
+          <div class="about-app-name">PromptHub</div>
+          <div class="about-version">Version 1.4.2 (Build 142)</div>
+          <div class="about-copy">Copyright © 2025 leetao</div>
+          <div class="about-links">
+            <a class="about-link" href="https://leetao.me" target="_blank">Website</a>
+            <a class="about-link" href="https://github.com/LeetaoGoooo/PromptHub" target="_blank">GitHub</a>
+            <a class="about-link" href="#">Changelog</a>
+            <a class="about-link" href="#">Privacy Policy</a>
+          </div>
+          <div class="about-communities">
+            <a class="community-chip" href="https://t.me/prompt_box" target="_blank">Telegram</a>
+            <a class="community-chip" href="#" target="_blank">WeChat</a>
+          </div>
+        </div>
+        <div class="settings-section" style="margin-top:20px;">
+          <div class="settings-section-title">Acknowledgements</div>
+          <div class="settings-card">
+            <div class="settings-row"><div class="settings-row-meta"><div class="settings-row-label">SwiftData</div><div class="settings-row-desc">Apple persistence framework</div></div></div>
+            <div class="settings-row"><div class="settings-row-meta"><div class="settings-row-label">GenKit</div><div class="settings-row-desc">AI model integration layer</div></div></div>
+            <div class="settings-row"><div class="settings-row-meta"><div class="settings-row-label">KeyboardShortcuts</div><div class="settings-row-desc">Global shortcut management by Sindre Sorhus</div></div></div>
+            <div class="settings-row"><div class="settings-row-meta"><div class="settings-row-label">WhatsNewKit</div><div class="settings-row-desc">What's New screen by SvenTiigi</div></div></div>
+            <div class="settings-row"><div class="settings-row-meta"><div class="settings-row-label">DifferenceKit</div><div class="settings-row-desc">Diff algorithm for prompt version comparison</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const symbols = {
+      search: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.25"></circle><path d="M10.5 10.5L14 14"></path></svg>`,
+      folder: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4.5h4l1.4 1.5h7.6v5.9a1.1 1.1 0 0 1-1.1 1.1H2.6a1.1 1.1 0 0 1-1.1-1.1V4.5z"></path></svg>`,
+      archive: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.1" y="2.5" width="11.8" height="2.6" rx=".7"></rect><path d="M3.2 5.1h9.6v7.3a1 1 0 0 1-1 1H4.2a1 1 0 0 1-1-1V5.1z"></path><path d="M6.1 8h3.8"></path></svg>`,
+      person: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.1" r="2.2"></circle><path d="M3.4 12.8c.8-2.1 2.5-3.2 4.6-3.2s3.8 1.1 4.6 3.2"></path></svg>`,
+      sparkles: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.8l1.1 3.1 3.1 1.1-3.1 1.1L8 10.2 6.9 7.1 3.8 6l3.1-1.1L8 1.8z"></path><path d="M12.6 10.4l.5 1.4 1.4.5-1.4.5-.5 1.4-.5-1.4-1.4-.5 1.4-.5.5-1.4z"></path></svg>`,
+      link: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.4 9.6L4.8 11.2a2.3 2.3 0 1 1-3.2-3.2l1.6-1.6"></path><path d="M9.6 6.4l1.6-1.6a2.3 2.3 0 1 1 3.2 3.2l-1.6 1.6"></path><path d="M5.6 10.4l4.8-4.8"></path></svg>`,
+      doc: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.1 2.1h5.2l2.6 2.7v8.7H4.1z"></path><path d="M9.3 2.1v2.7H12"></path><path d="M5.8 8h4.4"></path><path d="M5.8 10.4h4.4"></path></svg>`,
+      clock: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.2"></circle><path d="M8 5.1v3.1l2 1.2"></path></svg>`,
+      play: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.2l6.5 4.8L5 12.8V3.2z"></path></svg>`,
+      branch: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.1" cy="3.6" r="1.5"></circle><circle cx="11.9" cy="5.7" r="1.5"></circle><circle cx="11.9" cy="12.1" r="1.5"></circle><path d="M5.6 3.6h2A2.8 2.8 0 0 1 10.4 6.4v2.8"></path><path d="M5.6 3.6v8.5a1.5 1.5 0 0 0 1.5 1.5h3.3"></path></svg>`,
+      wand: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.4 2.4l.7 2 .2.7.7.2 2 .7-2 .7-.7.2-.2.7-.7 2-.7-2-.2-.7-.7-.2-2-.7 2-.7.7-.2.2-.7.7-2z"></path><path d="M3 13l6.8-6.8"></path></svg>`,
+      cube: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.9l5 2.7v6.8L8 14.1 3 11.4V4.6L8 1.9z"></path><path d="M3 4.6L8 7.3l5-2.7"></path><path d="M8 7.3v6.8"></path></svg>`,
+      check: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.3 8.3l2.6 2.6 6-6"></path></svg>`,
+      warning: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.1l5.5 9.6a.8.8 0 0 1-.7 1.2H3.2a.8.8 0 0 1-.7-1.2L8 2.1z"></path><path d="M8 5.6v3.1"></path><path d="M8 11.2h.01"></path></svg>`,
+      sliders: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.2h10"></path><path d="M3 8h10"></path><path d="M3 11.8h10"></path><circle cx="6" cy="4.2" r="1.2"></circle><circle cx="10.4" cy="8" r="1.2"></circle><circle cx="7.6" cy="11.8" r="1.2"></circle></svg>`,
+      settings: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6z"/><path d="M8 1.5l.8 1.6a5.2 5.2 0 0 1 1.3.55l1.7-.5 1.1 1.9-1.2 1.3c.07.35.07.7 0 1.05l1.2 1.3-1.1 1.9-1.7-.5c-.4.22-.84.41-1.3.55L8 14.5l-.8-1.6a5.2 5.2 0 0 1-1.3-.55l-1.7.5-1.1-1.9 1.2-1.3a5 5 0 0 1 0-1.05l-1.2-1.3 1.1-1.9 1.7.5c.4-.22.84-.41 1.3-.55L8 1.5z"/></svg>`,
+      inspector: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.2" y="2.4" width="11.6" height="11.2" rx="1"></rect><path d="M10.2 2.4v11.2"></path></svg>`,
+      share: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10.8V2.8"></path><path d="M5.1 5.7L8 2.8l2.9 2.9"></path><path d="M3 9.8v2.8h10V9.8"></path></svg>`,
+      diff: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.3v9.4"></path><path d="M11 3.3v9.4"></path><path d="M3 5.3h4"></path><path d="M9 10.7h4"></path></svg>`,
+      terminal: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1.5"></rect><path d="M5 6.5l2 2-2 2"></path><path d="M9 10.5h2"></path></svg>`,
+      plug: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13v-2.8"></path><path d="M5.5 10.2c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V8H5.5v2.2z"></path><path d="M6.5 3v2.5"></path><path d="M9.5 3v2.5"></path><path d="M5 5.5h6L11 8H5l-.5-2.5z"></path></svg>`,
+      arrow_right: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10"></path><path d="M9 5l4 3-4 3"></path></svg>`,
+      rocket: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5c-1 .5-3 2.5-3.5 5l2.5 2.5c2.5-.5 4.5-2.5 5-3.5C13 4 12 3 9.5 2.5z"></path><path d="M6 7.5L3.5 8c-.5.5-1 2-1 2s1.5-.5 2-1l1-1.5z"></path><path d="M8.5 10l-.5 2.5c-.5.5-2 1-2 1s.5-1.5 1-2l1.5-.5z"></path><circle cx="9" cy="7" r="1"></circle></svg>`,
+      grid: `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="4.5" height="4.5" rx=".7"></rect><rect x="9" y="2.5" width="4.5" height="4.5" rx=".7"></rect><rect x="2.5" y="9" width="4.5" height="4.5" rx=".7"></rect><rect x="9" y="9" width="4.5" height="4.5" rx=".7"></rect></svg>`
+    };
+
+    const icon = (name) => symbols[name] || "";
+
+    document.getElementById("searchIconEl").innerHTML = icon("search");
+    document.getElementById("settingsButton").innerHTML = icon("settings");
+    document.getElementById("inspectorButton").innerHTML = icon("inspector");
+
+    const sidebarModel = [
+      {
+        title: "Library",
+        meta: "4 views",
+        items: [
+          { id: "all-prompts", icon: "archive", label: "All Prompts", meta: "58" },
+          { id: "my-prompts", icon: "person", label: "My Prompts", meta: "16" },
+          { id: "explore-gallery", icon: "sparkles", label: "Explore Gallery", meta: "42" },
+          { id: "shared-with-me", icon: "link", label: "Shared with Me", meta: "6" }
+        ]
+      },
+      {
+        title: "Skills",
+        meta: "3 views",
+        items: [
+          { id: "my-skills", icon: "wand", label: "My Skills", meta: "18" },
+          { id: "skill-store", icon: "sparkles", label: "Discover", meta: "127" },
+          { id: "installed-skills", icon: "cube", label: "Installed", meta: "26" }
+        ]
+      },
+      {
+        title: "CLI",
+        meta: "cli",
+        items: [
+          { id: "cli-dashboard", icon: "terminal", label: "Workspaces", meta: "3" },
+        ]
+      },
+      {
+        title: "Recent Prompts",
+        meta: "2 recent",
+        items: [
+          { id: "prompt-weekly", icon: "doc", label: "Weekly Planning Review", meta: "v8" },
+          { id: "prompt-launch", icon: "doc", label: "Product Launch Narrative", meta: "v3" }
+        ]
+      }
+    ];
+
+    const views = {
+      "all-prompts": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("archive")}<h1 class="document-title">All Prompts</h1></div>
+                <div class="document-summary">Browse your private library alongside gallery prompts.</div>
+                <div class="meta-line">
+                  <span class="meta-item">${icon("person")}<span>16 personal</span></span>
+                  <span class="meta-item">${icon("sparkles")}<span>42 gallery</span></span>
+                  <span class="meta-item">${icon("link")}<span>6 shared</span></span>
+                </div>
+              </div>
+              <div class="header-actions">
+                <button class="tool-btn primary">${icon("wand")} New Prompt</button>
+                <button class="tool-btn">${icon("play")} Render Prompt…</button>
+              </div>
+            </div>
+            <div class="prompt-grid-body">
+              <div class="grid-section-label">${icon("person")} My Prompts <span class="row-meta">16</span></div>
+              <div class="prompt-grid">
+                <div class="prompt-card" data-nav-view="prompt-weekly">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Weekly Planning Review</div>
+                      <div class="prompt-card-desc">Team planning template with variables and revision history</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag accent">Shared</span><span class="prompt-card-time">12 min ago</span></div>
+                </div>
+                <div class="prompt-card" data-nav-view="prompt-launch">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Product Launch Narrative</div>
+                      <div class="prompt-card-desc">Go-to-market narrative draft for review circulation</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag good">Promoted</span><span class="prompt-card-time">Yesterday</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Incident Summary Builder</div>
+                      <div class="prompt-card-desc">Postmortem input template for engineering incidents</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="prompt-card-time">2 days ago</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">OKR Review Summarizer</div>
+                      <div class="prompt-card-desc">Condenses quarterly OKR progress into executive summary</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="prompt-card-time">Last week</span></div>
+                </div>
+              </div>
+              <div class="grid-section-label">${icon("sparkles")} Gallery <span class="row-meta">42</span></div>
+              <div class="prompt-grid">
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Executive Summary Condenser</div>
+                      <div class="prompt-card-desc">Compresses long documents into crisp executive briefings</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag good">Save to library</span><span class="prompt-card-time">1.2k saves</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">API Changelog Explainer</div>
+                      <div class="prompt-card-desc">Turns terse release notes into human-readable summaries</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="prompt-card-time">863 saves</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Customer Interview Synthesizer</div>
+                      <div class="prompt-card-desc">Converts qualitative notes into key themes and insights</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="prompt-card-time">538 saves</span></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel">
+            <div class="inspector-head"><div class="inspector-title">Library Totals</div></div>
+            <div class="inspector-body">
+              <div class="kv-list">
+                <div class="kv-row"><div class="kv-label">My Prompts</div><div class="kv-value">16</div></div>
+                <div class="kv-row"><div class="kv-label">Gallery</div><div class="kv-value">42</div></div>
+                <div class="kv-row"><div class="kv-label">Shared with Me</div><div class="kv-value">6</div></div>
+                <div class="kv-row"><div class="kv-label">Linked to Skills</div><div class="kv-value">7</div></div>
+              </div>
+            </div>
+          </section>
+          <section class="inspector-panel">
+            <div class="inspector-head"><div class="inspector-title">Actions</div></div>
+            <div class="inspector-body">
+              <button class="tool-btn">New Prompt</button>
+              <button class="tool-btn">Import Markdown</button>
+            </div>
+          </section>
+        `
+      },
+      "my-prompts": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("person")}<h1 class="document-title">My Prompts</h1></div>
+                <div class="document-summary">Private prompts and drafts. Click any card to open the editor.</div>
+                <div class="meta-line">
+                  <span class="meta-item">${icon("doc")}<span>16 prompts</span></span>
+                  <span class="meta-item">${icon("clock")}<span>5 edited this week</span></span>
+                  <span class="meta-item">${icon("wand")}<span>3 linked to skills</span></span>
+                </div>
+              </div>
+              <div class="header-actions">
+                <button class="tool-btn primary">${icon("wand")} New Prompt</button>
+                <button class="tool-btn">${icon("play")} Render Prompt…</button>
+              </div>
+            </div>
+            <div class="prompt-grid-body">
+              <div class="prompt-grid">
+                <div class="prompt-card" data-nav-view="prompt-weekly">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Weekly Planning Review</div>
+                      <div class="prompt-card-desc">Team planning template with variables and revision history</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag accent">Shared</span><span class="row-meta">v8</span><span class="prompt-card-time">12 min ago</span></div>
+                </div>
+                <div class="prompt-card" data-nav-view="prompt-launch">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Product Launch Narrative</div>
+                      <div class="prompt-card-desc">Go-to-market narrative draft for review circulation</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag good">Promoted to skill</span><span class="row-meta">v3</span><span class="prompt-card-time">Yesterday</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Incident Summary Builder</div>
+                      <div class="prompt-card-desc">Postmortem input template for engineering incidents</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="row-meta">v2</span><span class="prompt-card-time">2 days ago</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">OKR Review Summarizer</div>
+                      <div class="prompt-card-desc">Condenses quarterly OKR progress into executive summary</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="row-meta">v1</span><span class="prompt-card-time">Last week</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Design Brief Generator</div>
+                      <div class="prompt-card-desc">Creates structured briefs from rough design requirements</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="row-meta">v1</span><span class="prompt-card-time">2 weeks ago</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">API Documentation Writer</div>
+                      <div class="prompt-card-desc">Generates OpenAPI-style docs from code signatures</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="row-meta">v4</span><span class="prompt-card-time">3 weeks ago</span></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Private Scope</div></div><div class="inspector-body"><div class="kv-list"><div class="kv-row"><div class="kv-label">Prompts</div><div class="kv-value">16 owned</div></div><div class="kv-row"><div class="kv-label">Edited this week</div><div class="kv-value">5</div></div><div class="kv-row"><div class="kv-label">Linked to skills</div><div class="kv-value">3</div></div></div></div></section>
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Actions</div></div><div class="inspector-body"><button class="tool-btn">New Prompt</button><button class="tool-btn">Import Markdown</button></div></section>
+        `
+      },
+      "explore-gallery": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("sparkles")}<h1 class="document-title">Explore Gallery</h1></div>
+                <div class="document-summary">Browse public gallery prompts. Tap any card to preview, then save to your library.</div>
+                <div class="meta-line">
+                  <span class="meta-item">${icon("sparkles")}<span>42 prompts available</span></span>
+                </div>
+              </div>
+              <div class="header-actions"><button class="tool-btn">${icon("check")} Refresh</button></div>
+            </div>
+            <div class="prompt-grid-body">
+              <div class="prompt-grid">
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Executive Summary Condenser</div>
+                      <div class="prompt-card-desc">Compresses long documents into crisp executive briefings with key takeaways</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag good">Save to library</span><span class="prompt-card-time">1.2k saves</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">API Changelog Explainer</div>
+                      <div class="prompt-card-desc">Turns terse release notes into human-readable developer summaries</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag good">Save to library</span><span class="prompt-card-time">863 saves</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Customer Interview Synthesizer</div>
+                      <div class="prompt-card-desc">Converts qualitative user notes into structured themes and insights</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag good">Save to library</span><span class="prompt-card-time">538 saves</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Sprint Retrospective Facilitator</div>
+                      <div class="prompt-card-desc">Guides teams through what went well, blockers, and action items</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag">Preview</span><span class="prompt-card-time">412 saves</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Bug Report Formatter</div>
+                      <div class="prompt-card-desc">Structures raw bug descriptions into reproducible, actionable reports</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag">Preview</span><span class="prompt-card-time">389 saves</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("sparkles")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Job Description Optimizer</div>
+                      <div class="prompt-card-desc">Rewrites job posts to be inclusive, clear, and compelling</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag">Preview</span><span class="prompt-card-time">271 saves</span></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Gallery</div></div><div class="inspector-body"><div class="kv-list"><div class="kv-row"><div class="kv-label">Total prompts</div><div class="kv-value">42</div></div><div class="kv-row"><div class="kv-label">Saved to library</div><div class="kv-value">3</div></div></div></div></section>
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Actions</div></div><div class="inspector-body"><button class="tool-btn">Refresh Gallery</button></div></section>
+        `
+      },
+      "shared-with-me": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("link")}<h1 class="document-title">Shared with Me</h1></div>
+                <div class="document-summary">Public shared prompts from CloudKit. My shared creations plus community prompts.</div>
+                <div class="meta-line">
+                  <span class="meta-item">${icon("person")}<span>2 shared by me</span></span>
+                  <span class="meta-item">${icon("link")}<span>4 from community</span></span>
+                </div>
+              </div>
+            </div>
+            <div class="prompt-grid-body">
+              <div class="grid-section-label">${icon("person")} My Shared Creations <span class="row-meta">2</span></div>
+              <div class="prompt-grid">
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon shared">${icon("link")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Product Launch Narrative</div>
+                      <div class="prompt-card-desc">Shared via private link with the marketing team</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag accent">Public</span><span class="prompt-card-time">Shared yesterday</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon shared">${icon("link")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Investor Update Draft</div>
+                      <div class="prompt-card-desc">Shared narrative prompt for weekly reporting</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag accent">Public</span><span class="prompt-card-time">2 days ago</span></div>
+                </div>
+              </div>
+              <div class="grid-section-label">${icon("sparkles")} Community <span class="row-meta">4</span></div>
+              <div class="prompt-grid">
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Team Standup Formatter</div>
+                      <div class="prompt-card-desc">Structures async standups from bullet notes</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="prompt-card-time">From: @janedoe</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Architecture Decision Record</div>
+                      <div class="prompt-card-desc">Documents technical decisions with context and consequences</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="status-tag good">Saved</span><span class="prompt-card-time">From: @techwriter</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Feature Spec Template</div>
+                      <div class="prompt-card-desc">Problem statement, success metrics, scope, and open questions</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="prompt-card-time">From: @pmguru</span></div>
+                </div>
+                <div class="prompt-card">
+                  <div class="prompt-card-head">
+                    <div class="prompt-card-icon gallery">${icon("person")}</div>
+                    <div class="prompt-card-body">
+                      <div class="prompt-card-name">Code Review Summary</div>
+                      <div class="prompt-card-desc">Summarizes PR review comments into action items by severity</div>
+                    </div>
+                  </div>
+                  <div class="prompt-card-footer"><span class="prompt-card-time">From: @devops_dan</span></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">CloudKit</div></div><div class="inspector-body"><div class="kv-list"><div class="kv-row"><div class="kv-label">My shared</div><div class="kv-value">2</div></div><div class="kv-row"><div class="kv-label">Community</div><div class="kv-value">4</div></div></div></div></section>
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Actions</div></div><div class="inspector-body"><button class="tool-btn">Share a Prompt…</button><button class="tool-btn">Refresh</button></div></section>
+        `
+      },
+      "prompt-weekly": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">
+                  ${icon("doc")}
+                  <h1 class="document-title">Weekly Planning Review</h1>
+                  <span class="status-tag accent">Shared</span>
+                  <span class="status-tag">v8</span>
+                </div>
+                <div class="document-summary">Planning prompt for weekly operating reviews, blockers, priorities, and owner assignment.</div>
+                <div class="meta-line">
+                  <span class="meta-item">${icon("clock")}<span>Updated 12 minutes ago</span></span>
+                  <span class="meta-item">${icon("branch")}<span>8 versions</span></span>
+                  <span class="meta-item">${icon("wand")}<span>Promotable to skill</span></span>
+                </div>
+              </div>
+              <div class="header-actions">
+                <button class="tool-btn">${icon("play")} Test</button>
+                <button class="tool-btn">${icon("diff")} Diff</button>
+                <button class="tool-btn icon-only">${icon("share")}</button>
+              </div>
+            </div>
+
+            <div class="document-body">
+              <div class="doc-block">
+                <div class="doc-block-label">Variables</div>
+                <div class="vars-strip">
+                  <span class="var-chip">{{team_name}}</span>
+                  <span class="var-chip">{{target_week}}</span>
+                  <span class="var-chip">{{priorities}}</span>
+                  <span class="var-chip">{{blockers}}</span>
+                  <span class="var-chip">{{owners}}</span>
+                </div>
+              </div>
+
+              <div class="doc-block">
+                <div class="editor-wrap" id="promptEditorWrap">
+                  <div class="editor-surface" id="promptEditorText">You are assisting with the weekly planning review for {{team_name}}.
+
+Summarize the current priorities for {{target_week}}, identify blockers, assign likely owners, and propose a clean meeting agenda.
+
+Context:
+- Priorities: {{priorities}}
+- Blockers: {{blockers}}
+- Owner list: {{owners}}
+
+Return:
+1. Executive summary
+2. Top 3 risks
+3. Action items with owners
+4. Suggested agenda</div>
+                  <button class="ai-optimize-btn" id="aiOptimizeBtn">${icon("wand")} Optimize with AI</button>
+                </div>
+                <!-- Diff review block (hidden by default) -->
+                <div class="diff-review-block" id="diffReviewBlock" style="display:none;margin-top:10px;">
+                  <div class="diff-review-header">
+                    <div class="diff-review-title">${icon("wand")} Review AI Changes</div>
+                    <div class="diff-review-actions">
+                      <button class="diff-discard-btn" id="diffDiscardBtn">Discard</button>
+                      <button class="diff-keep-btn" id="diffKeepBtn">Keep &amp; Save v9</button>
+                    </div>
+                  </div>
+                  <div class="diff-body">
+                    <div class="diff-line context"><span class="diff-gutter"> </span><span class="diff-line-text">You are assisting with the weekly planning review for {{team_name}}.</span></div>
+                    <div class="diff-line context"><span class="diff-gutter"> </span><span class="diff-line-text"> </span></div>
+                    <div class="diff-line removed"><span class="diff-gutter">-</span><span class="diff-line-text">Summarize the current priorities for {{target_week}}, identify blockers, assign likely owners, and propose a clean meeting agenda.</span></div>
+                    <div class="diff-line added"><span class="diff-gutter">+</span><span class="diff-line-text">Your task: produce a structured weekly review for {{target_week}}. Cover priorities, surface blockers with root causes, assign owners, and output a timed meeting agenda.</span></div>
+                    <div class="diff-line context"><span class="diff-gutter"> </span><span class="diff-line-text"> </span></div>
+                    <div class="diff-line context"><span class="diff-gutter"> </span><span class="diff-line-text">Context:</span></div>
+                    <div class="diff-line context"><span class="diff-gutter"> </span><span class="diff-line-text">- Priorities: {{priorities}}</span></div>
+                    <div class="diff-line context"><span class="diff-gutter"> </span><span class="diff-line-text">- Blockers: {{blockers}}</span></div>
+                    <div class="diff-line context"><span class="diff-gutter"> </span><span class="diff-line-text">- Owner list: {{owners}}</span></div>
+                    <div class="diff-line context"><span class="diff-gutter"> </span><span class="diff-line-text"> </span></div>
+                    <div class="diff-line removed"><span class="diff-gutter">-</span><span class="diff-line-text">Return:</span></div>
+                    <div class="diff-line removed"><span class="diff-gutter">-</span><span class="diff-line-text">1. Executive summary</span></div>
+                    <div class="diff-line removed"><span class="diff-gutter">-</span><span class="diff-line-text">2. Top 3 risks</span></div>
+                    <div class="diff-line removed"><span class="diff-gutter">-</span><span class="diff-line-text">3. Action items with owners</span></div>
+                    <div class="diff-line removed"><span class="diff-gutter">-</span><span class="diff-line-text">4. Suggested agenda</span></div>
+                    <div class="diff-line added"><span class="diff-gutter">+</span><span class="diff-line-text">Output format:</span></div>
+                    <div class="diff-line added"><span class="diff-gutter">+</span><span class="diff-line-text">## Executive Summary (2–3 sentences)</span></div>
+                    <div class="diff-line added"><span class="diff-gutter">+</span><span class="diff-line-text">## Top 3 Risks — each with: risk, impact (H/M/L), owner</span></div>
+                    <div class="diff-line added"><span class="diff-gutter">+</span><span class="diff-line-text">## Action Items — owner · due date · priority</span></div>
+                    <div class="diff-line added"><span class="diff-gutter">+</span><span class="diff-line-text">## Timed Agenda — 30-min slots with discussion lead</span></div>
+                  </div>
+                </div>
+                <div class="diff-saved-banner" id="diffSavedBanner" style="display:none;margin-top:10px;">
+                  ${icon("check")} Saved as v9 — 5 lines changed
+                </div>
+              </div>
+
+              <div class="doc-block">
+                <div class="doc-block-label">Version History</div>
+                <div class="version-list">
+                  <div class="version-row">
+                    <div class="version-id">v8</div>
+                    <div class="version-desc">Added owner-specific action items and tightened agenda output.</div>
+                    <div class="version-when">12 min ago</div>
+                  </div>
+                  <div class="version-row">
+                    <div class="version-id">v7</div>
+                    <div class="version-desc">Introduced structured blocker input and risk summary.</div>
+                    <div class="version-when">Yesterday</div>
+                  </div>
+                  <div class="version-row">
+                    <div class="version-id">v6</div>
+                    <div class="version-desc">Created shareable team template baseline.</div>
+                    <div class="version-when">Last week</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel">
+            <div class="inspector-head"><div class="inspector-title">Information</div></div>
+            <div class="inspector-body">
+              <div class="insp-group">
+                <div class="insp-group-label">${icon("sliders")} Information</div>
+                <div class="insp-group-body">
+                  <div>
+                    <div class="insp-field-label">Name</div>
+                    <input class="insp-textfield" type="text" value="Weekly Planning Review" />
+                  </div>
+                  <div>
+                    <div class="insp-field-label">Description</div>
+                    <input class="insp-textfield" type="text" value="Planning prompt for weekly reviews" />
+                  </div>
+                  <div class="insp-divider"></div>
+                  <div class="insp-labeled-content"><span class="label">Version</span><span class="value">8</span></div>
+                  <div class="insp-labeled-content"><span class="label">Created</span><span class="value">Jan 3, 2025</span></div>
+                  <div class="insp-labeled-content"><span class="label">Updated</span><span class="value">12 min ago</span></div>
+                </div>
+              </div>
+              <div class="insp-group">
+                <div class="insp-group-label">${icon("sliders")} Configuration</div>
+                <div class="insp-group-body">
+                  <div class="insp-labeled-content"><span class="label">Model</span><span class="value">GPT-4o</span></div>
+                  <div class="insp-labeled-content"><span class="label">Temperature</span><span class="value">0.7</span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="inspector-panel">
+            <div class="inspector-head"><div class="inspector-title">Sharing</div></div>
+            <div class="inspector-body">
+              <div class="toggle-row">
+                <div class="toggle-meta">
+                  <div class="toggle-title">Shared internally</div>
+                  <div class="toggle-subtitle">Available to the product team through a private link.</div>
+                </div>
+                <div class="toggle" aria-hidden="true"></div>
+              </div>
+              <button class="tool-btn">${icon("share")} Share…</button>
+            </div>
+          </section>
+          <section class="inspector-panel">
+            <div class="inspector-head"><div class="inspector-title">Actions</div></div>
+            <div class="inspector-body">
+              <button class="tool-btn">Preview Diff</button>
+              <button class="tool-btn">Open Versions</button>
+              <button class="tool-btn">${icon("wand")} Promote to Skill</button>
+            </div>
+          </section>
+        `
+      },
+      "prompt-launch": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("doc")}<h1 class="document-title">Product Launch Narrative</h1><span class="status-tag">v3</span></div>
+                <div class="document-summary">Executive messaging draft for launch positioning and rollout narrative.</div>
+                <div class="meta-line">
+                  <span class="meta-item">${icon("clock")}<span>Edited yesterday</span></span>
+                  <span class="meta-item">${icon("branch")}<span>3 versions</span></span>
+                </div>
+              </div>
+              <div class="header-actions">
+                <button class="tool-btn">${icon("play")} Test</button>
+                <button class="tool-btn">${icon("diff")} Diff</button>
+                <button class="tool-btn icon-only">${icon("share")}</button>
+              </div>
+            </div>
+            <div class="document-body">
+              <div class="doc-block">
+                <div class="doc-block-label">Variables</div>
+                <div class="vars-strip">
+                  <span class="var-chip">{{product_name}}</span>
+                </div>
+              </div>
+              <div class="doc-block">
+                <div class="editor-surface">Write a concise launch narrative for {{product_name}} focused on the user problem, the change from current behavior, and a credible three-part rollout story.</div>
+              </div>
+              <div class="doc-block">
+                <div class="doc-block-label">Version History</div>
+                <div class="version-list">
+                  <div class="version-row"><div class="version-id">v3</div><div class="version-desc">Added three-part rollout story structure.</div><div class="version-when">Yesterday</div></div>
+                  <div class="version-row"><div class="version-id">v2</div><div class="version-desc">Tightened user problem framing.</div><div class="version-when">Last week</div></div>
+                  <div class="version-row"><div class="version-id">v1</div><div class="version-desc">Initial draft.</div><div class="version-when">3 weeks ago</div></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Information</div></div><div class="inspector-body">
+            <div class="insp-group">
+              <div class="insp-group-label">${icon("sliders")} Information</div>
+              <div class="insp-group-body">
+                <div><div class="insp-field-label">Name</div><input class="insp-textfield" type="text" value="Product Launch Narrative" /></div>
+                <div><div class="insp-field-label">Description</div><input class="insp-textfield" type="text" value="Executive messaging for launch positioning" /></div>
+                <div class="insp-divider"></div>
+                <div class="insp-labeled-content"><span class="label">Version</span><span class="value">3</span></div>
+                <div class="insp-labeled-content"><span class="label">Created</span><span class="value">Apr 20, 2025</span></div>
+                <div class="insp-labeled-content"><span class="label">Updated</span><span class="value">Yesterday</span></div>
+              </div>
+            </div>
+            <div class="insp-group">
+              <div class="insp-group-label">${icon("sliders")} Configuration</div>
+              <div class="insp-group-body">
+                <div class="insp-labeled-content"><span class="label">Model</span><span class="value">GPT-4o</span></div>
+                <div class="insp-labeled-content"><span class="label">Temperature</span><span class="value">0.7</span></div>
+              </div>
+            </div>
+          </div></section>
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Sharing</div></div><div class="inspector-body">
+            <div class="toggle-row"><div class="toggle-meta"><div class="toggle-title">Not shared</div><div class="toggle-subtitle">Only visible to you.</div></div><div class="toggle" style="background:rgba(30,41,64,0.2);border-color:rgba(30,41,64,0.15);"></div></div>
+            <button class="tool-btn">${icon("share")} Share…</button>
+          </div></section>
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Actions</div></div><div class="inspector-body">
+            <button class="tool-btn">Preview Diff</button>
+            <button class="tool-btn">${icon("wand")} Promote to Skill</button>
+          </div></section>
+        `
+      },
+      "skill-store": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("sparkles")}<h1 class="document-title">Skill Store</h1></div>
+                <div class="document-summary">Discover reusable skills, inspect installation coverage, and bring local SKILL.md packages into your workspace without leaving PromptHub.</div>
+              </div>
+            </div>
+            <div class="skill-metrics">
+              <div class="skill-metric"><div class="skill-metric-value">127</div><div class="skill-metric-label">Discover</div></div>
+              <div class="skill-metric"><div class="skill-metric-value">14</div><div class="skill-metric-label">Installed</div></div>
+              <div class="skill-metric"><div class="skill-metric-value">18</div><div class="skill-metric-label">Drafts</div></div>
+            </div>
+            <div class="skill-accessory">
+              <button class="tool-btn">${icon("folder")} /workspace/prompthub</button>
+              <button class="tool-btn icon-only" title="Refresh">${icon("check")}</button>
+              <button class="tool-btn">${icon("cube")} Import\u2026</button>
+              <div style="flex:1"></div>
+              <span style="font-size:11px;color:var(--good);display:flex;align-items:center;gap:5px;">${icon("check")} CLI access granted</span>
+            </div>
+            <div class="skill-browser">
+              <div class="skill-list-pane">
+                <div class="skill-list-group">
+                  <div class="skill-list-group-label">Catalog · 127</div>
+                  <div class="skill-row active">
+                    ${icon("sparkles")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Deep Research Orchestrator</div>
+                      <div class="skill-row-sub">PromptHub Catalog</div>
+                    </div>
+                    <span class="skill-install-badge installed">Installed</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("sparkles")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Skill Audit Reporter</div>
+                      <div class="skill-row-sub">PromptHub Catalog</div>
+                    </div>
+                    <span class="skill-install-badge installed">Installed</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("sparkles")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Commit Message Formatter</div>
+                      <div class="skill-row-sub">Community</div>
+                    </div>
+                    <span class="skill-install-badge partial">Partial</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("sparkles")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Code Review Assistant</div>
+                      <div class="skill-row-sub">PromptHub Catalog</div>
+                    </div>
+                    <span class="skill-install-badge available">Available</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("sparkles")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Test Coverage Analyzer</div>
+                      <div class="skill-row-sub">Community</div>
+                    </div>
+                    <span class="skill-install-badge available">Available</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("sparkles")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Documentation Generator</div>
+                      <div class="skill-row-sub">PromptHub Catalog</div>
+                    </div>
+                    <span class="skill-install-badge available">Available</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("sparkles")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Refactoring Advisor</div>
+                      <div class="skill-row-sub">Community</div>
+                    </div>
+                    <span class="skill-install-badge available">Available</span>
+                  </div>
+                </div>
+                <div class="skill-private-tip">
+                  ${icon("cube")} Install from a private source&hellip;
+                </div>
+              </div>
+              <div class="skill-detail-pane">
+                <div class="skill-detail-content">
+                  <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;">
+                    <div style="flex:1;">
+                      <div style="font-size:19px;font-weight:660;color:var(--text-0);letter-spacing:-0.02em;">Deep Research Orchestrator</div>
+                      <div style="font-size:12px;color:var(--text-2);margin-top:4px;">PromptHub Catalog · Revision-tracked</div>
+                    </div>
+                    <span class="skill-install-badge installed" style="font-size:11px;padding:3px 9px;">✓ Installed</span>
+                  </div>
+                  <div style="font-size:13px;color:var(--text-1);line-height:1.6;margin-bottom:18px;">Multi-step operator skill for retrieval, synthesis, and answer drafting with support for provenance shaping. Supports Claude Code, Cursor, and Codex targets.</div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">Metadata</div>
+                    <div class="skill-card-subtitle">Published details from the catalog registry.</div>
+                    <div class="kv-list">
+                      <div class="kv-row"><div class="kv-label">Publisher</div><div class="kv-value">PromptHub Catalog</div></div>
+                      <div class="kv-row"><div class="kv-label">Targets</div><div class="kv-value">Claude Code, Cursor, Codex</div></div>
+                      <div class="kv-row"><div class="kv-label">Source</div><div class="kv-value">Registry with revision tracking</div></div>
+                      <div class="kv-row"><div class="kv-label">Version</div><div class="kv-value">2.1.0</div></div>
+                    </div>
+                  </div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">Installation</div>
+                    <div class="skill-card-subtitle">Manage where this skill is active in your workspace.</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                      <button class="tool-btn">${icon("cube")} Install to Project</button>
+                      <button class="tool-btn">${icon("cube")} Install Globally</button>
+                      <button class="tool-btn" style="color:var(--danger);">Remove</button>
+                    </div>
+                    <div class="kv-list" style="font-size:12px;">
+                      <div class="kv-row"><div class="kv-label">Project scope</div><div class="kv-value"><span class="status-tag good">v2.1.0 installed</span></div></div>
+                      <div class="kv-row"><div class="kv-label">Global scope</div><div class="kv-value"><span class="status-tag">Not installed</span></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Catalog</div></div><div class="inspector-body">
+            <div class="kv-list">
+              <div class="kv-row"><div class="kv-label">Available</div><div class="kv-value">127</div></div>
+              <div class="kv-row"><div class="kv-label">Installed</div><div class="kv-value">14 in project</div></div>
+              <div class="kv-row"><div class="kv-label">Private sources</div><div class="kv-value">2</div></div>
+            </div>
+          </div></section>
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Selected Skill</div></div><div class="inspector-body">
+            <div class="kv-list">
+              <div class="kv-row"><div class="kv-label">Name</div><div class="kv-value">Deep Research Orchestrator</div></div>
+              <div class="kv-row"><div class="kv-label">Version</div><div class="kv-value">2.1.0</div></div>
+              <div class="kv-row"><div class="kv-label">Status</div><div class="kv-value"><span class="status-tag good">Installed</span></div></div>
+            </div>
+          </div></section>
+        `
+      },
+      "installed-skills": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("cube")}<h1 class="document-title">Installed Skills</h1></div>
+                <div class="document-summary">All skills installed in the current project or globally. Verify source integrity, manage agent coverage, and remove stale installations.</div>
+              </div>
+              <div class="header-actions">
+                <button class="tool-btn">${icon("check")} Verify All</button>
+                <button class="tool-btn">${icon("cube")} Add\u2026</button>
+              </div>
+            </div>
+            <div class="skill-metrics">
+              <div class="skill-metric"><div class="skill-metric-value">14</div><div class="skill-metric-label">Installed</div></div>
+              <div class="skill-metric"><div class="skill-metric-value">9</div><div class="skill-metric-label">Project</div></div>
+              <div class="skill-metric"><div class="skill-metric-value">5</div><div class="skill-metric-label">Global</div></div>
+            </div>
+            <div class="skill-browser">
+              <div class="skill-list-pane">
+                <div class="skill-list-group">
+                  <div class="skill-list-group-label">Project (9)</div>
+                  <div class="skill-row active">
+                    ${icon("cube")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">PromptHub UI Planner</div>
+                      <div class="skill-row-sub">v4.1.0 · Claude Code</div>
+                    </div>
+                    <span class="skill-install-badge installed">Project</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("cube")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Deep Research Orchestrator</div>
+                      <div class="skill-row-sub">v2.1.0 · 3 agents</div>
+                    </div>
+                    <span class="skill-install-badge installed">Project</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("cube")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Commit Message Formatter</div>
+                      <div class="skill-row-sub">v1.3.0 · partial</div>
+                    </div>
+                    <span class="skill-install-badge partial">Partial</span>
+                  </div>
+                </div>
+                <div class="skill-list-group">
+                  <div class="skill-list-group-label">Global (5)</div>
+                  <div class="skill-row">
+                    ${icon("cube")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Code Review Assistant</div>
+                      <div class="skill-row-sub">v2.0.0 · All agents</div>
+                    </div>
+                    <span class="skill-install-badge installed">Global</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("cube")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">PR Review Summarizer</div>
+                      <div class="skill-row-sub">v1.0.0 · All agents</div>
+                    </div>
+                    <span class="skill-install-badge installed">Global</span>
+                  </div>
+                </div>
+              </div>
+              <div class="skill-detail-pane">
+                <div class="skill-detail-content">
+                  <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;">
+                    <div style="flex:1;">
+                      <div style="font-size:19px;font-weight:660;color:var(--text-0);letter-spacing:-0.02em;">PromptHub UI Planner</div>
+                      <div style="font-size:12px;color:var(--text-2);margin-top:4px;">Project scope · v4.1.0 · Source: PromptHub Drafts</div>
+                    </div>
+                    <span class="skill-install-badge installed" style="font-size:11px;padding:3px 9px;">✓ Verified</span>
+                  </div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">Agent Coverage</div>
+                    <div class="skill-card-subtitle">Which agents in the current workspace have this skill installed.</div>
+                    <div class="kv-list">
+                      <div class="kv-row"><div class="kv-label">Claude Code</div><div class="kv-value"><span class="status-tag good">Installed</span></div></div>
+                      <div class="kv-row"><div class="kv-label">Cursor</div><div class="kv-value"><span class="status-tag good">Installed</span></div></div>
+                      <div class="kv-row"><div class="kv-label">Codex</div><div class="kv-value"><span class="status-tag">Not installed</span></div></div>
+                      <div class="kv-row"><div class="kv-label">Copilot</div><div class="kv-value"><span class="status-tag">Not installed</span></div></div>
+                    </div>
+                    <button class="tool-btn" style="margin-top:8px;">${icon("cube")} Install to More Agents\u2026</button>
+                  </div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">Source Integrity</div>
+                    <div class="skill-card-subtitle">Confirms the installed SKILL.md matches the source version in PromptHub.</div>
+                    <div class="kv-list">
+                      <div class="kv-row"><div class="kv-label">Source</div><div class="kv-value">PromptHub Drafts</div></div>
+                      <div class="kv-row"><div class="kv-label">Hash match</div><div class="kv-value"><span class="status-tag good">Verified</span></div></div>
+                      <div class="kv-row"><div class="kv-label">Last checked</div><div class="kv-value">Just now</div></div>
+                    </div>
+                    <button class="tool-btn" style="margin-top:8px;">${icon("check")} Re-verify</button>
+                  </div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">Effectiveness</div>
+                    <div class="skill-card-subtitle">Aggregate usage signals for this skill installation.</div>
+                    <div class="kv-list">
+                      <div class="kv-row"><div class="kv-label">Invoked</div><div class="kv-value">34 times this week</div></div>
+                      <div class="kv-row"><div class="kv-label">Session coverage</div><div class="kv-value">71% of coding sessions</div></div>
+                      <div class="kv-row"><div class="kv-label">Agent with most usage</div><div class="kv-value">Claude Code</div></div>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;gap:8px;margin-top:4px;">
+                    <button class="tool-btn">${icon("cube")} Update to Draft v4.1.0</button>
+                    <button class="tool-btn" style="color:var(--danger);">Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Queue</div></div><div class="inspector-body">
+            <div class="kv-list">
+              <div class="kv-row"><div class="kv-label">Project</div><div class="kv-value">9 installed</div></div>
+              <div class="kv-row"><div class="kv-label">Global</div><div class="kv-value">5 installed</div></div>
+              <div class="kv-row"><div class="kv-label">Needs update</div><div class="kv-value">2</div></div>
+            </div>
+          </div></section>
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Selected</div></div><div class="inspector-body">
+            <div class="kv-list">
+              <div class="kv-row"><div class="kv-label">Skill</div><div class="kv-value">UI Planner</div></div>
+              <div class="kv-row"><div class="kv-label">Scope</div><div class="kv-value">Project</div></div>
+              <div class="kv-row"><div class="kv-label">Integrity</div><div class="kv-value"><span class="status-tag good">Verified</span></div></div>
+            </div>
+          </div></section>
+        `
+      },
+      "my-skills": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("wand")}<h1 class="document-title">My Skills</h1></div>
+                <div class="document-summary">Write, version, and install first-class skill drafts. Prompts can graduate into reusable skills without leaving the authoring flow.</div>
+              </div>
+              <div class="header-actions">
+                <button class="tool-btn primary">${icon("branch")} Save Version</button>
+                <button class="tool-btn">${icon("doc")} Copy SKILL.md</button>
+              </div>
+            </div>
+            <div class="skill-metrics">
+              <div class="skill-metric"><div class="skill-metric-value">18</div><div class="skill-metric-label">Drafts</div></div>
+              <div class="skill-metric"><div class="skill-metric-value">3</div><div class="skill-metric-label">Need version</div></div>
+              <div class="skill-metric"><div class="skill-metric-value">14</div><div class="skill-metric-label">Installed</div></div>
+            </div>
+            <div class="skill-browser">
+              <div class="skill-list-pane">
+                <div class="skill-list-group">
+                  <div class="skill-list-group-label">Drafts</div>
+                  <div class="skill-row active">
+                    ${icon("wand")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">PromptHub UI Planner</div>
+                      <div class="skill-row-sub">prompthub-ui-planner · Last edited 12 min ago</div>
+                    </div>
+                    <span class="skill-install-badge partial">v4 draft</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("wand")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Deep Research Orchestrator</div>
+                      <div class="skill-row-sub">deep-research · Installed v2</div>
+                    </div>
+                    <span class="skill-install-badge installed">Installed</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("wand")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">Commit Message Generator</div>
+                      <div class="skill-row-sub">commit-msg · Not installed</div>
+                    </div>
+                    <span class="skill-install-badge available">Draft</span>
+                  </div>
+                  <div class="skill-row">
+                    ${icon("wand")}
+                    <div class="skill-row-meta">
+                      <div class="skill-row-name">PR Review Summarizer</div>
+                      <div class="skill-row-sub">pr-review · Installed v1</div>
+                    </div>
+                    <span class="skill-install-badge installed">Installed</span>
+                  </div>
+                </div>
+              </div>
+              <div class="skill-detail-pane">
+                <div class="skill-detail-content">
+                  <div class="skill-card">
+                    <div class="skill-card-title">Metadata</div>
+                    <div class="skill-card-subtitle">Edit the draft fields that become skill metadata and library labels.</div>
+                    <div class="skill-field">
+                      <div class="skill-field-label">Skill Name</div>
+                      <input class="skill-textfield" type="text" value="PromptHub UI Planner" />
+                    </div>
+                    <div class="skill-field">
+                      <div class="skill-field-label">Description</div>
+                      <input class="skill-textfield" type="text" value="Plans and designs PromptHub UI components with HIG compliance" />
+                    </div>
+                    <div class="skill-field-row">
+                      <div class="skill-field">
+                        <div class="skill-field-label">Slug</div>
+                        <input class="skill-textfield" type="text" value="prompthub-ui-planner" />
+                      </div>
+                      <div class="skill-field">
+                        <div class="skill-field-label">Identifier</div>
+                        <input class="skill-textfield" type="text" value="com.prompthub.ui-planner" />
+                      </div>
+                    </div>
+                    <div class="skill-field-row">
+                      <div class="skill-field">
+                        <div class="skill-field-label">Category</div>
+                        <input class="skill-textfield" type="text" value="Design" />
+                      </div>
+                      <div class="skill-field">
+                        <div class="skill-field-label">Tags</div>
+                        <input class="skill-textfield" type="text" value="ui, hig, swiftui, macOS" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">Instructions</div>
+                    <div class="skill-card-subtitle">These instructions are exported as the body of SKILL.md and installed into target agents.</div>
+                    <div class="skill-code-editor">You are an expert macOS UI designer following Apple Human Interface Guidelines.
+
+When asked to design or review UI components for PromptHub:
+1. Apply HIG principles: vibrancy, materials, native controls
+2. Use SwiftUI idioms: @Observable, NavigationSplitView, toolbar placement
+3. Suggest accessibility improvements
+4. Reference real macOS apps (Bear, Things 3, Craft) for benchmarks
+5. Output SwiftUI code with inline HIG justifications
+
+Always prioritize: clarity > deference > depth</div>
+                  </div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">Install Draft</div>
+                    <div class="skill-card-subtitle">Install the current draft directly into your configured agent skills directory.</div>
+                    <div class="skill-field">
+                      <div class="skill-field-label">Scope</div>
+                      <div class="seg-control">
+                        <button class="seg-btn active">Project</button>
+                        <button class="seg-btn">Global</button>
+                      </div>
+                    </div>
+                    <div class="skill-field">
+                      <div class="skill-field-label">Target Agents</div>
+                      <div class="checkbox-row"><div class="checkbox checked">✓</div> Claude Code</div>
+                      <div class="checkbox-row"><div class="checkbox checked">✓</div> Cursor</div>
+                      <div class="checkbox-row"><div class="checkbox checked">✓</div> Codex</div>
+                      <div class="checkbox-row"><div class="checkbox"></div> Copilot</div>
+                    </div>
+                    <button class="tool-btn">${icon("cube")} Install Current Draft</button>
+                    <div style="font-size:11px;color:var(--text-2);margin-top:4px;">Last installed: May 1, 2025 at 2:33 PM</div>
+                  </div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">Version History</div>
+                    <div class="skill-card-subtitle">Version snapshots let you keep stable points while continuing to edit the draft.</div>
+                    <div class="version-card-row">
+                      <div>
+                        <div class="version-card-id">v4.1.0</div>
+                        <div class="version-card-date">May 11, 2025</div>
+                      </div>
+                      <div class="version-card-body"><div class="version-card-desc">Added inspector GroupBox patterns and full-width document layout guidelines.</div></div>
+                      <div class="version-card-action">Restore</div>
+                    </div>
+                    <div class="version-card-row">
+                      <div>
+                        <div class="version-card-id">v4.0.0</div>
+                        <div class="version-card-date">Apr 28, 2025</div>
+                      </div>
+                      <div class="version-card-body"><div class="version-card-desc">Redesigned sidebar with vibrancy and proper section headers.</div></div>
+                      <div class="version-card-action">Restore</div>
+                    </div>
+                    <div class="version-card-row">
+                      <div>
+                        <div class="version-card-id">v3.2.0</div>
+                        <div class="version-card-date">Apr 14, 2025</div>
+                      </div>
+                      <div class="version-card-body"><div class="version-card-desc">Initial skill structure with basic HIG guidelines.</div></div>
+                      <div class="version-card-action">Restore</div>
+                    </div>
+                  </div>
+
+                  <div class="skill-card">
+                    <div class="skill-card-title">SKILL.md Preview</div>
+                    <div class="skill-card-subtitle">This is the markdown that will be copied or installed.</div>
+                    <div class="skill-code-preview"># PromptHub UI Planner
+
+You are an expert macOS UI designer following Apple Human Interface Guidelines.
+
+When asked to design or review UI components for PromptHub:
+1. Apply HIG principles: vibrancy, materials, native controls
+2. Use SwiftUI idioms: @Observable, NavigationSplitView, toolbar placement
+3. Suggest accessibility improvements
+4. Reference real macOS apps (Bear, Things 3, Craft) for benchmarks
+
+Always prioritize: clarity > deference > depth</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Selected Draft</div></div><div class="inspector-body">
+            <div class="kv-list">
+              <div class="kv-row"><div class="kv-label">Name</div><div class="kv-value">PromptHub UI Planner</div></div>
+              <div class="kv-row"><div class="kv-label">Versions</div><div class="kv-value">3 saved</div></div>
+              <div class="kv-row"><div class="kv-label">Installed</div><div class="kv-value">v4.0 — outdated</div></div>
+              <div class="kv-row"><div class="kv-label">Last edited</div><div class="kv-value">12 min ago</div></div>
+            </div>
+          </div></section>
+          <section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Actions</div></div><div class="inspector-body">
+            <button class="tool-btn primary">${icon("branch")} Save Version</button>
+            <button class="tool-btn">${icon("doc")} Copy SKILL.md</button>
+            <button class="tool-btn">${icon("cube")} Install Draft</button>
+          </div></section>
+        `
+      },
+
+      // ── CLI Dashboard ──────────────────────────────────────────────────
+      "cli-dashboard": {
+        main: `
+          <article class="document">
+            <div class="document-header">
+              <div>
+                <div class="document-title-row">${icon("terminal")}<h1 class="document-title">CLI Integration</h1><span class="status-tag good" style="margin-left:8px;">Active</span></div>
+                <div class="document-summary">Install your Skills into any AI coding agent — Claude Code, Cursor, Codex, Gemini CLI and more — so they become part of every conversation, automatically.</div>
+                <div class="meta-line">
+                  <span class="meta-item">${icon("cube")}<span>5 agents connected</span></span>
+                  <span class="meta-item">${icon("wand")}<span>18 skills installed</span></span>
+                  <span class="meta-item">${icon("link")}<span>prompthub project selected</span></span>
+                </div>
+              </div>
+              <div class="header-actions">
+                <button class="tool-btn primary">${icon("cube")} Install Skill</button>
+                <button class="tool-btn">${icon("sliders")} Manage Access</button>
+              </div>
+            </div>
+            <div class="cli-dashboard-body">
+
+              <!-- How it works callout -->
+              <div class="cli-howto-banner">
+                <div class="cli-howto-icon">${icon("terminal")}</div>
+                <div class="cli-howto-content">
+                  <div class="cli-howto-title">How Skills get into your AI agents</div>
+                  <div class="cli-howto-desc">PromptHub writes <code>SKILL.md</code> files into each agent's config directory. Next time you open Cursor, Claude Code, or Codex, those skills are already in context — no prompt copy-paste needed.</div>
+                </div>
+                <div class="cli-howto-cmds">
+                  <div class="cli-cmd-row"><span class="cli-cmd-label">Install</span><code class="cli-cmd">brew install prompthub</code></div>
+                  <div class="cli-cmd-row"><span class="cli-cmd-label">Add skill</span><code class="cli-cmd">ph skill install owner/repo@commit-writer</code></div>
+                  <div class="cli-cmd-row"><span class="cli-cmd-label">List</span><code class="cli-cmd">ph skill list</code></div>
+                </div>
+              </div>
+
+              <!-- Connected AI Agents -->
+              <div class="cli-section-head">Connected AI Agents</div>
+              <div class="cli-workspace-list">
+                <div class="cli-workspace-card active">
+                  <div class="cli-ws-header">
+                    <div class="cli-ws-info">
+                      <div class="cli-ws-name">Claude Code</div>
+                      <div class="cli-ws-path">~/.claude/  ·  granted</div>
+                    </div>
+                    <span class="cli-ws-badge good">Global + Project</span>
+                  </div>
+                  <div class="cli-ws-meta">
+                    <span class="cli-ws-stat">${icon("cube")} 8 skills</span>
+                    <span class="cli-ws-stat">${icon("wand")} global scope</span>
+                  </div>
+                  <div class="cli-ws-skills">
+                    <span class="skill-chip">commit-writer</span>
+                    <span class="skill-chip">pr-review</span>
+                    <span class="skill-chip">deep-research</span>
+                    <span class="skill-chip">+5 more</span>
+                  </div>
+                </div>
+                <div class="cli-workspace-card active">
+                  <div class="cli-ws-header">
+                    <div class="cli-ws-info">
+                      <div class="cli-ws-name">Cursor</div>
+                      <div class="cli-ws-path">~/.cursor/rules/  ·  granted</div>
+                    </div>
+                    <span class="cli-ws-badge good">Global + Project</span>
+                  </div>
+                  <div class="cli-ws-meta">
+                    <span class="cli-ws-stat">${icon("cube")} 8 skills</span>
+                    <span class="cli-ws-stat">${icon("wand")} global scope</span>
+                  </div>
+                  <div class="cli-ws-skills">
+                    <span class="skill-chip">commit-writer</span>
+                    <span class="skill-chip">pr-review</span>
+                    <span class="skill-chip">deep-research</span>
+                    <span class="skill-chip">+5 more</span>
+                  </div>
+                </div>
+                <div class="cli-workspace-card active">
+                  <div class="cli-ws-header">
+                    <div class="cli-ws-info">
+                      <div class="cli-ws-name">Codex</div>
+                      <div class="cli-ws-path">~/.codex/  ·  granted</div>
+                    </div>
+                    <span class="cli-ws-badge accent">Global only</span>
+                  </div>
+                  <div class="cli-ws-meta">
+                    <span class="cli-ws-stat">${icon("cube")} 6 skills</span>
+                    <span class="cli-ws-stat">${icon("wand")} global scope</span>
+                  </div>
+                  <div class="cli-ws-skills">
+                    <span class="skill-chip">commit-writer</span>
+                    <span class="skill-chip">test-advisor</span>
+                    <span class="skill-chip">refactor-coach</span>
+                  </div>
+                </div>
+                <div class="cli-workspace-card" style="opacity:0.6;">
+                  <div class="cli-ws-header">
+                    <div class="cli-ws-info">
+                      <div class="cli-ws-name">Gemini CLI</div>
+                      <div class="cli-ws-path">~/.gemini/  ·  not connected</div>
+                    </div>
+                    <span class="cli-ws-badge" style="background:rgba(30,41,64,0.07);color:var(--text-2);border:1px solid rgba(30,41,64,0.1);">Disconnected</span>
+                  </div>
+                  <div class="cli-ws-meta" style="color:var(--text-2);">
+                    <span class="cli-ws-stat">${icon("plug")} Grant folder access to connect</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Installed Skills (scoped) -->
+              <div class="cli-section-head" style="margin-top:24px;">Skills — Project Scope <span style="font-size:11px;font-weight:400;color:var(--text-2);margin-left:6px;">prompthub/ · ~/.agents/skills/</span></div>
+              <div class="cli-activity-list">
+                <div class="cli-activity-row">
+                  <div class="cli-activity-icon success">${icon("cube")}</div>
+                  <div class="cli-activity-content">
+                    <div class="cli-activity-cmd"><strong>commit-writer</strong> <span style="color:var(--text-2);font-size:11px;font-weight:400;">LeetaoGoooo/skills</span></div>
+                    <div class="cli-activity-meta">Claude Code · Cursor · Codex · installed globally</div>
+                  </div>
+                  <span class="cli-activity-badge good">v2.1</span>
+                </div>
+                <div class="cli-activity-row">
+                  <div class="cli-activity-icon success">${icon("cube")}</div>
+                  <div class="cli-activity-content">
+                    <div class="cli-activity-cmd"><strong>pr-review</strong> <span style="color:var(--text-2);font-size:11px;font-weight:400;">LeetaoGoooo/skills</span></div>
+                    <div class="cli-activity-meta">Claude Code · Cursor · installed globally</div>
+                  </div>
+                  <span class="cli-activity-badge good">v1.4</span>
+                </div>
+                <div class="cli-activity-row">
+                  <div class="cli-activity-icon success">${icon("cube")}</div>
+                  <div class="cli-activity-content">
+                    <div class="cli-activity-cmd"><strong>prompthub-ui-planner</strong> <span style="color:var(--text-2);font-size:11px;font-weight:400;">local draft</span></div>
+                    <div class="cli-activity-meta">Claude Code · Cursor · installed in project only</div>
+                  </div>
+                  <span class="cli-activity-badge" style="background:rgba(60,104,216,0.1);color:var(--accent);border:1px solid rgba(60,104,216,0.2);">project</span>
+                </div>
+                <div class="cli-activity-row">
+                  <div class="cli-activity-icon warn">${icon("warning")}</div>
+                  <div class="cli-activity-content">
+                    <div class="cli-activity-cmd"><strong>deep-research</strong> <span style="color:var(--text-2);font-size:11px;font-weight:400;">LeetaoGoooo/skills</span></div>
+                    <div class="cli-activity-meta">Update available — v1.0 → v1.2</div>
+                  </div>
+                  <span class="cli-activity-badge warn">Update</span>
+                </div>
+              </div>
+
+            </div>
+          </article>
+        `,
+        inspector: `
+          <section class="inspector-panel">
+            <div class="inspector-head"><div class="inspector-title">Setup Status</div></div>
+            <div class="inspector-body">
+              <div class="cli-todo-list">
+                <div class="cli-todo-item done">
+                  <div class="cli-todo-icon">${icon("check")}</div>
+                  <div class="cli-todo-body">
+                    <div class="cli-todo-title">CLI installed <span class="cli-todo-chip done">v2.1.4</span></div>
+                    <div class="cli-todo-desc">/usr/local/bin/ph</div>
+                  </div>
+                </div>
+                <div class="cli-todo-item done">
+                  <div class="cli-todo-icon">${icon("check")}</div>
+                  <div class="cli-todo-body">
+                    <div class="cli-todo-title">Agent dirs granted</div>
+                    <div class="cli-todo-desc">.claude · .cursor · .codex · .qoder</div>
+                  </div>
+                </div>
+                <div class="cli-todo-item done">
+                  <div class="cli-todo-icon">${icon("check")}</div>
+                  <div class="cli-todo-body">
+                    <div class="cli-todo-title">Project selected</div>
+                    <div class="cli-todo-desc">prompthub/</div>
+                  </div>
+                </div>
+                <div class="cli-todo-item pending">
+                  <div class="cli-todo-icon"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/></svg></div>
+                  <div class="cli-todo-body">
+                    <div class="cli-todo-title">Gemini CLI <span class="cli-todo-chip pending">Optional</span></div>
+                    <div class="cli-todo-desc">Grant ~/.gemini/ access to connect</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="inspector-panel">
+            <div class="inspector-head"><div class="inspector-title">Quick Actions</div></div>
+            <div class="inspector-body" style="display:flex;flex-direction:column;gap:6px;">
+              <button class="tool-btn primary">${icon("cube")} Install Skill…</button>
+              <button class="tool-btn">${icon("plug")} Grant Agent Access</button>
+              <button class="tool-btn">${icon("link")} Change Project Folder</button>
+              <button class="tool-btn">${icon("sliders")} CLI Settings</button>
+            </div>
+          </section>
+        `
+      },
+
+      // ── Onboarding ─────────────────────────────────────────────────────
+      "onboarding": {
+        main: `<div id="onboarding-view"></div>`,
+        inspector: `<section class="inspector-panel"><div class="inspector-head"><div class="inspector-title">Setup Progress</div></div><div class="inspector-body">
+          <div class="cli-todo-list">
+            <div class="cli-todo-item done"><div class="cli-todo-icon">${icon("check")}</div><div class="cli-todo-body"><div class="cli-todo-title">Welcome</div></div></div>
+            <div class="cli-todo-item done"><div class="cli-todo-icon">${icon("check")}</div><div class="cli-todo-body"><div class="cli-todo-title">Connect AI Service</div></div></div>
+            <div class="cli-todo-item pending"><div class="cli-todo-icon"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/></svg></div><div class="cli-todo-body"><div class="cli-todo-title">Create First Prompt</div></div></div>
+            <div class="cli-todo-item pending"><div class="cli-todo-icon"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/></svg></div><div class="cli-todo-body"><div class="cli-todo-title">Set Up CLI</div></div></div>
+          </div>
+        </div></section>`
+      }
+    };
+
+    let currentView = "prompt-weekly";
+
+    const sidebar = document.getElementById("sidebar");
+    const main = document.getElementById("main");
+    const inspector = document.getElementById("inspector");
+
+    function renderSidebar() {
+      const cliSection = sidebarModel.find(s => s.meta === "cli");
+      const regularSections = sidebarModel.filter(s => s.meta !== "cli");
+
+      sidebar.innerHTML = `
+        ${regularSections.map((section) => `
+          <div class="sidebar-section">
+            <div class="section-head">
+              <div class="section-title"><span>${section.title}</span></div>
+            </div>
+            <div class="nav-list">
+              ${section.items.map((item) => `
+                <div class="nav-row ${item.id === currentView ? "active" : ""}" data-view="${item.id}">
+                  ${icon(item.icon)}
+                  <div class="nav-meta">
+                    <div class="nav-title">${item.label}</div>
+                  </div>
+                  <div class="row-meta">${item.meta}</div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+
+        <div class="sidebar-cli-block">
+          <div class="cli-block-header">
+            <span class="cli-block-title">${icon("terminal")} CLI Integration</span>
+            <span class="cli-status-dot active"></span>
+          </div>
+          <div class="cli-block-status">5 agents connected</div>
+          <div class="nav-list" style="margin-top:4px;">
+            ${cliSection ? cliSection.items.map((item) => `
+              <div class="nav-row ${item.id === currentView ? "active" : ""}" data-view="${item.id}">
+                ${icon(item.icon)}
+                <div class="nav-meta">
+                  <div class="nav-title">${item.label}</div>
+                </div>
+                <div class="row-meta">${item.meta}</div>
+              </div>
+            `).join("") : ""}
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <button class="sidebar-onboarding-btn" id="onboardingBtn">
+            ${icon("rocket")}
+            <span>Get Started Guide</span>
+          </button>
+        </div>
+      `;
+
+      sidebar.querySelectorAll(".nav-row").forEach((row) => {
+        row.addEventListener("click", () => {
+          const view = row.dataset.view;
+          render(view);
+        });
+      });
+
+      const onbBtn = document.getElementById("onboardingBtn");
+      if (onbBtn) onbBtn.addEventListener("click", () => render("onboarding"));
+    }
+
+    function bindAiOptimize() {
+      const btn = document.getElementById("aiOptimizeBtn");
+      const diffBlock = document.getElementById("diffReviewBlock");
+      const editorWrap = document.getElementById("promptEditorWrap");
+      const keepBtn = document.getElementById("diffKeepBtn");
+      const discardBtn = document.getElementById("diffDiscardBtn");
+      const savedBanner = document.getElementById("diffSavedBanner");
+      if (!btn || !diffBlock) return;
+
+      btn.addEventListener("click", () => {
+        btn.classList.add("generating");
+        btn.textContent = "Analyzing…";
+        setTimeout(() => {
+          btn.style.display = "none";
+          diffBlock.style.display = "block";
+        }, 900);
+      });
+      keepBtn?.addEventListener("click", () => {
+        diffBlock.style.display = "none";
+        savedBanner.style.display = "flex";
+        // Update version badge in header
+        const vBadge = main.querySelector(".status-tag:not(.accent)");
+        if (vBadge) vBadge.textContent = "v9";
+      });
+      discardBtn?.addEventListener("click", () => {
+        diffBlock.style.display = "none";
+        btn.classList.remove("generating");
+        btn.innerHTML = `<img src="data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 16 16"><path d="M3.5 12.5L12.5 3.5M9 2l5 5-2 4.5-1.5-1.5L9 11.5 4.5 10 3 8.5l-1-3z"/></svg>')}"> Optimize with AI`;
+        btn.style.display = "flex";
+      });
+    }
+
+    function renderOnboarding() {
+      const el = document.getElementById("onboarding-view");
+      if (!el) return;
+      el.innerHTML = `
+        <div class="onboarding-wrap">
+          <div class="onboarding-hero">
+            <div class="onboarding-logo">${icon("wand")}</div>
+            <div class="onboarding-title">Welcome to PromptHub</div>
+            <div class="onboarding-sub">Your AI prompt and skills workspace. Let's get you set up in 4 steps — it only takes a few minutes.</div>
+          </div>
+          <div class="onboarding-steps">
+            <div class="onboarding-step done">
+              <div class="onboarding-step-num">${icon("check")}</div>
+              <div class="onboarding-step-title">Connect AI Service</div>
+              <div class="onboarding-step-desc">Link your OpenAI, Anthropic, or Ollama API key so prompts can run live previews and tests.</div>
+              <div class="onboarding-step-cta">${icon("check")} Connected to GPT-4o</div>
+            </div>
+            <div class="onboarding-step done">
+              <div class="onboarding-step-num">${icon("check")}</div>
+              <div class="onboarding-step-title">Create Your First Prompt</div>
+              <div class="onboarding-step-desc">Start with a template or write from scratch. Add variables with <code style="font-family:var(--mono);font-size:11px;background:rgba(30,41,64,0.07);padding:1px 4px;border-radius:3px;">{{placeholders}}</code> to make prompts reusable.</div>
+              <div class="onboarding-step-cta">${icon("check")} 16 prompts created</div>
+            </div>
+            <div class="onboarding-step" id="onb-step-cli" style="cursor:pointer;">
+              <div class="onboarding-step-num">3</div>
+              <div class="onboarding-step-title">Set Up CLI Integration</div>
+              <div class="onboarding-step-desc">This is what makes PromptHub different. Run <code style="font-family:var(--mono);font-size:11px;background:rgba(30,41,64,0.07);padding:1px 4px;border-radius:3px;">brew install prompthub</code> then grant PromptHub access to your agent directories — your Skills are automatically injected into Claude Code, Cursor, Codex and more.</div>
+              <div class="onboarding-step-cta">${icon("arrow_right")} Set up now</div>
+            </div>
+            <div class="onboarding-step">
+              <div class="onboarding-step-num">4</div>
+              <div class="onboarding-step-title">Build Your First Skill</div>
+              <div class="onboarding-step-desc">Promote a prompt into a reusable Skill — a structured agent instruction that can be installed globally or scoped to a project.</div>
+              <div class="onboarding-step-cta">${icon("arrow_right")} Start building</div>
+            </div>
+          </div>
+          <div class="onboarding-actions">
+            <button class="tool-btn primary" id="onb-done-btn">${icon("check")} Go to Library</button>
+            <button class="tool-btn" id="onb-cli-btn">${icon("terminal")} Set Up CLI</button>
+          </div>
+        </div>
+      `;
+      document.getElementById("onb-done-btn")?.addEventListener("click", () => render("all-prompts"));
+      document.getElementById("onb-cli-btn")?.addEventListener("click", () => render("cli-dashboard"));
+      document.getElementById("onb-step-cli")?.addEventListener("click", () => render("cli-dashboard"));
+    }
+
+    function render(view) {
+      currentView = view;
+      renderSidebar();
+      const data = views[view] || views["all-prompts"];
+      main.innerHTML = data.main;
+      inspector.innerHTML = data.inspector;
+      // Post-render hooks
+      if (view === "onboarding") renderOnboarding();
+      if (view === "prompt-weekly") bindAiOptimize();
+      // Card-level navigation: any element with data-nav-view navigates on click
+      main.querySelectorAll("[data-nav-view]").forEach(el => {
+        el.addEventListener("click", () => render(el.dataset.navView));
+      });
+      // Skill-row selection: highlight clicked row
+      main.querySelectorAll(".skill-row").forEach(row => {
+        row.addEventListener("click", () => {
+          main.querySelectorAll(".skill-row").forEach(r => r.classList.remove("active"));
+          row.classList.add("active");
+        });
+      });
+      // Segmented control
+      main.querySelectorAll(".seg-control").forEach(ctrl => {
+        ctrl.querySelectorAll(".seg-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            ctrl.querySelectorAll(".seg-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+          });
+        });
+      });
+    }
+
+    render(currentView);
+
+    // ── Search ─────────────────────────────────────────────────────────
+    const searchInput    = document.getElementById("searchInput");
+    const searchDropdown = document.getElementById("searchDropdown");
+    const searchKbd      = document.getElementById("searchKbd");
+
+    // Search index — all navigable items + actions
+    const searchIndex = [
+      // Prompts
+      { label: "Weekly Planning",       sub: "Prompt · Productivity",      view: "prompt-weekly",    icon: "doc" },
+      { label: "Launch Announcement",   sub: "Prompt · Marketing",          view: "prompt-launch",    icon: "doc" },
+      { label: "Blog Post Generator",   sub: "Prompt · Writing",            view: "my-prompts",       icon: "doc" },
+      { label: "Email Responder",       sub: "Prompt · Communication",      view: "my-prompts",       icon: "doc" },
+      { label: "Code Reviewer",         sub: "Prompt · Engineering",        view: "my-prompts",       icon: "doc" },
+      { label: "Meeting Summarizer",    sub: "Prompt · Productivity",       view: "my-prompts",       icon: "doc" },
+      { label: "Bug Fixer",             sub: "Prompt · Engineering",        view: "my-prompts",       icon: "doc" },
+      { label: "SQL Query Builder",     sub: "Prompt · Data",               view: "explore-gallery",  icon: "sparkles" },
+      { label: "Pitch Deck Writer",     sub: "Gallery · Business",          view: "explore-gallery",  icon: "sparkles" },
+      { label: "Resume Tailor",         sub: "Gallery · Career",            view: "explore-gallery",  icon: "sparkles" },
+      { label: "API Docs Generator",    sub: "Shared · Engineering",        view: "shared-with-me",   icon: "link" },
+      // Skills
+      { label: "PromptHub UI Planner",  sub: "My Skill · Draft",            view: "my-skills",        icon: "wand" },
+      { label: "Deep Research Agent",   sub: "My Skill · Draft",            view: "my-skills",        icon: "wand" },
+      { label: "Commit Msg Writer",     sub: "My Skill · Draft",            view: "my-skills",        icon: "wand" },
+      { label: "PR Review Agent",       sub: "My Skill · Draft",            view: "my-skills",        icon: "wand" },
+      { label: "Deep Research Orchestrator", sub: "Store · Research",       view: "skill-store",      icon: "cube" },
+      { label: "Test Coverage Advisor",      sub: "Store · Engineering",    view: "skill-store",      icon: "cube" },
+      { label: "Roadmap Planner",            sub: "Store · Product",        view: "skill-store",      icon: "cube" },
+      { label: "Refactor Coach",             sub: "Installed · Global",     view: "installed-skills", icon: "cube" },
+      { label: "Data Analyst",               sub: "Installed · Project",    view: "installed-skills", icon: "cube" },
+      // Actions
+      { label: "New Prompt",            sub: "Action",                       action: () => render("my-prompts"),    icon: "wand" },
+      { label: "Open Settings",         sub: "Action",                       action: () => openSettings(),          icon: "settings" },
+      { label: "Open Settings → CLI",   sub: "Action",                       action: () => openSettings("cli"),     icon: "settings" },
+      { label: "Open Settings → AI Service", sub: "Action",                  action: () => openSettings("ai-service"), icon: "settings" },
+      // Sections
+      { label: "All Prompts",           sub: "Section",                      view: "all-prompts",      icon: "archive" },
+      { label: "My Prompts",            sub: "Section",                      view: "my-prompts",       icon: "person" },
+      { label: "Explore Gallery",       sub: "Section",                      view: "explore-gallery",  icon: "sparkles" },
+      { label: "Shared with Me",        sub: "Section",                      view: "shared-with-me",   icon: "link" },
+      { label: "My Skills",             sub: "Section",                      view: "my-skills",        icon: "wand" },
+      { label: "Discover Skills",       sub: "Section",                      view: "skill-store",      icon: "sparkles" },
+      { label: "Installed Skills",      sub: "Section",                      view: "installed-skills", icon: "cube" },
+      { label: "CLI Integration",       sub: "Section",                      view: "cli-dashboard",    icon: "terminal" },
+      { label: "CLI Workspaces",        sub: "Section",                      view: "cli-dashboard",    icon: "terminal" },
+      { label: "Get Started Guide",     sub: "Action",                       action: () => render("onboarding"), icon: "rocket" },
+    ];
+
+    const RESULT_GROUPS = [
+      { key: "Action",   label: "Actions" },
+      { key: "Section",  label: "Navigate to" },
+      { key: "Prompt",   label: "Prompts" },
+      { key: "Gallery",  label: "Gallery" },
+      { key: "Shared",   label: "Shared" },
+      { key: "Skill",    label: "Skills" },
+      { key: "Store",    label: "Skill Store" },
+      { key: "Installed",label: "Installed Skills" },
+      { key: "My Skill", label: "My Skills" },
+    ];
+
+    let searchSelectedIdx = -1;
+    let searchResults = [];
+
+    function runSearch(q) {
+      if (!q.trim()) { closeSearch(); return; }
+      const lq = q.toLowerCase();
+      searchResults = searchIndex.filter(item =>
+        item.label.toLowerCase().includes(lq) || item.sub.toLowerCase().includes(lq)
+      ).slice(0, 14);
+      renderSearchDropdown();
+    }
+
+    function renderSearchDropdown() {
+      searchSelectedIdx = -1;
+      if (!searchResults.length) {
+        searchDropdown.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-2);font-size:13px;">No results</div>`;
+        searchDropdown.style.display = "block";
+        return;
+      }
+      // Group results
+      const grouped = {};
+      searchResults.forEach(r => {
+        const groupKey = r.sub.split(" · ")[0];
+        if (!grouped[groupKey]) grouped[groupKey] = [];
+        grouped[groupKey].push(r);
+      });
+      let html = "";
+      RESULT_GROUPS.forEach(({ key, label }) => {
+        if (!grouped[key]) return;
+        html += `<div style="padding:6px 12px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-2);">${label}</div>`;
+        grouped[key].forEach((item, localIdx) => {
+          const globalIdx = searchResults.indexOf(item);
+          html += `
+            <div class="search-result-row" data-idx="${globalIdx}"
+              style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-radius:8px;margin:1px 6px;transition:background 0.1s;">
+              <span style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:var(--text-2);flex-shrink:0;">${icon(item.icon)}</span>
+              <span style="flex:1;min-width:0;">
+                <span style="font-size:13px;font-weight:500;color:var(--text-0);">${item.label}</span>
+                <span style="font-size:11px;color:var(--text-2);margin-left:8px;">${item.sub}</span>
+              </span>
+              ${item.action ? `<span style="font-size:10px;color:var(--text-2);">Return</span>` : `<span style="font-size:10px;color:var(--text-2);">Open</span>`}
+            </div>`;
+        });
+      });
+      searchDropdown.innerHTML = html;
+      searchDropdown.style.display = "block";
+
+      // Wire up click handlers
+      searchDropdown.querySelectorAll(".search-result-row").forEach(row => {
+        row.addEventListener("mouseenter", () => highlightSearchRow(+row.dataset.idx));
+        row.addEventListener("click", () => activateResult(+row.dataset.idx));
+      });
+    }
+
+    function highlightSearchRow(idx) {
+      searchSelectedIdx = idx;
+      searchDropdown.querySelectorAll(".search-result-row").forEach(r => {
+        r.style.background = +r.dataset.idx === idx
+          ? "rgba(60,104,216,0.12)"
+          : "";
+      });
+    }
+
+    function activateResult(idx) {
+      const item = searchResults[idx];
+      if (!item) return;
+      closeSearch();
+      if (item.action) { item.action(); }
+      else if (item.view) { render(item.view); }
+    }
+
+    function closeSearch() {
+      searchDropdown.style.display = "none";
+      searchDropdown.innerHTML = "";
+      searchResults = [];
+      searchSelectedIdx = -1;
+    }
+
+    searchInput.addEventListener("input", e => runSearch(e.target.value));
+    searchInput.addEventListener("focus", () => {
+      searchKbd.style.display = "none";
+      if (searchInput.value) runSearch(searchInput.value);
+    });
+    searchInput.addEventListener("blur", () => {
+      setTimeout(() => {
+        closeSearch();
+        if (!searchInput.value) searchKbd.style.display = "";
+      }, 150);
+    });
+    searchInput.addEventListener("keydown", e => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        highlightSearchRow(Math.min(searchSelectedIdx + 1, searchResults.length - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        highlightSearchRow(Math.max(searchSelectedIdx - 1, 0));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (searchSelectedIdx >= 0) activateResult(searchSelectedIdx);
+        else if (searchResults.length) activateResult(0);
+      } else if (e.key === "Escape") {
+        closeSearch();
+        searchInput.value = "";
+        searchInput.blur();
+      }
+    });
+
+    // Global shortcut ⌥ Space to focus search
+    document.addEventListener("keydown", e => {
+      if (e.altKey && e.code === "Space" && !settingsOverlay.classList.contains("open")) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+    });
+
+
+    const settingsOverlay = document.getElementById("settingsOverlay");
+    const settingsClose   = document.getElementById("settingsClose");
+    const settingsButton  = document.getElementById("settingsButton");
+
+    function openSettings(tab) {
+      settingsOverlay.classList.add("open");
+      if (tab) switchTab(tab);
+    }
+    function closeSettings() {
+      settingsOverlay.classList.remove("open");
+    }
+
+    settingsButton.addEventListener("click", () => openSettings());
+    settingsClose.addEventListener("click", closeSettings);
+    settingsOverlay.addEventListener("click", e => { if (e.target === settingsOverlay) closeSettings(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeSettings(); });
+
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll(".settings-tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".settings-tab-content").forEach(c => c.classList.remove("active"));
+      const btn = document.querySelector(`.settings-tab-btn[data-tab="${tabId}"]`);
+      const content = document.getElementById(`tab-${tabId}`);
+      if (btn) btn.classList.add("active");
+      if (content) content.classList.add("active");
+    }
+
+    document.querySelectorAll(".settings-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+
+    // Toggle switches
+    document.querySelectorAll(".toggle-switch").forEach(sw => {
+      sw.addEventListener("click", () => sw.classList.toggle("off"));
+    });
+
+    // Service picker
+    document.querySelectorAll("#servicePicker .service-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#servicePicker .service-chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        const configs = {
+          openai: { host: "https://api.openai.com/v1", model: "gpt-4o" },
+          anthropic: { host: "https://api.anthropic.com/v1", model: "claude-opus-4-5" },
+          ollama: { host: "http://localhost:11434/v1", model: "llama3.1:8b" },
+          mistral: { host: "https://api.mistral.ai/v1", model: "mistral-large" },
+          perplexity: { host: "https://api.perplexity.ai", model: "sonar-pro" },
+          custom: { host: "", model: "" }
+        };
+        const cfg = configs[chip.dataset.service] || {};
+        const h = document.getElementById("svc-host");
+        const m = document.getElementById("svc-model");
+        if (h) h.value = cfg.host || "";
+        if (m) m.value = cfg.model || "";
+      });
+    });
+
+    // Token show/hide
+    const tokenToggle = document.getElementById("tokenToggle");
+    const tokenInput  = document.getElementById("svc-token");
+    if (tokenToggle && tokenInput) {
+      tokenToggle.addEventListener("click", () => {
+        tokenInput.type = tokenInput.type === "password" ? "text" : "password";
+        tokenToggle.innerHTML = tokenInput.type === "password"
+          ? `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="8" rx="5.5" ry="3.5"/><circle cx="8" cy="8" r="1.6"/></svg>`
+          : `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="14" y2="14"/><path d="M6.5 5.8a4 4 0 0 1 5.7 5.7M4 4.3A9 9 0 0 0 2.5 8c1.2 3 4 5 5.5 5a6 6 0 0 0 3.2-.9"/></svg>`;
+      });
+    }
+
+    // CLI "Run Check Now" mock
+    const testCliBtn = document.getElementById("testCliBtn");
+    if (testCliBtn) {
+      testCliBtn.addEventListener("click", () => {
+        testCliBtn.textContent = "Checking…";
+        testCliBtn.disabled = true;
+        setTimeout(() => {
+          const r = document.getElementById("cliCheckResult");
+          if (r) { r.style.display = "flex"; r.innerHTML = "✓ Connected · 9 project skills · 5 global skills"; }
+          testCliBtn.textContent = "Run Check Now";
+          testCliBtn.disabled = false;
+        }, 900);
+      });
+    }
+
+    // CLI Grant Access toggle mock
+    let grantedCount = 4;
+    const agentNames = {
+      agents: "PromptHub", claude: "Claude Code", codex: "Codex", cursor: "Cursor",
+      gemini: "Gemini CLI", opencode: "OpenCode", qoder: "Qoder", iflow: "iFlow", qwen: "Qwen"
+    };
+    function updateCliStatusTodo() {
+      const pending = 9 - grantedCount;
+      const grantedRow = document.getElementById("cliGrantedRow");
+      const pendingRow = document.getElementById("cliPendingRow");
+      if (!grantedRow || !pendingRow) return;
+      // Update granted row
+      const grantedAgentEls = Array.from(document.querySelectorAll(".cli-agent-row"))
+        .filter(r => r.querySelector(".cli-status-dot.granted"))
+        .map(r => agentNames[r.dataset.agent] || r.dataset.agent);
+      grantedRow.querySelector(".cli-todo-title").textContent = `${grantedCount} agents granted access`;
+      const grantedChips = grantedRow.querySelector(".cli-todo-agents");
+      grantedChips.innerHTML = grantedAgentEls.map(n => `<span class="cli-todo-chip">${n}</span>`).join("");
+      // Update pending row
+      const pendingAgentEls = Array.from(document.querySelectorAll(".cli-agent-row"))
+        .filter(r => !r.querySelector(".cli-status-dot.granted") && r.querySelector("button.tool-btn"))
+        .map(r => agentNames[r.dataset.agent] || r.dataset.agent);
+      if (pending === 0) {
+        pendingRow.className = "cli-todo-item done";
+        pendingRow.querySelector(".cli-todo-icon").innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2 6.8-6.8"/></svg>`;
+        pendingRow.querySelector(".cli-todo-title").textContent = "All agents granted";
+        pendingRow.querySelector(".cli-todo-agents").innerHTML = "";
+      } else {
+        pendingRow.querySelector(".cli-todo-title").textContent = `${pending} agents pending`;
+        const pendingChips = pendingRow.querySelector(".cli-todo-agents");
+        pendingChips.innerHTML = pendingAgentEls.map(n => `<span class="cli-todo-chip">${n}</span>`).join("");
+      }
+    }
+    document.querySelectorAll(".cli-agent-row").forEach(row => {
+      const grantBtn = row.querySelector("button.tool-btn");
+      if (grantBtn) {
+        grantBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          const dot = row.querySelector(".cli-status-dot");
+          dot.className = "cli-status-dot granted";
+          grantBtn.outerHTML = `<span class="status-tag good" style="font-size:10px;padding:2px 7px;">Granted</span>`;
+          grantedCount++;
+          updateCliStatusTodo();
+        });
+      }
+    });
+  </script>
+</body>
+</html>

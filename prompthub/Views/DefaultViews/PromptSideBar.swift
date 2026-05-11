@@ -12,20 +12,24 @@ struct PromptSideBar: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Prompt.name) var prompts: [Prompt]
     @AppStorage("sidebar.recentPromptsExpanded") private var isRecentPromptsExpanded = true
-    
+    @ObservedObject private var cliAccess = CLIDirectoryAccessManager.shared
+
     @State private var promptToDelete: Prompt?
-    
+
     @Binding var promptSelection: PromptSelection
     let onCreateNewPrompt: () -> Void
     let onCreateNewSkill: () -> Void
-    
+
     @Environment(\.openWindow) var openWindow
+
+    private var grantedAgentCount: Int { cliAccess.grantedDirectories.count }
     
     var body: some View {
         VStack(spacing: 0) {
             List(selection: $promptSelection) {
                 librarySection
                 skillsSection
+                cliSection
                 recentPromptsSection
             }
             .listStyle(.sidebar)
@@ -95,6 +99,38 @@ struct PromptSideBar: View {
     }
 
     @ViewBuilder
+    private var cliSection: some View {
+        Section {
+            NavigationLink(value: PromptSelection.cliDashboard) {
+                Label {
+                    HStack {
+                        Text("Agents")
+                        Spacer()
+                        if grantedAgentCount > 0 {
+                            Text("\(grantedAgentCount)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } icon: {
+                    ZStack(alignment: .bottomTrailing) {
+                        Image(systemName: "terminal")
+                        if grantedAgentCount > 0 {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 6, height: 6)
+                                .offset(x: 3, y: 3)
+                        }
+                    }
+                }
+            }
+            .help("Manage CLI agent connections and installed skills")
+        } header: {
+            Text("CLI Integration")
+        }
+    }
+
+    @ViewBuilder
     private var recentPromptsSection: some View {
         Section("Recent Prompts", isExpanded: $isRecentPromptsExpanded) {
             ForEach(prompts) { prompt in
@@ -121,6 +157,26 @@ struct PromptSideBar: View {
     private var sidebarFooter: some View {
         VStack(spacing: 0) {
             Divider()
+            // Get Started Guide button
+            Button {
+                promptSelection = .onboarding
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .imageScale(.small)
+                    Text("Get Started Guide")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .help("Open the onboarding guide")
+
             HStack {
                 Button {
                     promptSelection = .settings
@@ -131,9 +187,9 @@ struct PromptSideBar: View {
                 }
                 .buttonStyle(.plain)
                 .help("Settings")
-                
+
                 Spacer()
-                
+
                 Button {
                     handleCreateAction()
                 } label: {

@@ -49,6 +49,8 @@ struct ContentView: View {
         case .mySkills:          return "My Skills"
         case .skillStore:        return "Skill Store"
         case .installedSkills:   return "Installed Skills"
+        case .cliDashboard:      return "CLI Integration"
+        case .onboarding:        return "Get Started"
         case .prompt(let p):     return p.name
         case .skill(let s):      return s.displayName
         }
@@ -68,6 +70,11 @@ struct ContentView: View {
                         switch promptSelection {
                         case .settings:
                             SettingsView()
+                        case .cliDashboard:
+                            CLIDashboardView()
+                        case .onboarding:
+                            OnboardingView(onFinish: { promptSelection = .allPrompts },
+                                           onCLI: { promptSelection = .cliDashboard })
                         case .prompt(let selectedPrompt):
                             PromptDetail(prompt: selectedPrompt, onPromoteToSkill: { skill in promptSelection = .skill(skill) })
                         default:
@@ -82,6 +89,8 @@ struct ContentView: View {
             .onKeyPress(.escape) {
                 if case .prompt = promptSelection { promptSelection = .allPrompts; return .handled }
                 if case .skill = promptSelection  { promptSelection = .mySkills; return .handled }
+                if case .cliDashboard = promptSelection { promptSelection = .allPrompts; return .handled }
+                if case .onboarding = promptSelection  { promptSelection = .allPrompts; return .handled }
                 return .ignored
             }
             .toast(isPresenting: $showToast) { AlertToast(type: toastType, title: toastMessage) }
