@@ -13,6 +13,9 @@ enum SearchResultType: String, CaseIterable {
     case shared = "Shared Creation"
     case gallery = "Gallery Prompt"
     case skill = "Skill Draft"
+    case installedSkill = "Installed Skill"
+    case catalogSkill = "Catalog Skill"
+    case action = "Action"
     
     var icon: String {
         switch self {
@@ -24,6 +27,12 @@ enum SearchResultType: String, CaseIterable {
             return "globe"
         case .skill:
             return "wand.and.stars"
+        case .installedSkill:
+            return "square.stack.3d.up.fill"
+        case .catalogSkill:
+            return "sparkles.rectangle.stack"
+        case .action:
+            return "command"
         }
     }
     
@@ -37,6 +46,12 @@ enum SearchResultType: String, CaseIterable {
             return "systemGray"
         case .skill:
             return "mint"
+        case .installedSkill:
+            return "green"
+        case .catalogSkill:
+            return "purple"
+        case .action:
+            return "accent"
         }
     }
 }
@@ -109,7 +124,7 @@ struct SearchableSharedCreation: SearchableItem, Identifiable {
     var type: SearchResultType { .shared }
 
     var navigationTarget: SearchNavigationTarget? {
-        nil
+        .selection(.shared, query: creation.name)
     }
 }
 
@@ -143,7 +158,7 @@ struct SearchableGalleryPrompt: SearchableItem, Identifiable {
     var type: SearchResultType { .gallery }
 
     var navigationTarget: SearchNavigationTarget? {
-        nil
+        .selection(.explore, query: galleryPrompt.name)
     }
 }
 
@@ -199,6 +214,102 @@ struct SearchableSkillDraft: SearchableItem, Identifiable {
     var navigationTarget: SearchNavigationTarget? {
         .skill(skill.id)
     }
+}
+
+struct SearchableInstalledSkill: SearchableItem, Identifiable {
+    let skill: InstalledSkillSnapshot
+
+    var id: String {
+        skill.id
+    }
+
+    var stableID: String {
+        id
+    }
+
+    var name: String {
+        skill.displayName
+    }
+
+    var description: String? {
+        skill.summary
+    }
+
+    var content: String {
+        [skill.displayName, skill.summary, skill.packageName].joined(separator: "\n")
+    }
+
+    var searchableContent: String {
+        [
+            skill.displayName,
+            skill.summary,
+            skill.packageName,
+            skill.displaySource ?? "",
+            skill.scope.displayName,
+            skill.agents.map(\.displayName).joined(separator: " ")
+        ]
+        .joined(separator: "\n")
+    }
+
+    var type: SearchResultType { .installedSkill }
+
+    var navigationTarget: SearchNavigationTarget? {
+        .selection(.installedSkills, query: skill.displayName)
+    }
+}
+
+struct SearchableCatalogSkill: SearchableItem, Identifiable {
+    let skill: CatalogSkill
+
+    var id: String {
+        skill.id
+    }
+
+    var stableID: String {
+        id
+    }
+
+    var name: String {
+        skill.displayName
+    }
+
+    var description: String? {
+        skill.summary
+    }
+
+    var content: String {
+        [skill.displayName, skill.summary].joined(separator: "\n")
+    }
+
+    var searchableContent: String {
+        [
+            skill.displayName,
+            skill.summary,
+            skill.displaySource ?? "",
+            skill.hintedScopes.map(\.displayName).joined(separator: " "),
+            skill.hintedAgents.map(\.displayName).joined(separator: " ")
+        ]
+        .joined(separator: "\n")
+    }
+
+    var type: SearchResultType { .catalogSkill }
+
+    var navigationTarget: SearchNavigationTarget? {
+        .selection(.skillStore, query: skill.displayName)
+    }
+}
+
+struct SearchableShortcut: SearchableItem, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let content: String
+    let searchableContent: String
+    let navigationTarget: SearchNavigationTarget?
+
+    var stableID: String { id }
+
+    var type: SearchResultType { .action }
 }
 
 protocol SearchableItem: Identifiable {

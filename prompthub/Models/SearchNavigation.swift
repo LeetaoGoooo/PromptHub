@@ -3,6 +3,9 @@ import Foundation
 enum SearchNavigationTarget: Equatable {
     case prompt(UUID)
     case skill(UUID)
+    case selection(PromptSelection, query: String?)
+    case newPrompt
+    case newSkillDraft
 }
 
 extension Notification.Name {

@@ -52,9 +52,28 @@ extension ContentView {
     func handleSearchNavigation(_ target: SearchNavigationTarget) {
         switch target {
         case .prompt(let promptID):
-            if let prompt = prompts.first(where: { $0.id == promptID }) { promptSelection = .prompt(prompt) }
+            searchText = ""
+            if let prompt = prompts.first(where: { $0.id == promptID }) {
+                promptSelection = .prompt(prompt)
+            } else {
+                promptSelection = .allPrompts
+            }
         case .skill(let skillID):
-            if let skill = skillDrafts.first(where: { $0.id == skillID }) { promptSelection = .skill(skill) }
+            searchText = ""
+            if let skill = skillDrafts.first(where: { $0.id == skillID }) {
+                promptSelection = .skill(skill)
+            } else {
+                promptSelection = .mySkills
+            }
+        case .selection(let selection, let query):
+            promptSelection = selection
+            searchText = query ?? ""
+        case .newPrompt:
+            searchText = ""
+            createNewPrompt()
+        case .newSkillDraft:
+            searchText = ""
+            createNewSkillDraft()
         }
     }
 

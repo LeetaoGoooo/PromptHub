@@ -11,7 +11,7 @@ struct ContentView: View {
 
     @State var promptSelection: PromptSelection = .allPrompts
     @AppStorage("onboardingCompleted") private var onboardingCompleted = false
-    @State private var searchText = ""
+    @State var searchText = ""
     @State var galleryPrompts: [GalleryPrompt] = []
     @State var isLoading = true
     @State var showToast = false

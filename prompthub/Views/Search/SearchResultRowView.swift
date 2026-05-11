@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct SearchResultRowView<Item: SearchableItem>: View {
-    let item: Item
+struct SearchResultRowView: View {
+    let item: any SearchableItem
     let type: SearchResultType
     let isSelected: Bool
     let onOpen: () -> Void
@@ -122,6 +122,12 @@ struct SearchResultRowView<Item: SearchableItem>: View {
             return .gray
         case "mint":
             return .mint
+        case "green":
+            return .green
+        case "purple":
+            return .purple
+        case "accent":
+            return .accentColor
         default:
             return .primary
         }
