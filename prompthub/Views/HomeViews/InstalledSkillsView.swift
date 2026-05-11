@@ -132,6 +132,7 @@ struct InstalledSkillsView: View {
                 }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
+                .accessibilityLabel("Refresh installed skills")
                 .help("Refresh installed skills")
 
                 if isCheckingUpdates {
@@ -161,6 +162,7 @@ struct InstalledSkillsView: View {
                 }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
+                .accessibilityLabel("Audit all installed skills")
                 .help("Audit all installed skills")
 
                 Divider().frame(height: 14)

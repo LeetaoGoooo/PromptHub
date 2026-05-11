@@ -108,43 +108,36 @@ struct SkillLibraryHeaderCard<Accessory: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Row 1 — title + toolbar
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    if !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                }
+        VStack(alignment: .leading, spacing: 10) {
+            // Row 1 — title only (full width, breathes)
+            Text(title)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.primary)
 
-                Spacer(minLength: 12)
+            // Row 2 — subtitle (allowed to wrap up to 2 lines instead of mid-truncating)
+            if !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-                // FIX (line 38 crash): NSView-backed controls (.menuStyle(.borderedButton),
-                // .buttonStyle(.bordered)) call -layoutSubtreeIfNeeded during SwiftUI's own
-                // layout pass, causing AppKit recursion. Wrapping in HStack + .fixedSize
-                // creates an isolated layout boundary — SwiftUI treats the accessory as a
-                // fixed-size atom and stops probing it for size during the parent layout pass.
+            // Row 3 — accessory bar on its own row, right-aligned
+            HStack(spacing: 6) {
+                Spacer(minLength: 0)
+                // FIX (line 38 crash): isolate AppKit-backed controls' layout pass.
                 HStack(spacing: 6) { accessory() }
                     .fixedSize(horizontal: true, vertical: false)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 14)
-            .padding(.bottom, metrics.isEmpty ? 14 : 6)
 
-            // Row 2 — compact metric strip
+            // Row 4 — metric strip
             if !metrics.isEmpty {
-                HStack(spacing: 0) {
-                    ForEach(Array(metrics.enumerated()), id: \.element.id) { index, metric in
-                        HStack(spacing: 4) {
+                HStack(spacing: 14) {
+                    ForEach(metrics) { metric in
+                        HStack(spacing: 5) {
                             Image(systemName: metric.systemImage)
-                                .font(.system(size: 9, weight: .medium))
+                                .font(.caption2.weight(.medium))
                                 .foregroundStyle(.tertiary)
                             Text(metric.value)
                                 .font(.caption.weight(.semibold))
@@ -154,25 +147,20 @@ struct SkillLibraryHeaderCard<Accessory: View>: View {
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                         }
-                        if index < metrics.count - 1 {
-                            Text("·")
-                                .font(.caption2)
-                                .foregroundStyle(.quaternary)
-                                .padding(.horizontal, 5)
-                        }
                     }
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 10)
+                .padding(.top, 2)
             }
         }
+        .padding(.horizontal, 22)
+        .padding(.top, 16)
+        .padding(.bottom, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             // Liquid Glass: vibrancy layer + specular edge highlight
             ZStack(alignment: .top) {
                 LibraryGlassMaterial(material: .headerView, blendingMode: .withinWindow)
-                // Specular top-edge shimmer — the defining glass highlight
                 LinearGradient(
                     colors: [Color.white.opacity(0.11), Color.clear],
                     startPoint: .top,
@@ -181,7 +169,6 @@ struct SkillLibraryHeaderCard<Accessory: View>: View {
             }
         }
         .overlay(alignment: .bottom) {
-            // Bottom edge: thin rule that separates glass header from content
             Rectangle()
                 .fill(Color.primary.opacity(0.07))
                 .frame(height: 0.5)
@@ -220,7 +207,12 @@ struct SkillLibraryScreen<Accessory: View, Content: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background {
+            // Window-spanning Liquid Glass underlayer so content inherits the
+            // same vibrancy as the header card instead of sitting on a flat fill.
+            LibraryGlassMaterial(material: .underWindowBackground, blendingMode: .behindWindow)
+                .ignoresSafeArea()
+        }
     }
 }
 

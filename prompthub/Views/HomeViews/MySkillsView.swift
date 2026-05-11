@@ -46,6 +46,7 @@ struct MySkillsView: View {
                     .buttonStyle(.borderless)
                     .controlSize(.small)
                     .disabled(selectedSkill == nil)
+                    .accessibilityLabel("Copy SKILL.md")
                     .help("Copy SKILL.md")
                 }
             }

@@ -35,6 +35,7 @@ extension SkillStoreView {
             Button { fetchSkills(query: searchText) } label: { Image(systemName: "arrow.clockwise") }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
+                .accessibilityLabel("Refresh catalog")
                 .help("Refresh catalog")
 
             Menu {
@@ -54,6 +55,7 @@ extension SkillStoreView {
             .menuIndicator(.hidden)
             .controlSize(.small)
             .fixedSize()
+            .accessibilityLabel("Import skill")
             .help("Import a local or private skill")
 
             Divider().frame(height: 14)
