@@ -28,7 +28,18 @@ struct ContentView: View {
         case .mySkills, .skill:          return "Search skills..."
         case .skillStore:                return "Search skill catalog..."
         case .installedSkills:           return "Search installed skills..."
+        case .cliDashboard, .settings, .onboarding:
+            return ""
         default:                         return "Search prompts..."
+        }
+    }
+
+    private var isSidebarSearchEnabled: Bool {
+        switch promptSelection {
+        case .cliDashboard, .settings, .onboarding:
+            return false
+        default:
+            return true
         }
     }
 
@@ -59,9 +70,16 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            PromptSideBar(promptSelection: $promptSelection, onCreateNewPrompt: createNewPrompt, onCreateNewSkill: createNewSkillDraft)
-                .navigationSplitViewColumnWidth(min: 170, ideal: 190, max: 240)
-                .frame(minWidth: 170)
+            PromptSideBar(
+                promptSelection: $promptSelection,
+                searchText: $searchText,
+                searchPlaceholder: searchPrompt,
+                isSearchEnabled: isSidebarSearchEnabled,
+                onCreateNewPrompt: createNewPrompt,
+                onCreateNewSkill: createNewSkillDraft
+            )
+            .navigationSplitViewColumnWidth(min: 210, ideal: 235, max: 275)
+            .frame(minWidth: 210)
         } detail: {
             Group {
                 if isSkillsSelection {
@@ -86,13 +104,13 @@ struct ContentView: View {
                 }
             }
             .navigationTitle(navigationTitle)
-            .searchable(text: $searchText, placement: .toolbar, prompt: searchPrompt)
             .toolbar { toolbarContent }
             .onKeyPress(.escape) {
                 if case .prompt = promptSelection { promptSelection = .allPrompts; return .handled }
                 if case .skill = promptSelection  { promptSelection = .mySkills; return .handled }
                 if case .cliDashboard = promptSelection { promptSelection = .allPrompts; return .handled }
                 if case .onboarding = promptSelection  { promptSelection = .allPrompts; return .handled }
+                if case .settings = promptSelection { promptSelection = .allPrompts; return .handled }
                 return .ignored
             }
             .toast(isPresenting: $showToast) { AlertToast(type: toastType, title: toastMessage) }
