@@ -98,10 +98,10 @@ struct SkillLibraryEmptyState<Actions: View>: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Icon well — glassy circle
+            // Icon well — flat tinted circle (content layer: no backdrop filter per Liquid Glass spec)
             ZStack {
                 Circle()
-                    .fill(.regularMaterial)
+                    .fill(Color(NSColor.controlBackgroundColor))
                     .frame(width: 68, height: 68)
                     .overlay {
                         Circle()
@@ -133,8 +133,8 @@ struct SkillLibraryEmptyState<Actions: View>: View {
 
 // MARK: - Inspector Card
 
-/// Glass-surfaced card for inspector / detail sections.
-/// Rounded rect with material background and a subtle stroke border.
+/// Opaque content card for inspector / detail sections.
+/// Uses flat NSColor surface per Liquid Glass content-layer spec (no backdrop-filter).
 struct SkillLibraryInspectorCard<Content: View>: View {
     let title: String?
     @ViewBuilder let content: () -> Content
@@ -157,7 +157,7 @@ struct SkillLibraryInspectorCard<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(.regularMaterial)
+        .background(Color(NSColor.controlBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
