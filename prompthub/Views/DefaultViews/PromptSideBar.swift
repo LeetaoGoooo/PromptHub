@@ -42,19 +42,13 @@ struct PromptSideBar: View {
             sidebarHeader
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    primaryAreaSection
-
-                    switch currentPrimaryArea {
-                    case .skills:
-                        skillsNavigationSection
-                    case .prompts:
-                        promptsNavigationSection
-                    case .agents:
-                        agentsNavigationSection
-                    }
+                VStack(alignment: .leading, spacing: 18) {
+                    promptsNavigationSection
+                    skillsNavigationSection
+                    agentsNavigationSection
                 }
                 .padding(.horizontal, 12)
+                .padding(.top, 4)
                 .padding(.bottom, 18)
             }
 
