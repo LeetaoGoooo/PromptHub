@@ -76,8 +76,6 @@ struct ContentView: View {
             PromptSideBar(
                 installedWorkspaceStore: installedWorkspaceStore,
                 promptSelection: $promptSelection,
-                skillsScopeFilter: $skillsScopeFilter,
-                skillsSourceFilter: $skillsSourceFilter,
                 searchText: $searchText,
                 searchPlaceholder: searchPrompt,
                 isSearchEnabled: isSidebarSearchEnabled,

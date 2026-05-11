@@ -17,8 +17,6 @@ struct PromptSideBar: View {
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
 
     @Binding var promptSelection: PromptSelection
-    @Binding var skillsScopeFilter: SkillsSidebarScopeFilter
-    @Binding var skillsSourceFilter: SkillsSidebarSourceFilter
     @Binding var searchText: String
     let searchPlaceholder: String
     let isSearchEnabled: Bool
@@ -31,6 +29,15 @@ struct PromptSideBar: View {
 
     private var promptsCount: Int { prompts.count + galleryCount }
     private var allInstalledCount: Int { installedSkills.count }
+
+    private var isPromptDetailSelected: Bool {
+        if case .prompt = promptSelection { return true }
+        return false
+    }
+    private var isSkillDraftDetailSelected: Bool {
+        if case .skill = promptSelection { return true }
+        return false
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -95,16 +102,16 @@ struct PromptSideBar: View {
             sidebarSectionHeader("Prompts")
 
             VStack(spacing: 6) {
-                sidebarSelectionButton(title: "All Prompts", icon: "square.grid.2x2", meta: "\(promptsCount)", isActive: promptSelection == .allPrompts) {
+                sidebarSelectionButton(title: "All Prompts", icon: "square.grid.2x2", meta: metaCount(promptsCount), isActive: promptSelection == .allPrompts || isPromptDetailSelected) {
                     promptSelection = .allPrompts
                 }
-                sidebarSelectionButton(title: "My Prompts", icon: "person", meta: "\(prompts.count)", isActive: promptSelection == .mine) {
+                sidebarSelectionButton(title: "My Prompts", icon: "person", meta: metaCount(prompts.count), isActive: promptSelection == .mine) {
                     promptSelection = .mine
                 }
-                sidebarSelectionButton(title: "Shared with Me", icon: "link", meta: sharedCreations.isEmpty ? nil : "\(sharedCreations.count)", isActive: promptSelection == .shared) {
+                sidebarSelectionButton(title: "Shared with Me", icon: "link", meta: metaCount(sharedCreations.count), isActive: promptSelection == .shared) {
                     promptSelection = .shared
                 }
-                sidebarSelectionButton(title: "Explore Gallery", icon: "sparkles", meta: "\(galleryCount)", isActive: promptSelection == .explore) {
+                sidebarSelectionButton(title: "Explore Gallery", icon: "sparkles", meta: metaCount(galleryCount), isActive: promptSelection == .explore) {
                     promptSelection = .explore
                 }
             }
@@ -116,10 +123,10 @@ struct PromptSideBar: View {
             sidebarSectionHeader("Skills")
 
             VStack(spacing: 6) {
-                sidebarSelectionButton(title: "Installed", icon: "square.stack.3d.up.fill", meta: "\(allInstalledCount)", isActive: promptSelection == .installedSkills) {
+                sidebarSelectionButton(title: "Installed", icon: "square.stack.3d.up.fill", meta: metaCount(allInstalledCount), isActive: promptSelection == .installedSkills) {
                     promptSelection = .installedSkills
                 }
-                sidebarSelectionButton(title: "Drafts", icon: "tag", meta: "\(skillDrafts.count)", isActive: promptSelection == .mySkills || isSkillDraftDetailSelected) {
+                sidebarSelectionButton(title: "Drafts", icon: "tag", meta: metaCount(skillDrafts.count), isActive: promptSelection == .mySkills || isSkillDraftDetailSelected) {
                     promptSelection = .mySkills
                 }
                 sidebarSelectionButton(title: "Discover", icon: "globe.europe.africa", meta: nil, isActive: promptSelection == .skillStore) {
@@ -134,7 +141,7 @@ struct PromptSideBar: View {
             sidebarSectionHeader("Agents")
 
             VStack(spacing: 6) {
-                sidebarSelectionButton(title: "Workspaces", icon: "terminal", meta: "\(grantedAgentCount)", isActive: promptSelection == .cliDashboard) {
+                sidebarSelectionButton(title: "Workspaces", icon: "terminal", meta: metaCount(grantedAgentCount), isActive: promptSelection == .cliDashboard) {
                     promptSelection = .cliDashboard
                 }
             }
@@ -240,11 +247,8 @@ struct PromptSideBar: View {
         }
     }
 
-    private var isSkillDraftDetailSelected: Bool {
-        if case .skill = promptSelection {
-            return true
-        }
-        return false
+    private func metaCount(_ value: Int) -> String? {
+        value > 0 ? "\(value)" : nil
     }
 
     @ViewBuilder

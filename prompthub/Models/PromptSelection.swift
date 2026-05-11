@@ -1,5 +1,3 @@
-import Foundation
-
 // MARK: - Navigation Selection
 
 enum PromptSelection: Hashable, Equatable {
