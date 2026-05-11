@@ -6,12 +6,23 @@ struct OnboardingView: View {
     let onFinish: () -> Void
     let onCLI: () -> Void
 
+    @AppStorage("onboardingCompleted") private var onboardingCompleted = false
     @AppStorage("onboarding.aiServiceConnected") private var aiServiceConnected = false
     @AppStorage("onboarding.firstPromptCreated") private var firstPromptCreated = false
     @AppStorage("onboarding.cliSetupSeen") private var cliSetupSeen = false
     @ObservedObject private var cliAccess = CLIDirectoryAccessManager.shared
 
     private var cliConnected: Bool { cliAccess.grantedDirectories.count > 0 }
+
+    private func finish() {
+        onboardingCompleted = true
+        onFinish()
+    }
+
+    private func goToCLI() {
+        cliSetupSeen = true
+        onCLI()
+    }
 
     var body: some View {
         ScrollView {
@@ -47,7 +58,7 @@ struct OnboardingView: View {
                         description: "Start with a template or write from scratch. Add variables with {{placeholders}} to make prompts reusable.",
                         isDone: firstPromptCreated,
                         ctaLabel: "Go to Library",
-                        ctaAction: { firstPromptCreated = true; onFinish() }
+                        ctaAction: { firstPromptCreated = true; finish() }
                     )
                     OnboardingStepCard(
                         number: 3,
@@ -56,7 +67,7 @@ struct OnboardingView: View {
                         isDone: cliConnected,
                         ctaLabel: "Set Up CLI",
                         isHighlighted: true,
-                        ctaAction: { cliSetupSeen = true; onCLI() }
+                        ctaAction: goToCLI
                     )
                     OnboardingStepCard(
                         number: 4,
@@ -64,20 +75,20 @@ struct OnboardingView: View {
                         description: "Promote a prompt into a reusable Skill — a structured agent instruction that installs into any AI coding agent.",
                         isDone: false,
                         ctaLabel: "Start Building",
-                        ctaAction: onFinish
+                        ctaAction: finish
                     )
                 }
                 .frame(maxWidth: 560)
 
                 // ── Actions ─────────────────────────────────────────────
                 HStack(spacing: 12) {
-                    Button(action: onFinish) {
+                    Button(action: finish) {
                         Label("Go to Library", systemImage: "tray.full")
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
 
-                    Button(action: onCLI) {
+                    Button(action: goToCLI) {
                         Label("Set Up CLI", systemImage: "terminal")
                     }
                     .buttonStyle(.bordered)

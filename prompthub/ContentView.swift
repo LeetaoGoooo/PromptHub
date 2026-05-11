@@ -10,6 +10,7 @@ struct ContentView: View {
     let skillDraftService = SkillDraftService.shared
 
     @State var promptSelection: PromptSelection = .allPrompts
+    @AppStorage("onboardingCompleted") private var onboardingCompleted = false
     @State private var searchText = ""
     @State var galleryPrompts: [GalleryPrompt] = []
     @State var isLoading = true
@@ -94,7 +95,13 @@ struct ContentView: View {
                 return .ignored
             }
             .toast(isPresenting: $showToast) { AlertToast(type: toastType, title: toastMessage) }
-            .onAppear { loadGalleryPrompts(); checkForWhatsNew() }
+            .onAppear {
+                loadGalleryPrompts()
+                checkForWhatsNew()
+                if !onboardingCompleted {
+                    promptSelection = .onboarding
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .searchNavigationRequested)) { notification in
                 guard let target = SearchNavigationRequest.from(notification) else { return }
                 handleSearchNavigation(target)
