@@ -10,6 +10,7 @@ import SwiftUI
 
 struct PromptSideBar: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.controlActiveState) private var controlActiveState
     @Query(sort: \Prompt.name) var prompts: [Prompt]
     @Query(sort: \Skill.updatedAt, order: .reverse) private var skillDrafts: [Skill]
     @Query private var sharedCreations: [SharedCreation]
@@ -244,7 +245,7 @@ struct PromptSideBar: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .background(isActive ? PH.Color.accentTint : Color.clear, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
+            .background(isActive ? (controlActiveState == .key ? PH.Color.accentTint : PH.Color.accentTint.opacity(0.45)) : Color.clear, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
