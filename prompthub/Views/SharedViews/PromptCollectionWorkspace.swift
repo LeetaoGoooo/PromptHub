@@ -127,17 +127,35 @@ struct PromptBrowserScreen<Actions: View, EmptyState: View>: View {
     }
 }
 
+private enum PromptBrowserListFilter: String, CaseIterable {
+    case all     = "All"
+    case ready   = "Ready"
+    case shared  = "Shared"
+    case sources = "Sources"
+}
+
 private struct PromptBrowserWorkspace<EmptyState: View>: View {
     let sections: [PromptBrowserSection]
     @Binding var selectedItemID: String?
     @ViewBuilder let emptyState: () -> EmptyState
 
+    @State private var listFilter: PromptBrowserListFilter = .all
+
     private var allItems: [PromptBrowserItem] {
         sections.flatMap(\.items)
     }
 
+    private var filteredItems: [PromptBrowserItem] {
+        switch listFilter {
+        case .all:     return allItems
+        case .ready:   return allItems.filter { !$0.promptText.isEmpty }
+        case .shared:  return allItems.filter { $0.badges.contains(where: { $0.title == "Shared" || $0.title == "Public" }) }
+        case .sources: return allItems.filter { $0.badges.contains(where: { $0.title == "Sources" }) }
+        }
+    }
+
     private var selectedItem: PromptBrowserItem? {
-        let items = allItems
+        let items = filteredItems
         if let selectedItemID,
            let selectedItem = items.first(where: { $0.id == selectedItemID }) {
             return selectedItem
@@ -163,36 +181,63 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
         .onChange(of: allItems.map(\.id)) { _, _ in
             syncSelection()
         }
+        .onChange(of: listFilter) { _, _ in
+            syncSelection()
+        }
     }
 
     private var listPane: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                ForEach(sections) { section in
-                    VStack(alignment: .leading, spacing: 8) {
-                        PromptCollectionSectionLabel(
-                            title: section.title,
-                            count: section.items.count,
-                            systemImage: section.systemImage
-                        )
+        VStack(spacing: 0) {
+            // Chip filter strip
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: PH.Spacing.toolbarGap) {
+                    ForEach(PromptBrowserListFilter.allCases, id: \.rawValue) { filter in
+                        PHFilterChip(label: filter.rawValue, isActive: listFilter == filter) {
+                            listFilter = filter
+                        }
+                    }
+                }
+                .padding(.horizontal, PH.Spacing.toolbarH)
+                .padding(.vertical, PH.Spacing.toolbarV)
+            }
+            .background(PH.Color.sidebarBg)
+            .overlay(alignment: .bottom) { Divider().opacity(0.6) }
 
-                        VStack(spacing: 6) {
-                            ForEach(section.items) { item in
-                                PromptBrowserRow(
-                                    item: item,
-                                    isSelected: item.id == selectedItem?.id,
-                                    onSelect: {
-                                        selectedItemID = item.id
-                                    }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(sections) { section in
+                        let sectionItems = section.items.filter { item in
+                            filteredItems.contains(where: { $0.id == item.id })
+                        }
+                        if !sectionItems.isEmpty {
+                            VStack(alignment: .leading, spacing: 0) {
+                                PromptCollectionSectionLabel(
+                                    title: section.title,
+                                    count: sectionItems.count,
+                                    systemImage: section.systemImage
                                 )
+                                .padding(.top, 12)
+
+                                VStack(spacing: 2) {
+                                    ForEach(sectionItems) { item in
+                                        PromptBrowserRow(
+                                            item: item,
+                                            isSelected: item.id == selectedItem?.id,
+                                            onSelect: {
+                                                selectedItemID = item.id
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                .padding(.horizontal, PH.Spacing.rowV)
+                .padding(.bottom, PH.Spacing.detailB)
             }
-            .padding(20)
         }
-        .frame(minWidth: 280, idealWidth: 320, maxWidth: 360, maxHeight: .infinity)
+        .frame(minWidth: 280, idealWidth: 316, maxWidth: 380, maxHeight: .infinity)
         .background(Color(NSColor.controlBackgroundColor))
     }
 
@@ -200,7 +245,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
         ScrollView {
             if let selectedItem {
                 PromptBrowserDetail(item: selectedItem)
-                    .padding(24)
+                    .padding(PH.Spacing.detailH)
             }
         }
         .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
@@ -208,7 +253,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
     }
 
     private func syncSelection() {
-        let itemIDs = Set(allItems.map(\.id))
+        let itemIDs = Set(filteredItems.map(\.id))
         guard !itemIDs.isEmpty else {
             selectedItemID = nil
             return
@@ -218,7 +263,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
             return
         }
 
-        selectedItemID = allItems.first?.id
+        selectedItemID = filteredItems.first?.id
     }
 }
 
