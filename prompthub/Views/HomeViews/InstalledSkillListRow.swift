@@ -9,111 +9,88 @@ struct InstalledSkillListRow: View {
     var hasUpdate: Bool = false
     var onSelect: () -> Void = {}
     var onUpdate: (() -> Void)?
-    @State private var isHovered = false
 
-    private var scopeColor: Color {
-        skill.isGlobal ? .blue : .mint
+    // Quick quality hint derived from agent coverage — no async audit needed in list.
+    private var qualityHint: (label: String, color: Color)? {
+        let n = skill.agents.count
+        if n >= 3 { return ("Excellent", PH.Color.statusOK) }
+        if n >= 1 { return ("Strong",    PH.Color.statusOK) }
+        if skill.isManagedByPromptHub { return ("Needs Check", PH.Color.statusWarn) }
+        return nil
+    }
+
+    private var subText: String {
+        let scope = skill.isGlobal ? "Global" : "Project"
+        let origin = skill.isManagedByPromptHub ? "Managed" : "External"
+        return "\(scope) · \(origin)"
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(skill.displayName)
-                    .font(.headline)
-                    .lineLimit(1)
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: PH.Spacing.rowGap) {
+                // Line 1: name + optional update badge + quality label (right-aligned)
+                HStack(spacing: 4) {
+                    Text(skill.displayName)
+                        .font(PH.Font.rowName)
+                        .foregroundStyle(PH.Color.primary)
+                        .lineLimit(1)
 
-                if isRemoving {
-                    ProgressView()
-                        .controlSize(.small)
-                }
+                    if isRemoving {
+                        ProgressView().controlSize(.mini)
+                    }
 
-                if hasUpdate {
-                    if let onUpdate {
-                        Button(action: onUpdate) {
-                            Label("Update", systemImage: "arrow.triangle.2.circlepath")
-                                .font(.caption2.weight(.bold))
+                    if hasUpdate {
+                        if let onUpdate {
+                            Button(action: onUpdate) {
+                                Text("Update")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(PH.Color.statusWarn)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Text("Update")
+                                .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(.white)
-                                .padding(.horizontal, 6)
+                                .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
-                                .background(Color.orange)
+                                .background(PH.Color.statusWarn)
                                 .clipShape(Capsule())
                         }
-                        .buttonStyle(.plain)
-                    } else {
-                        Text("Update")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.orange)
-                            .clipShape(Capsule())
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if let q = qualityHint {
+                        Text(q.label)
+                            .font(PH.Font.statusLabel)
+                            .foregroundStyle(q.color)
                     }
                 }
 
-                Spacer()
-            }
-
-            if let source = skill.displaySource {
-                Text(source)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            Text(skill.summary.isEmpty ? "No summary available" : skill.summary)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-
-            HStack(spacing: 6) {
-                InstalledSkillBadge(
-                    title: skill.isGlobal ? "Global" : "Project",
-                    icon: skill.isGlobal ? "globe" : "folder",
-                    foreground: scopeColor,
-                    background: scopeColor.opacity(0.14)
-                )
-
-                if !skill.agents.isEmpty {
-                    HStack(spacing: 3) {
-                        ForEach(AgentWorkflow.allCases.prefix(6), id: \.rawValue) { agent in
-                            let covered = skill.agents.contains(agent)
-                            Circle()
-                                .fill(covered ? scopeColor : Color(NSColor.separatorColor).opacity(0.5))
-                                .frame(width: 6, height: 6)
-                                .help(agent.displayName + (covered ? " ✓" : " —"))
-                        }
-                        if AgentWorkflow.allCases.count > 6 {
-                            Text("+\(AgentWorkflow.allCases.count - 6)")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(Color.secondary.opacity(0.08))
-                    .clipShape(Capsule())
-                }
-
-                if !skill.isManagedByPromptHub {
-                    InstalledSkillBadge(
-                        title: "External",
-                        icon: "arrow.triangle.branch",
-                        foreground: .orange,
-                        background: Color.orange.opacity(0.14)
-                    )
+                // Line 2: status dot + scope/origin
+                HStack(spacing: PH.Spacing.sectionHeadGap) {
+                    Circle()
+                        .fill(skill.isGlobal ? PH.Color.statusOK : PH.Color.accent)
+                        .frame(width: PH.Layout.statusDotSize, height: PH.Layout.statusDotSize)
+                    Text(subText)
+                        .font(PH.Font.rowSub)
+                        .foregroundStyle(PH.Color.tertiary)
+                        .lineLimit(1)
                 }
             }
+            .padding(.vertical, PH.Spacing.rowH)
+            .padding(.horizontal, PH.Spacing.rowV)
         }
-        .padding(12)
-        .modifier(SkillLibraryRowCardStyle(isSelected: isSelected, isHovered: isHovered))
-        .opacity(isRemoving ? 0.6 : 1)
-        .animation(.easeInOut(duration: 0.14), value: isHovered)
-        .contentShape(RoundedRectangle(cornerRadius: 14))
-        .onTapGesture(perform: onSelect)
-        .accessibilityAddTraits(.isButton)
-        .onHover { hovering in
-            isHovered = hovering
-        }
+        .buttonStyle(.plain)
+        .background(isSelected ? PH.Color.accentTint : .clear)
+        .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+        .opacity(isRemoving ? 0.55 : 1)
+        .accessibilityLabel(skill.displayName)
+        .accessibilityValue(subText)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
