@@ -539,9 +539,6 @@
     "CLI File Access" : {
 
     },
-    "CLI Integration" : {
-
-    },
     "CLI ready — no agents connected" : {
 
     },
@@ -1549,15 +1546,6 @@
     "Install Selected" : {
 
     },
-    "Install Skill" : {
-
-    },
-    "Install Skill…" : {
-
-    },
-    "Install your Skills into any AI coding agent so they become part of every conversation automatically." : {
-
-    },
     "Install…" : {
 
     },
@@ -1754,9 +1742,6 @@
           }
         }
       }
-    },
-    "Manage Access" : {
-
     },
     "Manage CLI directories from Grant Agent Access, and select the active project folder here in the dashboard." : {
 
@@ -2356,6 +2341,9 @@
 
     },
     "PromptHub writes SKILL.md files into each agent's config directory. Next time you open Cursor, Claude Code, or Codex, those skills are already loaded and ready to use." : {
+
+    },
+    "Prompts Workspace" : {
 
     },
     "Public prompt" : {
@@ -3117,9 +3105,6 @@
       }
     },
     "Updating CLIs…" : {
-
-    },
-    "Use Discover or My Skills to install a skill, then return here to verify which agents received it." : {
 
     },
     "v%@" : {

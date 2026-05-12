@@ -107,7 +107,48 @@ struct CLIDashboardView: View {
 
             Divider().opacity(0.5)
 
-            connectedAgentsSection
+            // Filter chips — pinned, no scroll
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: PH.Spacing.toolbarGap) {
+                    ForEach(CLIAgentFilter.allCases, id: \.rawValue) { filter in
+                        PHFilterChip(label: filter.rawValue, isActive: agentFilter == filter) {
+                            agentFilter = filter
+                        }
+                    }
+                }
+                .padding(.horizontal, PH.Spacing.rowH)
+                .padding(.vertical, PH.Spacing.toolbarV)
+            }
+            .background(PH.Color.sidebarBg)
+            .overlay(alignment: .bottom) { Divider().opacity(0.6) }
+
+            // Agent rows — scrollable
+            ScrollView {
+                if filteredDirectories.isEmpty {
+                    Text("No agents match the current filter.")
+                        .font(PH.Font.rowSub)
+                        .foregroundStyle(PH.Color.secondary)
+                        .padding(PH.Spacing.detailH)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+                        .padding(.horizontal, PH.Spacing.rowH)
+                        .padding(.top, PH.Spacing.rowV)
+                } else {
+                    VStack(spacing: 2) {
+                        ForEach(filteredDirectories) { directory in
+                            CLIAgentListRow(
+                                directory: directory,
+                                isGranted: cliAccess.hasAccess(to: directory),
+                                skills: skills(for: directory),
+                                isSelected: selectedDirectory == directory,
+                                onTap: { selectedDirectory = directory }
+                            )
+                        }
+                    }
+                    .padding(.vertical, PH.Spacing.rowV)
+                }
+            }
+            .frame(maxHeight: .infinity)
         }
         .frame(minWidth: 220, idealWidth: 260, maxWidth: 320, maxHeight: .infinity)
         .background(Color(NSColor.controlBackgroundColor))
@@ -168,43 +209,7 @@ struct CLIDashboardView: View {
         }
     }
 
-    private var connectedAgentsSection: some View {
-        VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadGap) {
-            // Filter chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: PH.Spacing.toolbarGap) {
-                    ForEach(CLIAgentFilter.allCases, id: \.rawValue) { filter in
-                        PHFilterChip(label: filter.rawValue, isActive: agentFilter == filter) {
-                            agentFilter = filter
-                        }
-                    }
-                }
-                .padding(.vertical, PH.Spacing.toolbarV)
-            }
 
-            // 2-line agent rows
-            if filteredDirectories.isEmpty {
-                Text("No agents match the current filter.")
-                    .font(PH.Font.rowSub)
-                    .foregroundStyle(PH.Color.secondary)
-                    .padding(PH.Spacing.detailH)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
-            } else {
-                VStack(spacing: 2) {
-                    ForEach(filteredDirectories) { directory in
-                        CLIAgentListRow(
-                            directory: directory,
-                            isGranted: cliAccess.hasAccess(to: directory),
-                            skills: skills(for: directory),
-                            isSelected: selectedDirectory == directory,
-                            onTap: { selectedDirectory = directory }
-                        )
-                    }
-                }
-            }
-        }
-    }
 
     @ViewBuilder
     private func installedSkillsSection(title: String, subtitle: String, skills: [InstalledSkillSnapshot]) -> some View {
