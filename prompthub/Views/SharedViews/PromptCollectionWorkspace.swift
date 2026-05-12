@@ -431,6 +431,11 @@ private struct PromptBrowserDetail: View {
                 }
             }
 
+            // Quick actions — promoted to top, immediately visible
+            if !detailActions.isEmpty {
+                PromptQuickActionWrap(actions: detailActions)
+            }
+
             Divider().opacity(0.6)
 
             // Body section
@@ -474,15 +479,6 @@ private struct PromptBrowserDetail: View {
                 VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
                     PHSectionHead(systemImage: "info.circle", label: "Context")
                     PromptCollectionKVList(items: item.metadata.map { ($0.label, $0.value) })
-                }
-            }
-
-            // Quick actions
-            if !detailActions.isEmpty {
-                Divider().opacity(0.6)
-                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
-                    PHSectionHead(systemImage: "bolt", label: "Actions")
-                    PromptQuickActionWrap(actions: detailActions)
                 }
             }
         }
