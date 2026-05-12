@@ -126,14 +126,15 @@ struct PromptSideBar: View {
             sidebarSectionHeader("Skills")
 
             VStack(spacing: 6) {
-                sidebarSelectionButton(title: "Installed", icon: "square.stack.3d.up.fill", meta: metaCount(allInstalledCount), isActive: promptSelection == .installedSkills) {
-                    promptSelection = .installedSkills
-                }
-                sidebarSelectionButton(title: "Drafts", icon: "tag", meta: metaCount(skillDrafts.count), isActive: promptSelection == .mySkills || isSkillDraftDetailSelected) {
-                    promptSelection = .mySkills
-                }
-                sidebarSelectionButton(title: "Discover", icon: "globe.europe.africa", meta: nil, isActive: promptSelection == .skillStore) {
-                    promptSelection = .skillStore
+                sidebarSelectionButton(
+                    title: "Skills",
+                    icon: "square.stack.3d.up.fill",
+                    meta: metaCount(allInstalledCount),
+                    isActive: promptSelection == .installedSkills || promptSelection == .mySkills || promptSelection == .skillStore || isSkillDraftDetailSelected
+                ) {
+                    if promptSelection != .installedSkills && promptSelection != .mySkills && promptSelection != .skillStore && !isSkillDraftDetailSelected {
+                        promptSelection = .installedSkills
+                    }
                 }
             }
         }
