@@ -38,6 +38,30 @@ struct SkillLibraryRowCardStyle: ViewModifier {
 
 // MARK: - Metadata Block
 
+// MARK: - PH Filter Chip
+
+/// Flat pill-shaped filter chip used in list-pane headers.
+struct PHFilterChip: View {
+    let label: String
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(PH.Font.chip)
+                .foregroundStyle(isActive ? PH.Color.accent : PH.Color.secondary)
+                .padding(.horizontal, PH.Spacing.chipH + 2)
+                .padding(.vertical, 3)
+                .background(
+                    RoundedRectangle(cornerRadius: PH.Spacing.chipCorner)
+                        .fill(isActive ? PH.Color.accentTint : PH.Color.chipBg)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 /// Aligned key-value metadata grid used in detail and inspector panels.
 struct SkillLibraryMetadataBlock: View {
     let title: String

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptHub – Agents</title>
+  <style>
+    :root {
+      --bg-top: #edf3ff; --bg-bottom: #d8e4f6;
+      --win: rgba(255,255,255,0.80); --win-edge: rgba(255,255,255,0.74);
+      --stroke: rgba(31,45,74,0.09); --stroke-soft: rgba(31,45,74,0.055);
+      --t0: #1f2940; --t1: #57637d; --t2: #8290a8;
+      --blue: #3d67d7; --blue-bg: rgba(61,103,215,0.10);
+      --green: #1a7a56; --orange: #a85f14; --red: #a04050;
+      --shadow: 0 24px 64px rgba(33,49,84,0.17), 0 6px 16px rgba(33,49,84,0.09);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh; padding: 22px; font-family: var(--font); color: var(--t0);
+      display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(ellipse at top left, rgba(255,255,255,0.92), transparent 26%),
+        radial-gradient(ellipse at bottom right, rgba(152,188,255,0.38), transparent 32%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    }
+    .window {
+      width: min(1560px, 100%); height: min(950px, calc(100vh - 44px));
+      display: grid; grid-template-rows: 50px 1fr;
+      background: var(--win); border: 1px solid var(--win-edge); border-radius: 22px;
+      box-shadow: var(--shadow); backdrop-filter: blur(20px) saturate(160%); overflow: hidden;
+    }
+
+    .titlebar {
+      display: grid; grid-template-columns: 72px minmax(0,1fr) auto;
+      align-items: center; gap: 10px; padding: 0 14px;
+      border-bottom: 1px solid var(--stroke); background: rgba(255,255,255,0.20);
+    }
+    .traffic { display: flex; gap: 7px; }
+    .traffic span { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .tr { background: #ff5f57; } .ty { background: #ffbd2e; } .tg { background: #28c840; }
+    .searchbar {
+      height: 28px; display: flex; align-items: center; gap: 6px;
+      padding: 0 9px; border-radius: 8px;
+      background: rgba(255,255,255,0.44); border: 1px solid rgba(31,45,74,0.07);
+      color: var(--t2); font-size: 12px; min-width: 0;
+    }
+    .searchbar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tb-right { display: flex; align-items: center; gap: 6px; }
+    .btn {
+      height: 27px; padding: 0 9px; border: 1px solid rgba(31,45,74,0.09);
+      border-radius: 8px; background: rgba(255,255,255,0.52); color: var(--t1);
+      font-size: 12px; font-weight: 650; font-family: var(--font);
+      display: inline-flex; align-items: center; gap: 5px; cursor: default;
+    }
+    .btn.p { background: var(--blue-bg); border-color: transparent; color: var(--blue); }
+    .btn.sq { width: 27px; padding: 0; justify-content: center; }
+
+    .workspace { min-height: 0; display: grid; grid-template-columns: 216px 316px minmax(0,1fr); }
+
+    .sidebar { padding: 8px 6px; background: rgba(33,44,72,0.042); border-right: 1px solid var(--stroke); display: flex; flex-direction: column; }
+    .sec-lbl { margin: 8px 6px 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t2); }
+    .nrow { padding: 6px 8px; border-radius: 7px; display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--t1); cursor: default; margin-bottom: 1px; }
+    .nrow.on { background: var(--blue-bg); color: var(--t0); }
+    .nrow-lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nbadge { min-width: 18px; height: 16px; padding: 0 5px; border-radius: 999px; background: rgba(31,45,74,0.07); color: var(--t2); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 5px 0; }
+    .chip { min-height: 21px; padding: 0 7px; border-radius: 6px; background: rgba(31,45,74,0.055); color: var(--t1); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; }
+    .chip.on { background: var(--blue-bg); color: var(--blue); }
+    .sb-spacer { flex: 1; }
+    .sb-footer { padding: 8px 4px 2px; border-top: 1px solid var(--stroke); display: flex; gap: 5px; }
+
+    .lp { background: transparent; border-right: 1px solid var(--stroke); display: grid; grid-template-rows: auto auto minmax(0,1fr); }
+    .ph { padding: 10px 13px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: center; justify-content: space-between; }
+    .ph-l { display: flex; align-items: center; gap: 7px; }
+    .ph-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .ph-count { min-width: 18px; height: 16px; padding: 0 5px; border-radius: 999px; background: rgba(31,45,74,0.07); color: var(--t2); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .tbar { padding: 6px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: center; gap: 6px; }
+    .tbar-s { flex: 1; height: 26px; padding: 0 8px; border-radius: 7px; background: rgba(255,255,255,0.30); display: flex; align-items: center; gap: 5px; color: var(--t2); font-size: 12px; overflow: hidden; }
+    .tbar-s span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fc { display: flex; gap: 4px; }
+    .ls { min-height: 0; overflow-y: auto; padding: 4px 5px 8px; }
+
+    /* list row — 2 lines */
+    .arow { padding: 8px 9px; border-radius: 7px; margin-bottom: 1px; display: grid; gap: 3px; min-width: 0; background: transparent; border: none; text-align: left; cursor: default; width: 100%; }
+    .arow.on { background: var(--blue-bg); }
+    .ar-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .ar-name { flex: 1; font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; background: #97a2bb; }
+    .dot.g { background: var(--green); } .dot.w { background: var(--orange); } .dot.b { background: var(--red); }
+    .stlbl { font-size: 11px; font-weight: 700; color: var(--t2); white-space: nowrap; flex-shrink: 0; }
+    .stlbl.g { color: var(--green); } .stlbl.w { color: var(--orange); } .stlbl.b { color: var(--red); }
+    .ar-sub { font-size: 11px; color: var(--t2); display: flex; align-items: center; gap: 5px; overflow: hidden; }
+    .ar-sub span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .dp { background: rgba(255,255,255,0.28); display: grid; grid-template-rows: auto minmax(0,1fr); }
+    .dh { padding: 10px 15px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .dh-l { min-width: 0; }
+    .d-title { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+    .d-sub { margin-top: 2px; font-size: 12px; color: var(--t2); overflow-wrap: anywhere; }
+    .d-btns { display: flex; gap: 5px; flex-shrink: 0; }
+    .dscroll { min-height: 0; overflow-y: auto; padding: 0 15px 15px; }
+    .ds { padding: 10px 0; border-bottom: 1px solid var(--stroke); }
+    .ds:last-child { border-bottom: none; }
+    .ds-head { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; font-size: 11px; font-weight: 700; color: var(--t1); }
+    .ds-head svg { color: var(--t2); flex-shrink: 0; }
+
+    .kv { display: grid; }
+    .kvrow { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 10px; padding: 5px 0; border-top: 1px solid var(--stroke-soft); font-size: 12px; align-items: start; }
+    .kvrow:first-child { border-top: none; }
+    .kvk { color: var(--t2); font-weight: 600; }
+    .kvv { min-width: 0; overflow-wrap: anywhere; }
+    .mono { font-family: var(--mono); font-size: 11px; }
+
+    .skill-tokens { display: flex; flex-wrap: wrap; gap: 5px; }
+    .stoken { min-height: 20px; padding: 0 7px; border-radius: 6px; background: rgba(31,45,74,0.055); color: var(--t1); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; }
+
+    .desc { font-size: 13px; line-height: 1.58; color: var(--t0); overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+<div class="window">
+  <div class="titlebar">
+    <div class="traffic"><span class="tr"></span><span class="ty"></span><span class="tg"></span></div>
+    <div class="searchbar">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="4"/><line x1="9" y1="9" x2="12.5" y2="12.5"/></svg>
+      <span>Search…</span>
+    </div>
+    <div class="tb-right">
+      <div class="btn sq" title="Refresh all">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12.5 7a5.5 5.5 0 1 1-1.1-3.3"/><polyline points="12.5,1.5 12.5,4.5 9.5,4.5"/></svg>
+      </div>
+      <div class="btn">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="12" height="9" rx="2"/><polyline points="3.5,5.5 6,7 3.5,8.5"/><line x1="7.5" y1="8.5" x2="10.5" y2="8.5"/></svg>
+        Manage CLIs
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="nrow on">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5.5"/><polyline points="4.5,7 6.5,9 9.5,5"/></svg>
+        <span class="nrow-lbl">Connected</span><span class="nbadge">5</span>
+      </div>
+      <div class="nrow">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5l5.5 10H1.5z"/><line x1="7" y1="5.5" x2="7" y2="8"/><circle cx="7" cy="9.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+        <span class="nrow-lbl">Needs Attention</span><span class="nbadge">1</span>
+      </div>
+      <div class="sec-lbl">Role</div>
+      <div class="chip-row">
+        <span class="chip on">Coding</span>
+        <span class="chip">Search</span>
+        <span class="chip">Content</span>
+      </div>
+      <div class="sec-lbl">Project</div>
+      <div class="chip-row">
+        <span class="chip on">PromptHub</span>
+        <span class="chip">Global</span>
+      </div>
+      <div class="sb-spacer"></div>
+      <div class="sb-footer">
+        <div class="btn sq" title="Choose Project">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5H12.5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H1.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3L5.8 2h4"/></svg>
+        </div>
+        <div class="btn sq" title="Directory guide">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5.5"/><line x1="7" y1="6" x2="7" y2="10"/><circle cx="7" cy="4" r="0.5" fill="currentColor" stroke="none"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <main class="lp">
+      <div class="ph">
+        <div class="ph-l">
+          <span class="ph-title">Agents</span>
+          <span class="ph-count">6</span>
+        </div>
+        <div class="btn sq" title="Rescan">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12.5 7a5.5 5.5 0 1 1-1.1-3.3"/><polyline points="12.5,1.5 12.5,4.5 9.5,4.5"/></svg>
+        </div>
+      </div>
+      <div class="tbar">
+        <div class="tbar-s">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="4"/><line x1="9" y1="9" x2="12.5" y2="12.5"/></svg>
+          <span>Filter…</span>
+        </div>
+        <div class="fc">
+          <span class="chip on">Connected</span>
+          <span class="chip">Attention</span>
+        </div>
+      </div>
+      <div class="ls" id="agentsList"></div>
+    </main>
+
+    <section class="dp">
+      <div class="dh">
+        <div class="dh-l">
+          <div class="d-title" id="dTitle">Codex</div>
+          <div class="d-sub" id="dSub">coding · connected · PromptHub · 5 skills</div>
+        </div>
+        <div class="d-btns">
+          <div class="btn p" id="dPrimary">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5H12.5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H1.5a1 1 0 0 1-1-1V5.5z"/><path d="M9.5 5.5V3.5A1.5 1.5 0 0 0 8 2H6a1.5 1.5 0 0 0-1.5 1.5v2"/></svg>
+            Open Dir
+          </div>
+          <div class="btn sq" title="Choose Project">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5H12.5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H1.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3L5.8 2h4"/></svg>
+          </div>
+          <div class="btn sq" title="Rescan">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12.5 7a5.5 5.5 0 1 1-1.1-3.3"/><polyline points="12.5,1.5 12.5,4.5 9.5,4.5"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="dscroll" id="dScroll"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const agents = [
+  {
+    id:"codex", name:"Codex", role:"coding", status:"Connected", st:"g",
+    sub:"coding · connected · PromptHub · 5 skills",
+    details:[["Access","Granted"],["Project","PromptHub/"],["Last scan","Just now"],["Visible skills","5"]],
+    paths:[["CLI","/opt/homebrew/bin/codex"],["Global","~/.codex/skills"],["Project","~/workspace/prompthub/.agents/skills"]],
+    skills:["Apple Note","Autocli","Daily Unread Articles","Decision Tradeoff Auditor","Excalidraw MCP"],
+    note:"Active — no action needed.", primaryLabel:"Open Dir", primaryT:"p",
+  },
+  {
+    id:"cursor", name:"Cursor", role:"coding", status:"Needs Attention", st:"w",
+    sub:"coding · needs attention · path unresolved · 0 skills",
+    details:[["Access","Not granted"],["Project","None"],["Last scan","6 min ago"],["Visible skills","0"]],
+    paths:[["CLI","/Applications/Cursor.app"],["Global","Unknown"],["Project","Unavailable"]],
+    skills:[],
+    note:"Grant directory access, then rescan to recover the skill path.", primaryLabel:"Grant Access", primaryT:"p",
+  },
+  {
+    id:"gemini", name:"Gemini CLI", role:"coding", status:"Connected", st:"g",
+    sub:"coding · connected · global · 3 skills",
+    details:[["Access","Granted"],["Project","Global only"],["Last scan","Today"],["Visible skills","3"]],
+    paths:[["CLI","/opt/homebrew/bin/gemini"],["Global","~/.gemini/skills"],["Project","Not configured"]],
+    skills:["Apple Note","Autocli","Daily Unread Articles"],
+    note:"Project-level skills not yet configured for this CLI.", primaryLabel:"Open Dir", primaryT:"p",
+  },
+];
+
+let sel = agents[0].id;
+
+function renderList() {
+  document.getElementById("agentsList").innerHTML = agents.map(a=>`
+    <button class="arow ${a.id===sel?"on":""}" data-id="${a.id}">
+      <div class="ar-top">
+        <div class="ar-name">${a.name}</div>
+        <div class="stlbl ${a.st}">${a.status}</div>
+      </div>
+      <div class="ar-sub">
+        <span class="dot ${a.st}"></span>
+        <span>${a.role} · ${a.details.find(d=>d[0]==="Project")?.[1]||"—"} · ${a.details.find(d=>d[0]==="Visible skills")?.[1]||"0"} skills</span>
+      </div>
+    </button>`).join("");
+  document.querySelectorAll(".arow").forEach(r=>r.addEventListener("click",()=>{sel=r.dataset.id;renderList();renderDetail();}));
+}
+
+function renderDetail() {
+  const a = agents.find(x=>x.id===sel);
+  document.getElementById("dTitle").textContent = a.name;
+  document.getElementById("dSub").textContent = a.sub;
+  document.getElementById("dPrimary").innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5H12.5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H1.5a1 1 0 0 1-1-1V5.5z"/><path d="M9.5 5.5V3.5A1.5 1.5 0 0 0 8 2H6a1.5 1.5 0 0 0-1.5 1.5v2"/></svg>
+    ${a.primaryLabel}`;
+
+  document.getElementById("dScroll").innerHTML = `
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5.5"/><line x1="7" y1="5" x2="7" y2="9"/><circle cx="7" cy="3.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+        Connection
+      </div>
+      <div class="kv">${a.details.map(([k,v])=>`<div class="kvrow"><div class="kvk">${k}</div><div class="kvv">${v}</div></div>`).join("")}</div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5H12.5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H1.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3L5.8 2h4"/></svg>
+        Paths
+      </div>
+      <div class="kv">${a.paths.map(([k,v])=>`<div class="kvrow"><div class="kvk">${k}</div><div class="kvv mono">${v}</div></div>`).join("")}</div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5l1.2 3.5 3.8.3-2.9 2.5 1 3.7L7 9.8l-3.1 1.8 1-3.7-2.9-2.5 3.8-.3z"/></svg>
+        Skills
+      </div>
+      <div class="skill-tokens">
+        ${a.skills.length ? a.skills.map(s=>`<span class="stoken">${s}</span>`).join("") : `<span style="font-size:12px;color:var(--t2)">No visible skills</span>`}
+      </div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,4 7,7 12,4"/><path d="M2 4v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4"/></svg>
+        Status
+      </div>
+      <p class="desc">${a.note}</p>
+    </div>
+  `;
+}
+
+renderList(); renderDetail();
+</script>
+</body>
+</html>

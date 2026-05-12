@@ -89,54 +89,20 @@ extension InstalledSkillsView {
     }
 
     private var installedListHeaderBar: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Results")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                Text("\(filteredSkills.count) installed skills")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.primary)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: PH.Spacing.toolbarGap) {
+                ForEach(ListFilter.allCases, id: \.rawValue) { filter in
+                    PHFilterChip(label: filter.rawValue, isActive: listFilter == filter) {
+                        listFilter = filter
+                    }
+                }
             }
-
-            Spacer(minLength: 12)
-
-            VStack(alignment: .trailing, spacing: 8) {
-                installedScopeControl
-                installedSourceControl
-            }
+            .padding(.horizontal, PH.Spacing.toolbarH)
+            .padding(.vertical, PH.Spacing.toolbarV)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color(NSColor.windowBackgroundColor).opacity(0.82))
-    }
-
-    private var installedScopeControl: some View {
-        HStack(spacing: 6) {
-            installedFilterButton(title: "All", systemImage: "square.stack.3d.up", isActive: scopeFilter == .allInstalled) {
-                scopeFilter = .allInstalled
-            }
-            installedFilterButton(title: "Global", systemImage: "globe", isActive: scopeFilter == .global) {
-                scopeFilter = .global
-            }
-            installedFilterButton(title: "Project", systemImage: "folder", isActive: scopeFilter == .project) {
-                scopeFilter = .project
-            }
-        }
-    }
-
-    private var installedSourceControl: some View {
-        HStack(spacing: 6) {
-            installedFilterButton(title: "Any Source", systemImage: "line.3.horizontal.decrease.circle", isActive: sourceFilter == .all) {
-                sourceFilter = .all
-            }
-            installedFilterButton(title: "External", systemImage: "wrench.and.screwdriver", isActive: sourceFilter == .external) {
-                sourceFilter = .external
-            }
-            installedFilterButton(title: "Local", systemImage: "laptopcomputer", isActive: sourceFilter == .localOnly) {
-                sourceFilter = .localOnly
-            }
+        .background(PH.Color.sidebarBg)
+        .overlay(alignment: .bottom) {
+            Divider().opacity(0.6)
         }
     }
 

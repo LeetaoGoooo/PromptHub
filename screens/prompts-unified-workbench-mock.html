@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptHub – Prompts</title>
+  <style>
+    :root {
+      --bg-top: #eef4ff; --bg-bottom: #dbe6f7;
+      --win: rgba(255,255,255,0.80); --win-edge: rgba(255,255,255,0.74);
+      --stroke: rgba(31,45,74,0.09); --stroke-soft: rgba(31,45,74,0.055);
+      --t0: #1f2940; --t1: #57637d; --t2: #8290a8;
+      --blue: #3d67d7; --blue-bg: rgba(61,103,215,0.10);
+      --green: #1a7a56; --orange: #a85f14; --red: #a04050;
+      --shadow: 0 24px 64px rgba(33,49,84,0.17), 0 6px 16px rgba(33,49,84,0.09);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh; padding: 22px; font-family: var(--font); color: var(--t0);
+      display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(ellipse at top left, rgba(255,255,255,0.92), transparent 26%),
+        radial-gradient(ellipse at bottom right, rgba(152,188,255,0.38), transparent 32%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    }
+    .window {
+      width: min(1560px, 100%); height: min(950px, calc(100vh - 44px));
+      display: grid; grid-template-rows: 50px 1fr;
+      background: var(--win); border: 1px solid var(--win-edge); border-radius: 22px;
+      box-shadow: var(--shadow); backdrop-filter: blur(20px) saturate(160%); overflow: hidden;
+    }
+
+    .titlebar {
+      display: grid; grid-template-columns: 72px minmax(0,1fr) auto;
+      align-items: center; gap: 10px; padding: 0 14px;
+      border-bottom: 1px solid var(--stroke); background: rgba(255,255,255,0.20);
+    }
+    .traffic { display: flex; gap: 7px; }
+    .traffic span { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .tr { background: #ff5f57; } .ty { background: #ffbd2e; } .tg { background: #28c840; }
+    .searchbar {
+      height: 28px; display: flex; align-items: center; gap: 6px;
+      padding: 0 9px; border-radius: 8px;
+      background: rgba(255,255,255,0.44); border: 1px solid rgba(31,45,74,0.07);
+      color: var(--t2); font-size: 12px; min-width: 0;
+    }
+    .searchbar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tb-right { display: flex; align-items: center; gap: 6px; }
+    .btn {
+      height: 27px; padding: 0 9px; border: 1px solid rgba(31,45,74,0.09);
+      border-radius: 8px; background: rgba(255,255,255,0.52); color: var(--t1);
+      font-size: 12px; font-weight: 650; font-family: var(--font);
+      display: inline-flex; align-items: center; gap: 5px; cursor: default;
+    }
+    .btn.p { background: var(--blue-bg); border-color: transparent; color: var(--blue); }
+    .btn.sq { width: 27px; padding: 0; justify-content: center; }
+
+    .workspace { min-height: 0; display: grid; grid-template-columns: 216px 316px minmax(0,1fr); }
+
+    /* sidebar */
+    .sidebar { padding: 8px 6px; background: rgba(33,44,72,0.042); border-right: 1px solid var(--stroke); display: flex; flex-direction: column; }
+    .sec-lbl { margin: 8px 6px 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t2); }
+    .nrow { padding: 6px 8px; border-radius: 7px; display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--t1); cursor: default; margin-bottom: 1px; }
+    .nrow.on { background: var(--blue-bg); color: var(--t0); }
+    .nrow-lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nbadge { min-width: 18px; height: 16px; padding: 0 5px; border-radius: 999px; background: rgba(31,45,74,0.07); color: var(--t2); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 5px 0; }
+    .chip { min-height: 21px; padding: 0 7px; border-radius: 6px; background: rgba(31,45,74,0.055); color: var(--t1); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; }
+    .chip.on { background: var(--blue-bg); color: var(--blue); }
+    .sb-spacer { flex: 1; }
+    .sb-footer { padding: 8px 4px 2px; border-top: 1px solid var(--stroke); display: flex; gap: 5px; }
+
+    /* list pane */
+    .lp { background: transparent; border-right: 1px solid var(--stroke); display: grid; grid-template-rows: auto auto minmax(0,1fr); }
+    .ph { padding: 10px 13px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: center; justify-content: space-between; }
+    .ph-l { display: flex; align-items: center; gap: 7px; }
+    .ph-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .ph-count { min-width: 18px; height: 16px; padding: 0 5px; border-radius: 999px; background: rgba(31,45,74,0.07); color: var(--t2); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .tbar { padding: 6px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: center; gap: 6px; }
+    .tbar-s { flex: 1; height: 26px; padding: 0 8px; border-radius: 7px; background: rgba(255,255,255,0.30); display: flex; align-items: center; gap: 5px; color: var(--t2); font-size: 12px; overflow: hidden; }
+    .tbar-s span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fc { display: flex; gap: 4px; }
+    .ls { min-height: 0; overflow-y: auto; padding: 4px 5px 8px; }
+
+    /* list row — 2 lines max */
+    .prow { padding: 8px 9px; border-radius: 7px; margin-bottom: 1px; display: grid; gap: 3px; min-width: 0; background: transparent; border: none; text-align: left; cursor: default; width: 100%; }
+    .prow.on { background: var(--blue-bg); }
+    .pr-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .pr-name { flex: 1; font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mchip { min-height: 18px; padding: 0 6px; border-radius: 5px; background: rgba(31,45,74,0.06); color: var(--t2); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; white-space: nowrap; flex-shrink: 0; }
+    .pr-sub { font-size: 11px; color: var(--t2); display: flex; align-items: center; gap: 6px; overflow: hidden; }
+    .pr-sub span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; background: #97a2bb; }
+    .dot.g { background: var(--green); } .dot.w { background: var(--orange); }
+
+    /* detail pane */
+    .dp { background: rgba(255,255,255,0.28); display: grid; grid-template-rows: auto minmax(0,1fr); }
+    .dh { padding: 10px 15px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .dh-l { min-width: 0; }
+    .d-title { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+    .d-sub { margin-top: 2px; font-size: 12px; color: var(--t2); overflow-wrap: anywhere; }
+    .d-btns { display: flex; gap: 5px; flex-shrink: 0; }
+    .dscroll { min-height: 0; overflow-y: auto; padding: 0 15px 15px; }
+    .ds { padding: 10px 0; border-bottom: 1px solid var(--stroke); }
+    .ds:last-child { border-bottom: none; }
+    .ds-head { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; font-size: 11px; font-weight: 700; color: var(--t1); }
+    .ds-head svg { color: var(--t2); flex-shrink: 0; }
+
+    /* prompt body block */
+    .pbody { padding: 10px 11px; border-radius: 8px; background: rgba(31,45,74,0.042); font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--t0); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+    /* vars inline */
+    .var-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .var { min-height: 20px; padding: 0 7px; border-radius: 6px; background: rgba(61,103,215,0.08); color: var(--blue); font-family: var(--mono); font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; }
+
+    /* kv */
+    .kv { display: grid; }
+    .kvrow { display: grid; grid-template-columns: 86px minmax(0,1fr); gap: 10px; padding: 5px 0; border-top: 1px solid var(--stroke-soft); font-size: 12px; align-items: start; }
+    .kvrow:first-child { border-top: none; }
+    .kvk { color: var(--t2); font-weight: 600; }
+    .kvv { min-width: 0; overflow-wrap: anywhere; }
+
+    /* history */
+    .hrow { display: flex; align-items: baseline; gap: 8px; padding: 5px 0; border-top: 1px solid var(--stroke-soft); font-size: 12px; min-width: 0; }
+    .hrow:first-child { border-top: none; }
+    .hvtag { min-width: 24px; font-size: 10px; font-weight: 700; color: var(--t2); font-family: var(--mono); flex-shrink: 0; }
+    .hnote { color: var(--t1); overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+<div class="window">
+  <div class="titlebar">
+    <div class="traffic"><span class="tr"></span><span class="ty"></span><span class="tg"></span></div>
+    <div class="searchbar">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="4"/><line x1="9" y1="9" x2="12.5" y2="12.5"/></svg>
+      <span>Search…</span>
+    </div>
+    <div class="tb-right">
+      <div class="btn sq" title="Compare">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1.5" width="5" height="11" rx="1.5"/><rect x="8" y="1.5" width="5" height="11" rx="1.5"/></svg>
+      </div>
+      <div class="btn p">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><line x1="7" y1="2" x2="7" y2="12"/><line x1="2" y1="7" x2="12" y2="7"/></svg>
+        New Prompt
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="nrow on">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"/><polyline points="9,1 9,5 12,5"/><line x1="4.5" y1="8" x2="9.5" y2="8"/><line x1="4.5" y1="10" x2="7" y2="10"/></svg>
+        <span class="nrow-lbl">All Prompts</span><span class="nbadge">42</span>
+      </div>
+      <div class="nrow">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="5" r="3"/><path d="M2.5 12.5a4.5 4.5 0 0 1 9 0"/></svg>
+        <span class="nrow-lbl">My Prompts</span><span class="nbadge">16</span>
+      </div>
+      <div class="nrow">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="4" cy="7" r="2.5"/><circle cx="10" cy="4" r="2.5"/><circle cx="10" cy="10" r="2.5"/><line x1="6.4" y1="5.8" x2="7.7" y2="5.2"/><line x1="6.4" y1="8.2" x2="7.7" y2="8.8"/></svg>
+        <span class="nrow-lbl">Shared</span><span class="nbadge">6</span>
+      </div>
+      <div class="nrow">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="12" height="9" rx="1.5"/><path d="M4 3V2.5a2.5 2.5 0 0 1 5 0V3"/></svg>
+        <span class="nrow-lbl">Gallery</span><span class="nbadge">20</span>
+      </div>
+      <div class="sec-lbl">Focus</div>
+      <div class="chip-row">
+        <span class="chip on">Recent</span>
+        <span class="chip">Ready</span>
+        <span class="chip">Cleanup</span>
+      </div>
+      <div class="sb-spacer"></div>
+      <div class="sb-footer">
+        <div class="btn sq" title="Settings">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="2.2"/><path d="M7 1.5v1.2M7 11.3V12.5M1.5 7h1.2M11.3 7H12.5M3.1 3.1l.85.85M10.05 10.05l.85.85M3.1 10.9l.85-.85M10.05 3.95l.85-.85"/></svg>
+        </div>
+        <div class="btn sq" title="Open Gallery">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="12" height="9" rx="1.5"/><path d="M4 3V2.5a2.5 2.5 0 0 1 5 0V3"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <main class="lp">
+      <div class="ph">
+        <div class="ph-l">
+          <span class="ph-title">My Prompts</span>
+          <span class="ph-count">16</span>
+        </div>
+        <div class="btn sq" title="Sort">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="4" x2="12" y2="4"/><line x1="3" y1="7" x2="11" y2="7"/><line x1="4.5" y1="10" x2="9.5" y2="10"/></svg>
+        </div>
+      </div>
+      <div class="tbar">
+        <div class="tbar-s">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="4"/><line x1="9" y1="9" x2="12.5" y2="12.5"/></svg>
+          <span>Filter…</span>
+        </div>
+        <div class="fc">
+          <span class="chip on">All</span>
+          <span class="chip">Ready</span>
+          <span class="chip">Shared</span>
+          <span class="chip">Sources</span>
+        </div>
+      </div>
+      <div class="ls" id="promptsList"></div>
+    </main>
+
+    <section class="dp">
+      <div class="dh">
+        <div class="dh-l">
+          <div class="d-title" id="dTitle">Minimal Weather Widget</div>
+          <div class="d-sub" id="dSub">image · private · 5 vars · gpt-image-1</div>
+        </div>
+        <div class="d-btns">
+          <div class="btn p" id="dRun">
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor"><polygon points="3,2 12,7 3,12"/></svg>
+            Run
+          </div>
+          <div class="btn sq" title="Copy">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="7" height="7" rx="1.5"/><path d="M3 9.5H2A1.5 1.5 0 0 1 .5 8V2A1.5 1.5 0 0 1 2 .5h6A1.5 1.5 0 0 1 9.5 2V3"/></svg>
+          </div>
+          <div class="btn sq" title="Compare">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1.5" width="5" height="11" rx="1.5"/><rect x="8" y="1.5" width="5" height="11" rx="1.5"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="dscroll" id="dScroll"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const prompts = [
+  {
+    id:"weather", name:"Minimal Weather Widget",
+    line:"image · private · 5 vars", model:"gpt-image-1", status:"Ready", statusT:"g",
+    body:"Create image prompt for a surreal minimal weather widget viewed through an airplane window. Use the landmark scenery of [country_name], an overlay weather card with a subtle gradient backdrop, a small weather icon, current temperature in a light font, and a location tag below. If the destination has extreme weather, let the condensation and backdrop resonate with the scene. Keep strong negative space, reflected glass, and calm composition.",
+    vars:["country_name","landmark","weather","temperature","ui_style"],
+    meta:[["State","Ready"],["Updated","12 min ago"],["Words","86"]],
+    sources:[["Source","Private Library"],["Asset","Image reference attached"],["Share","Not shared"]],
+    history:[{v:"v1",note:"Created as image generation prompt"}],
+  },
+  {
+    id:"planning", name:"Weekly Planning Review",
+    line:"team · shared · 6 vars", model:"gpt-4.1", status:"Shared", statusT:"g",
+    body:"Review the current weekly planning notes and create a concise leadership brief. Group blockers by team, list clear owners, highlight dependencies, and end with the next three decisions that need approval.",
+    vars:["teams","blockers","owners","dependencies","decisions","agenda"],
+    meta:[["State","Shared"],["Updated","Yesterday"],["Words","64"]],
+    sources:[["Source","Shared Library"],["Asset","Meeting notes"],["Share","Public link enabled"]],
+    history:[{v:"v8",note:"Refined owner summary format"},{v:"v7",note:"Added decision checklist"}],
+  },
+  {
+    id:"launch", name:"Product Launch Narrative",
+    line:"longform · private · 2 vars", model:"claude-4.6", status:"Needs cleanup", statusT:"w",
+    body:"Write a product launch narrative that explains the user problem, why the current release matters, and how the product direction changes after this launch. Include external positioning and internal alignment language in distinct sections.",
+    vars:["audience","positioning_angle"],
+    meta:[["State","Needs cleanup"],["Updated","4 days ago"],["Words","71"]],
+    sources:[["Source","Private Library"],["Asset","None"],["Share","Not shared"]],
+    history:[{v:"v3",note:"Reduced repetition in intro"},{v:"v2",note:"Added internal alignment section"}],
+  },
+];
+
+let sel = prompts[0].id;
+
+function renderList() {
+  document.getElementById("promptsList").innerHTML = prompts.map(p=>`
+    <button class="prow ${p.id===sel?"on":""}" data-id="${p.id}">
+      <div class="pr-top">
+        <div class="pr-name">${p.name}</div>
+        <div class="mchip">${p.model}</div>
+      </div>
+      <div class="pr-sub">
+        <span class="dot ${p.statusT}"></span>
+        <span>${p.line}</span>
+      </div>
+    </button>`).join("");
+  document.querySelectorAll(".prow").forEach(r=>r.addEventListener("click",()=>{sel=r.dataset.id;renderList();renderDetail();}));
+}
+
+function renderDetail() {
+  const p = prompts.find(x=>x.id===sel);
+  document.getElementById("dTitle").textContent = p.name;
+  document.getElementById("dSub").textContent = `${p.line} · ${p.model}`;
+  document.getElementById("dRun").innerHTML = `<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor"><polygon points="3,2 12,7 3,12"/></svg> Run`;
+
+  document.getElementById("dScroll").innerHTML = `
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"/><polyline points="9,1 9,5 12,5"/></svg>
+        Body
+      </div>
+      <div class="pbody">${p.body}</div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="4.5" x2="7" y2="4.5"/><line x1="1" y1="9.5" x2="7" y2="9.5"/><path d="M7 4.5c1.5 0 5.5.5 5.5 2.5s-4 2.5-5.5 2.5"/></svg>
+        Variables
+      </div>
+      <div class="var-row">${p.vars.map(v=>`<span class="var">${v}</span>`).join("")}</div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5.5"/><line x1="7" y1="6" x2="7" y2="10"/><circle cx="7" cy="4" r="0.5" fill="currentColor" stroke="none"/></svg>
+        Context
+      </div>
+      <div class="kv">${p.meta.map(([k,v])=>`<div class="kvrow"><div class="kvk">${k}</div><div class="kvv">${v}</div></div>`).join("")}</div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4.5 8.5A3.5 3.5 0 0 0 7 9.5h1a3 3 0 0 0 0-6H7A3.5 3.5 0 0 0 4.5 5"/><path d="M9.5 5.5A3.5 3.5 0 0 0 7 4.5H6a3 3 0 0 0 0 6h1a3.5 3.5 0 0 0 2.5-1"/></svg>
+        Sources
+      </div>
+      <div class="kv">${p.sources.map(([k,v])=>`<div class="kvrow"><div class="kvk">${k}</div><div class="kvv">${v}</div></div>`).join("")}</div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><polyline points="7,4.5 7,7.2 9,8.5"/></svg>
+        History
+      </div>
+      <div>${p.history.map(h=>`<div class="hrow"><span class="hvtag">${h.v}</span><span class="hnote">${h.note}</span></div>`).join("")}</div>
+    </div>
+  `;
+}
+
+renderList(); renderDetail();
+</script>
+</body>
+</html>

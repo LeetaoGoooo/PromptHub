@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptHub – Skills</title>
+  <style>
+    :root {
+      --bg-top: #edf3ff; --bg-bottom: #d8e4f6;
+      --win: rgba(255,255,255,0.80); --win-edge: rgba(255,255,255,0.74);
+      --stroke: rgba(31,45,74,0.09); --stroke-soft: rgba(31,45,74,0.055);
+      --t0: #1f2940; --t1: #57637d; --t2: #8290a8;
+      --blue: #3d67d7; --blue-bg: rgba(61,103,215,0.10);
+      --green: #1a7a56; --orange: #a85f14; --red: #a04050;
+      --shadow: 0 24px 64px rgba(33,49,84,0.17), 0 6px 16px rgba(33,49,84,0.09);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh; padding: 22px; font-family: var(--font); color: var(--t0);
+      display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(ellipse at top left, rgba(255,255,255,0.92), transparent 26%),
+        radial-gradient(ellipse at bottom right, rgba(152,188,255,0.38), transparent 32%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    }
+    .window {
+      width: min(1560px, 100%); height: min(950px, calc(100vh - 44px));
+      display: grid; grid-template-rows: 50px 1fr;
+      background: var(--win); border: 1px solid var(--win-edge); border-radius: 22px;
+      box-shadow: var(--shadow); backdrop-filter: blur(20px) saturate(160%); overflow: hidden;
+    }
+
+    /* titlebar */
+    .titlebar {
+      display: grid; grid-template-columns: 72px minmax(0,1fr) auto;
+      align-items: center; gap: 10px; padding: 0 14px;
+      border-bottom: 1px solid var(--stroke); background: rgba(255,255,255,0.20);
+    }
+    .traffic { display: flex; gap: 7px; align-items: center; }
+    .traffic span { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .tr { background: #ff5f57; } .ty { background: #ffbd2e; } .tg { background: #28c840; }
+    .searchbar {
+      height: 28px; display: flex; align-items: center; gap: 6px;
+      padding: 0 9px; border-radius: 8px;
+      background: rgba(255,255,255,0.44); border: 1px solid rgba(31,45,74,0.07);
+      color: var(--t2); font-size: 12px; min-width: 0;
+    }
+    .searchbar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tb-right { display: flex; align-items: center; gap: 6px; }
+
+    /* buttons */
+    .btn {
+      height: 27px; padding: 0 9px; border: 1px solid rgba(31,45,74,0.09);
+      border-radius: 8px; background: rgba(255,255,255,0.52); color: var(--t1);
+      font-size: 12px; font-weight: 650; font-family: var(--font);
+      display: inline-flex; align-items: center; gap: 5px; cursor: default;
+    }
+    .btn.p { background: var(--blue-bg); border-color: transparent; color: var(--blue); }
+    .btn.sq { width: 27px; padding: 0; justify-content: center; }
+
+    /* workspace */
+    .workspace { min-height: 0; display: grid; grid-template-columns: 216px 316px minmax(0,1fr); }
+
+    /* sidebar */
+    .sidebar {
+      padding: 8px 6px; background: rgba(33,44,72,0.042);
+      border-right: 1px solid var(--stroke); display: flex; flex-direction: column;
+    }
+    .sec-lbl { margin: 8px 6px 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t2); }
+    .nrow {
+      padding: 6px 8px; border-radius: 7px; display: flex; align-items: center;
+      gap: 7px; font-size: 13px; color: var(--t1); cursor: default; margin-bottom: 1px;
+    }
+    .nrow.on { background: var(--blue-bg); color: var(--t0); }
+    .nrow-lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nbadge {
+      min-width: 18px; height: 16px; padding: 0 5px; border-radius: 999px;
+      background: rgba(31,45,74,0.07); color: var(--t2); font-size: 10px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 5px 0; }
+    .chip {
+      min-height: 21px; padding: 0 7px; border-radius: 6px;
+      background: rgba(31,45,74,0.055); color: var(--t1);
+      font-size: 11px; font-weight: 700; display: inline-flex; align-items: center;
+    }
+    .chip.on { background: var(--blue-bg); color: var(--blue); }
+    .sb-spacer { flex: 1; }
+    .sb-footer { padding: 8px 4px 2px; border-top: 1px solid var(--stroke); display: flex; gap: 5px; }
+
+    /* list pane */
+    .lp { background: transparent; border-right: 1px solid var(--stroke); display: grid; grid-template-rows: auto auto minmax(0,1fr); }
+    .ph { padding: 10px 13px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: center; justify-content: space-between; }
+    .ph-l { display: flex; align-items: center; gap: 7px; }
+    .ph-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .ph-count { min-width: 18px; height: 16px; padding: 0 5px; border-radius: 999px; background: rgba(31,45,74,0.07); color: var(--t2); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .tbar { padding: 6px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: center; gap: 6px; }
+    .tbar-s { flex: 1; height: 26px; padding: 0 8px; border-radius: 7px; background: rgba(255,255,255,0.30); display: flex; align-items: center; gap: 5px; color: var(--t2); font-size: 12px; overflow: hidden; }
+    .tbar-s span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fc { display: flex; gap: 4px; }
+    .ls { min-height: 0; overflow-y: auto; padding: 4px 5px 8px; }
+
+    /* list row — 2 lines only */
+    .srow { padding: 8px 9px; border-radius: 7px; margin-bottom: 1px; display: grid; gap: 3px; min-width: 0; background: transparent; border: none; text-align: left; cursor: default; width: 100%; }
+    .srow.on { background: var(--blue-bg); }
+    .sr-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .sr-name { flex: 1; font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .qlbl { font-size: 11px; font-weight: 700; color: var(--t2); white-space: nowrap; flex-shrink: 0; }
+    .qlbl.g { color: var(--green); } .qlbl.w { color: var(--orange); }
+    .sr-sub { font-size: 11px; color: var(--t2); display: flex; align-items: center; gap: 5px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; background: #97a2bb; }
+    .dot.g { background: var(--green); } .dot.w { background: var(--orange); } .dot.b { background: var(--red); }
+
+    /* detail pane */
+    .dp { background: rgba(255,255,255,0.28); display: grid; grid-template-rows: auto minmax(0,1fr); }
+    .dh { padding: 10px 15px 8px; border-bottom: 1px solid var(--stroke); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .dh-l { min-width: 0; }
+    .d-title { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+    .d-sub { margin-top: 2px; font-size: 12px; color: var(--t2); }
+    .d-btns { display: flex; gap: 5px; flex-shrink: 0; }
+    .dscroll { min-height: 0; overflow-y: auto; padding: 0 15px 15px; }
+
+    /* detail sections — no ALL-CAPS headings */
+    .ds { padding: 10px 0; border-bottom: 1px solid var(--stroke); }
+    .ds:last-child { border-bottom: none; }
+    .ds-head { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; font-size: 11px; font-weight: 700; color: var(--t1); }
+    .ds-head svg { color: var(--t2); flex-shrink: 0; }
+    .desc { font-size: 13px; line-height: 1.58; color: var(--t0); overflow-wrap: anywhere; }
+
+    .trow { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag { min-height: 20px; padding: 0 7px; border-radius: 6px; background: rgba(31,45,74,0.055); color: var(--t1); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; }
+    .tag.bl { background: rgba(61,103,215,0.10); color: var(--blue); }
+
+    .at { display: grid; }
+    .drow { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid var(--stroke-soft); font-size: 12px; }
+    .drow:first-child { border-top: none; }
+    .acli { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ast { font-size: 11px; font-weight: 700; color: var(--t2); white-space: nowrap; }
+    .ast.g { color: var(--green); } .ast.w { color: var(--orange); } .ast.b { color: var(--red); }
+
+    .aurow { display: flex; align-items: center; gap: 7px; padding: 5px 0; border-top: 1px solid var(--stroke-soft); font-size: 12px; min-width: 0; }
+    .aurow:first-child { border-top: none; }
+    .aulbl { flex: 1; overflow-wrap: anywhere; }
+    .aust { font-size: 11px; font-weight: 700; color: var(--t2); white-space: nowrap; }
+    .aust.g { color: var(--green); } .aust.w { color: var(--orange); }
+
+    .kv { display: grid; }
+    .kvrow { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 10px; padding: 5px 0; border-top: 1px solid var(--stroke-soft); font-size: 12px; align-items: start; }
+    .kvrow:first-child { border-top: none; }
+    .kvk { color: var(--t2); font-weight: 600; }
+    .kvv { min-width: 0; overflow-wrap: anywhere; }
+    .mono { font-family: var(--mono); font-size: 11px; }
+  </style>
+</head>
+<body>
+<div class="window">
+  <!-- titlebar -->
+  <div class="titlebar">
+    <div class="traffic"><span class="tr"></span><span class="ty"></span><span class="tg"></span></div>
+    <div class="searchbar">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="4"/><line x1="9" y1="9" x2="12.5" y2="12.5"/></svg>
+      <span>Search…</span>
+    </div>
+    <div class="tb-right">
+      <div class="btn sq" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="2.2"/><path d="M7 1.5v1.2M7 11.3V12.5M1.5 7h1.2M11.3 7H12.5M3.1 3.1l.85.85M10.05 10.05l.85.85M3.1 10.9l.85-.85M10.05 3.95l.85-.85"/></svg>
+      </div>
+      <div class="btn p">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><line x1="7" y1="2" x2="7" y2="12"/><line x1="2" y1="7" x2="12" y2="7"/></svg>
+        New Skill
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <!-- sidebar -->
+    <aside class="sidebar">
+      <div class="nrow on">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5l1.2 3.5 3.8.3-2.9 2.5 1 3.7L7 9.8l-3.1 1.8 1-3.7-2.9-2.5 3.8-.3z"/></svg>
+        <span class="nrow-lbl">Installed</span><span class="nbadge">35</span>
+      </div>
+      <div class="nrow">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"/><polyline points="9,1 9,5 12,5"/><line x1="4.5" y1="8" x2="9.5" y2="8"/><line x1="4.5" y1="10" x2="7" y2="10"/></svg>
+        <span class="nrow-lbl">Drafts</span><span class="nbadge">3</span>
+      </div>
+      <div class="nrow">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><line x1="7" y1="1.5" x2="7" y2="3"/><line x1="7" y1="11" x2="7" y2="12.5"/><line x1="1.5" y1="7" x2="3" y2="7"/><line x1="11" y1="7" x2="12.5" y2="7"/></svg>
+        <span class="nrow-lbl">Discover</span><span class="nbadge">124</span>
+      </div>
+      <div class="sec-lbl">Scope</div>
+      <div class="chip-row">
+        <span class="chip on">All</span>
+        <span class="chip">Global</span>
+        <span class="chip">Project</span>
+      </div>
+      <div class="sb-spacer"></div>
+      <div class="sb-footer">
+        <div class="btn sq" title="Manage CLIs">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="12" height="9" rx="2"/><polyline points="3.5,5.5 6,7 3.5,8.5"/><line x1="7.5" y1="8.5" x2="10.5" y2="8.5"/></svg>
+        </div>
+        <div class="btn sq" title="Choose Project">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5H12.5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H1.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3L5.8 2h4"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <!-- list pane -->
+    <main class="lp">
+      <div class="ph">
+        <div class="ph-l">
+          <span class="ph-title">Skills</span>
+          <span class="ph-count">35</span>
+        </div>
+        <div class="btn sq" title="Refresh">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12.5 7a5.5 5.5 0 1 1-1.1-3.3"/><polyline points="12.5,1.5 12.5,4.5 9.5,4.5"/></svg>
+        </div>
+      </div>
+      <div class="tbar">
+        <div class="tbar-s">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="4"/><line x1="9" y1="9" x2="12.5" y2="12.5"/></svg>
+          <span>Filter…</span>
+        </div>
+        <div class="fc">
+          <span class="chip on">All</span>
+          <span class="chip">Visible</span>
+          <span class="chip">Needs fix</span>
+          <span class="chip">Local</span>
+        </div>
+      </div>
+      <div class="ls" id="skillsList"></div>
+    </main>
+
+    <!-- detail pane -->
+    <section class="dp">
+      <div class="dh">
+        <div class="dh-l">
+          <div class="d-title" id="dTitle">Apple Note</div>
+          <div class="d-sub" id="dSub">Global · External · 3 CLIs</div>
+        </div>
+        <div class="d-btns">
+          <div class="btn sq" title="Open package">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5H12.5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H1.5a1 1 0 0 1-1-1V5.5z"/><path d="M9.5 5.5V3.5A1.5 1.5 0 0 0 8 2H6a1.5 1.5 0 0 0-1.5 1.5v2"/></svg>
+          </div>
+          <div class="btn sq" title="History">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><polyline points="7,4.5 7,7.2 9,8.5"/></svg>
+          </div>
+          <div class="btn sq" title="Duplicate">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="7" height="7" rx="1.5"/><path d="M3 9.5H2A1.5 1.5 0 0 1 .5 8V2A1.5 1.5 0 0 1 2 .5h6A1.5 1.5 0 0 1 9.5 2V3"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="dscroll" id="dScroll"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const I = {
+  ok:  `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,7 5.5,10.5 12,4"/></svg>`,
+  wrn: `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5l5.5 10H1.5z"/><line x1="7" y1="5.5" x2="7" y2="8.5"/><circle cx="7" cy="10.5" r="0.6" fill="currentColor" stroke="none"/></svg>`,
+  x:   `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg>`,
+};
+const CLR = { g:'var(--green)', w:'var(--orange)', b:'var(--red)' };
+function ti(t){ return t==='g'?I.ok: t==='w'?I.wrn: I.x; }
+
+const skills = [
+  { id:"apple-note", name:"Apple Note", scope:"Global", install:"External", q:{l:"Excellent",t:"g"},
+    desc:"Interact with Apple Notes on macOS — create, read, edit, search, and list notes with full attachment support.",
+    tags:[{s:"Global"},{s:"External"},{s:"Local only"}],
+    avail:[{cli:"Codex",s:"Visible",t:"g"},{cli:"Claude Code",s:"Unknown",t:"w"},{cli:"Cursor",s:"Missing",t:"b"},{cli:"Gemini CLI",s:"Visible",t:"g"},{cli:"Qwen Code",s:"Visible",t:"g"},{cli:"Qoder",s:"Not installed",t:"b"}],
+    audit:[{l:"Frontmatter",s:"Passed",t:"g"},{l:"Description clarity",s:"Strong",t:"g"},{l:"Coverage hints",s:"Needs expansion",t:"w"},{l:"Install traceability",s:"Passed",t:"g"}],
+    pkg:[["ID","apple-note"],["Managed","External"],["Source","Local only"],["Draft","None"]] },
+  { id:"autocli", name:"Autocli", scope:"Global", install:"External", q:{l:"Strong",t:"g"},
+    desc:"Use a logged-in Chrome session to automate reading and publishing across 55+ content sites.",
+    tags:[{s:"Global"},{s:"External"}],
+    avail:[{cli:"Codex",s:"Visible",t:"g"},{cli:"Claude Code",s:"Visible",t:"g"},{cli:"Gemini CLI",s:"Unknown",t:"w"}],
+    audit:[{l:"Frontmatter",s:"Passed",t:"g"},{l:"Description clarity",s:"Strong",t:"g"},{l:"Coverage hints",s:"Passed",t:"g"},{l:"Install traceability",s:"Needs work",t:"w"}],
+    pkg:[["ID","autocli"],["Managed","External"],["Source","Local only"],["Draft","None"]] },
+  { id:"decision", name:"Decision Tradeoff Auditor", scope:"Global", install:"Managed", q:{l:"Needs Work",t:"w"},
+    desc:"Compare options, expose trade-offs, and produce a concrete decision instead of vague brainstorming.",
+    tags:[{s:"Global"},{s:"Managed",c:"bl"}],
+    avail:[{cli:"Codex",s:"Visible",t:"g"},{cli:"Claude Code",s:"Missing",t:"b"}],
+    audit:[{l:"Frontmatter",s:"Passed",t:"g"},{l:"Description clarity",s:"Needs work",t:"w"},{l:"Coverage hints",s:"Needs expansion",t:"w"},{l:"Install traceability",s:"Passed",t:"g"}],
+    pkg:[["ID","decision-tradeoff-auditor"],["Managed","PromptHub"],["Source","Hub library"],["Draft","decision-tradeoff-v2"]] },
+  { id:"unread", name:"Daily Unread Articles", scope:"Global", install:"Managed", q:{l:"Strong",t:"g"},
+    desc:"Fetch top unread articles from a local Knowledge Reader API and explain why each deserves attention.",
+    tags:[{s:"Global"},{s:"Managed",c:"bl"}],
+    avail:[{cli:"Codex",s:"Visible",t:"g"},{cli:"Gemini CLI",s:"Visible",t:"g"},{cli:"Qwen Code",s:"Visible",t:"g"}],
+    audit:[{l:"Frontmatter",s:"Passed",t:"g"},{l:"Description clarity",s:"Strong",t:"g"},{l:"Coverage hints",s:"Passed",t:"g"},{l:"Install traceability",s:"Passed",t:"g"}],
+    pkg:[["ID","daily-unread-articles-top5"],["Managed","PromptHub"],["Source","Hub library"],["Draft","None"]] },
+];
+
+let sel = skills[0].id;
+
+function renderList() {
+  document.getElementById("skillsList").innerHTML = skills.map(s=>`
+    <button class="srow ${s.id===sel?"on":""}" data-id="${s.id}">
+      <div class="sr-top">
+        <div class="sr-name">${s.name}</div>
+        <div class="qlbl ${s.q.t}">${s.q.l}</div>
+      </div>
+      <div class="sr-sub"><span class="dot ${s.q.t}"></span>${s.scope} · ${s.install}</div>
+    </button>`).join("");
+  document.querySelectorAll(".srow").forEach(r=>r.addEventListener("click",()=>{sel=r.dataset.id;renderList();renderDetail();}));
+}
+
+function renderDetail() {
+  const s = skills.find(x=>x.id===sel);
+  const vis = s.avail.filter(a=>a.t==="g").length;
+  document.getElementById("dTitle").textContent = s.name;
+  document.getElementById("dSub").textContent = `${s.scope} · ${s.install} · ${vis} CLI${vis!==1?"s":""}`;
+  document.getElementById("dScroll").innerHTML = `
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 1.5h9v11h-9z"/><line x1="4.5" y1="5" x2="9.5" y2="5"/><line x1="4.5" y1="7.5" x2="9.5" y2="7.5"/><line x1="4.5" y1="10" x2="7" y2="10"/></svg>
+        Description
+      </div>
+      <p class="desc">${s.desc}</p>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 7c1.5-3 3-4.5 6-4.5S11.5 4 13 7c-1.5 3-3 4.5-6 4.5S2.5 10 1 7z"/><circle cx="7" cy="7" r="2"/></svg>
+        Scope
+      </div>
+      <div class="trow">${s.tags.map(t=>`<span class="tag ${t.c||""}">${t.s}</span>`).join("")}</div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="12" height="9" rx="2"/><polyline points="3.5,5.5 6,7 3.5,8.5"/><line x1="7.5" y1="8.5" x2="10.5" y2="8.5"/></svg>
+        CLI Visibility
+      </div>
+      <div class="at">${s.avail.map(a=>`
+        <div class="drow">
+          <span style="color:${CLR[a.t]};flex-shrink:0">${ti(a.t)}</span>
+          <span class="acli">${a.cli}</span>
+          <span class="ast ${a.t}">${a.s}</span>
+        </div>`).join("")}
+      </div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,4.5 7,7.5 12.5,4.5"/><path d="M1.5 4.5V10a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V4.5"/></svg>
+        Audit
+      </div>
+      <div class="at">${s.audit.map(a=>`
+        <div class="aurow">
+          <span style="color:${CLR[a.t]};flex-shrink:0">${ti(a.t)}</span>
+          <span class="aulbl">${a.l}</span>
+          <span class="aust ${a.t}">${a.s}</span>
+        </div>`).join("")}
+      </div>
+    </div>
+
+    <div class="ds">
+      <div class="ds-head">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,4 7,7 12.5,4"/><path d="M1.5 4v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V4"/><polyline points="4.5,2 7,4 9.5,2"/></svg>
+        Package
+      </div>
+      <div class="kv">${s.pkg.map(([k,v])=>`
+        <div class="kvrow"><div class="kvk">${k}</div><div class="kvv ${k==="ID"?"mono":""}">${v}</div></div>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+renderList(); renderDetail();
+</script>
+</body>
+</html>

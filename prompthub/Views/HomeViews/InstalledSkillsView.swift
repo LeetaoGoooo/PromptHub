@@ -37,6 +37,15 @@ struct InstalledSkillsView: View {
     @State var skillsWithUpdates: Set<String> = []
     @State var isCheckingUpdates = false
     @State var updatingSkill: InstalledSkillSnapshot?
+    @State var listFilter: ListFilter = .all
+
+    // MARK: - List filter
+    enum ListFilter: String, CaseIterable {
+        case all      = "All"
+        case visible  = "Visible"
+        case needsFix = "Needs Fix"
+        case local    = "Local"
+    }
 
     var installedSkills: [InstalledSkillSnapshot] { installedWorkspaceStore.installedSkills }
 
@@ -65,11 +74,21 @@ struct InstalledSkillsView: View {
     }
 
     var filteredSkills: [InstalledSkillSnapshot] {
-        guard !searchText.isEmpty else { return filteredBySidebar }
-        return filteredBySidebar.filter {
-            $0.packageName.localizedCaseInsensitiveContains(searchText) ||
-            $0.displayName.localizedCaseInsensitiveContains(searchText) ||
-            $0.summary.localizedCaseInsensitiveContains(searchText)
+        let afterSearch: [InstalledSkillSnapshot]
+        if searchText.isEmpty {
+            afterSearch = filteredBySidebar
+        } else {
+            afterSearch = filteredBySidebar.filter {
+                $0.packageName.localizedCaseInsensitiveContains(searchText) ||
+                $0.displayName.localizedCaseInsensitiveContains(searchText) ||
+                $0.summary.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+        switch listFilter {
+        case .all:      return afterSearch
+        case .visible:  return afterSearch.filter { !$0.agents.isEmpty }
+        case .needsFix: return afterSearch.filter { $0.agents.isEmpty }
+        case .local:    return afterSearch.filter { !$0.isGlobal }
         }
     }
 
