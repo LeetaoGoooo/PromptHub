@@ -170,8 +170,6 @@ struct CLIDashboardView: View {
 
     private var connectedAgentsSection: some View {
         VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadGap) {
-            PHSectionHead(systemImage: "cube", label: "Connected AI Agents")
-
             // Filter chips
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: PH.Spacing.toolbarGap) {
