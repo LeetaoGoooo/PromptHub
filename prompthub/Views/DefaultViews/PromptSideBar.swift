@@ -274,6 +274,7 @@ struct PromptSideBar: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .background(isActive ? PH.Color.accentTint : Color.clear, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

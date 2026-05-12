@@ -533,6 +533,9 @@
     "CLI" : {
 
     },
+    "CLI Agents" : {
+
+    },
     "CLI File Access" : {
 
     },
@@ -1416,6 +1419,9 @@
     "Grant folder access to connect" : {
 
     },
+    "Grant folder access to install skills into this agent." : {
+
+    },
     "Hide" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1926,6 +1932,9 @@
         }
       }
     },
+    "No global skills installed." : {
+
+    },
     "No history available for this prompt except the latest version." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1973,6 +1982,9 @@
     "No project selected. Skills will be installed relative to the project root." : {
 
     },
+    "No project-scoped skills installed." : {
+
+    },
     "No prompts available" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1993,6 +2005,9 @@
           }
         }
       }
+    },
+    "No results for \"%@\"" : {
+
     },
     "No saved versions yet." : {
 
@@ -2642,6 +2657,9 @@
         }
       }
     },
+    "Select an agent to inspect" : {
+
+    },
     "Select Models" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3011,6 +3029,9 @@
           }
         }
       }
+    },
+    "Try a different filter or clear the current one." : {
+
     },
     "Try using different keywords" : {
       "extractionState" : "manual",
