@@ -84,6 +84,7 @@ struct PromptSideBar: View {
                         promptSelection = .allPrompts
                     }
                 }
+                .keyboardShortcut("1", modifiers: .command)
             }
         }
     }
@@ -103,6 +104,7 @@ struct PromptSideBar: View {
                         promptSelection = .installedSkills
                     }
                 }
+                .keyboardShortcut("2", modifiers: .command)
             }
         }
     }
@@ -115,6 +117,7 @@ struct PromptSideBar: View {
                 sidebarSelectionButton(title: "Workspaces", icon: "terminal", meta: metaCount(grantedAgentCount), isActive: promptSelection == .cliDashboard) {
                     promptSelection = .cliDashboard
                 }
+                .keyboardShortcut("3", modifiers: .command)
             }
         }
     }
