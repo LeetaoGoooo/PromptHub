@@ -84,6 +84,7 @@ struct InstalledSkillListRow: View {
             }
             .padding(.vertical, PH.Spacing.rowH)
             .padding(.horizontal, PH.Spacing.rowV)
+            .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
         }
         .buttonStyle(.plain)
         .background(isSelected ? PH.Color.accentTint : .clear)
