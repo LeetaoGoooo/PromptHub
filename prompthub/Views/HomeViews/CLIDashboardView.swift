@@ -12,7 +12,6 @@ struct CLIDashboardView: View {
     @State private var selectedDirectory: CLIDirectory?
     @State private var showingAccessManager = false
     @State private var showingCLISettingsHint = false
-    @State private var copiedCommand: String?
     @State private var agentFilter: CLIAgentFilter = .all
 
     private var grantedDirectories: [CLIDirectory] {
@@ -175,7 +174,7 @@ struct CLIDashboardView: View {
                     Text("Select an agent to inspect")
                         .font(PH.Font.rowName)
                         .foregroundStyle(PH.Color.secondary)
-                    CLIHowItWorksCard(onCopyCommand: copyCommand(_:), copiedCommand: copiedCommand, availableWidth: 560)
+                    CLIHowItWorksCard(availableWidth: 560)
                         .padding(.top, 8)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -190,9 +189,10 @@ struct CLIDashboardView: View {
     private var inspectorColumn: some View {
         CLIDashboardInspector(
             cliExecutablePath: cliExecutablePath,
+            selectedDirectory: selectedDirectory,
+            selectedDirectoryHasAccess: selectedDirectory.map { cliAccess.hasAccess(to: $0) } ?? false,
             grantedDirectories: grantedDirectories,
             selectedProjectLabel: selectedProjectLabel,
-            hasGeminiAccess: cliAccess.hasAccess(to: .gemini),
             onGrantAccess: { showingAccessManager = true },
             onChangeProject: chooseProjectRoot,
             onCLISettings: { showingCLISettingsHint = true }
@@ -274,17 +274,6 @@ struct CLIDashboardView: View {
         workspaceService.setSelectedProjectRootURL(selectedURL)
     }
 
-    private func copyCommand(_ command: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(command, forType: .string)
-        copiedCommand = command
-        Task {
-            try? await Task.sleep(for: .seconds(1.2))
-            if copiedCommand == command {
-                copiedCommand = nil
-            }
-        }
-    }
 }
 
 private struct HeaderMetric: View {
@@ -631,12 +620,33 @@ private struct CLISkillActivityRow: View {
 
 private struct CLIDashboardInspector: View {
     let cliExecutablePath: String?
+    let selectedDirectory: CLIDirectory?
+    let selectedDirectoryHasAccess: Bool
     let grantedDirectories: [CLIDirectory]
     let selectedProjectLabel: String
-    let hasGeminiAccess: Bool
     let onGrantAccess: () -> Void
     let onChangeProject: () -> Void
     let onCLISettings: () -> Void
+
+    private var selectedConnectionTitle: String {
+        selectedDirectory?.displayName ?? "No agent selected"
+    }
+
+    private var selectedConnectionSubtitle: String {
+        guard let selectedDirectory else {
+            return "Choose an agent from the list to inspect its connection state"
+        }
+
+        if selectedDirectoryHasAccess {
+            return "Connected"
+        }
+
+        return "Grant ~\(selectedDirectory.rawValue)/ access to connect"
+    }
+
+    private var cliInstallHint: String {
+        cliExecutablePath ?? "PromptHub CLI is not publicly released yet"
+    }
 
     var body: some View {
         ScrollView {
@@ -645,16 +655,16 @@ private struct CLIDashboardInspector: View {
                 VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
                     PHSectionHead(systemImage: "powerplug", label: "Connection")
                     SetupStatusRow(
-                        title: cliExecutablePath == nil ? "CLI not detected" : "CLI installed",
-                        subtitle: cliExecutablePath ?? "Install with brew install prompthub",
+                        title: cliExecutablePath == nil ? "PromptHub CLI not detected" : "PromptHub CLI detected",
+                        subtitle: cliInstallHint,
                         isDone: cliExecutablePath != nil,
                         chipTitle: cliExecutablePath == nil ? nil : "Detected"
                     )
                     SetupStatusRow(
-                        title: "Gemini CLI",
-                        subtitle: hasGeminiAccess ? "Connected" : "Grant ~/.gemini/ access to connect",
-                        isDone: hasGeminiAccess,
-                        chipTitle: hasGeminiAccess ? nil : "Optional"
+                        title: selectedConnectionTitle,
+                        subtitle: selectedConnectionSubtitle,
+                        isDone: selectedDirectoryHasAccess,
+                        chipTitle: nil
                     )
                 }
 
@@ -771,8 +781,6 @@ private struct SetupStatusRow: View {
 }
 
 struct CLIHowItWorksCard: View {
-    let onCopyCommand: (String) -> Void
-    let copiedCommand: String?
     let availableWidth: CGFloat
 
     private var usesVerticalLayout: Bool {
@@ -822,9 +830,14 @@ struct CLIHowItWorksCard: View {
 
     private var commandBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CLICommandRow(label: "Install", command: "brew install prompthub", copiedCommand: copiedCommand, onCopy: onCopyCommand)
-            CLICommandRow(label: "Add skill", command: "ph skill install owner/repo@commit-writer", copiedCommand: copiedCommand, onCopy: onCopyCommand)
-            CLICommandRow(label: "List", command: "ph skill list", copiedCommand: copiedCommand, onCopy: onCopyCommand)
+            Text("PromptHub CLI release status")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            Text("The app-side directory integration is implemented, but the public PromptHub CLI installer has not shipped yet. Until the CLI package, tests, and release pipeline are published, Homebrew install and `ph` command examples should not be treated as available to users.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: usesVerticalLayout ? .infinity : 320, alignment: .leading)
     }
