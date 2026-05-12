@@ -108,7 +108,24 @@ struct ContentView: View {
                     contentForDefaultSelection
                 }
             }
-            .navigationTitle(navigationTitle)
+            .navigationTitle({
+                switch promptSelection {
+                case .cliDashboard:
+                    return navigationTitle
+                case .settings,
+                        .allPrompts,
+                        .mine,
+                        .shared,
+                        .explore,
+                        .mySkills,
+                        .skillStore,
+                        .installedSkills,
+                        .onboarding,
+                        .prompt,
+                        .skill:
+                    return ""
+                }
+            }())
             .toolbar { toolbarContent }
             .searchable(text: $searchText, placement: .toolbar, prompt: searchPrompt)
             .onKeyPress(.escape) {
