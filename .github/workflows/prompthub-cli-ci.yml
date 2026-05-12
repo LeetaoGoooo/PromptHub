@@ -1,0 +1,33 @@
+name: PromptHub CLI CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - PromptHubCLI/**
+      - PromptHubSkillKit/**
+      - .github/workflows/prompthub-cli-*.yml
+      - README.md
+      - tools/homebrew/**
+  pull_request:
+    paths:
+      - PromptHubCLI/**
+      - PromptHubSkillKit/**
+      - .github/workflows/prompthub-cli-*.yml
+      - README.md
+      - tools/homebrew/**
+
+jobs:
+  test:
+    runs-on: macos-14
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run PromptHub CLI tests
+        run: swift test --package-path PromptHubCLI
+
+      - name: Verify ph entrypoint
+        run: swift run --package-path PromptHubCLI ph --help

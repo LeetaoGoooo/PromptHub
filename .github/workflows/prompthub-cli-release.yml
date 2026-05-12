@@ -1,0 +1,72 @@
+name: PromptHub CLI Release
+
+on:
+  push:
+    tags:
+      - ph-v*
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Derive release version
+        id: version
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          VERSION="${TAG_NAME#ph-v}"
+
+          if [[ -z "$VERSION" || "$VERSION" == "$TAG_NAME" ]]; then
+            echo "Unable to derive version from tag: $TAG_NAME" >&2
+            exit 1
+          fi
+
+          echo "tag=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Run PromptHub CLI tests
+        run: swift test --package-path PromptHubCLI
+
+      - name: Build release binary
+        run: swift build --package-path PromptHubCLI -c release --product ph
+
+      - name: Package release assets
+        id: package
+        env:
+          TAG_NAME: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          BIN_PATH="$(swift build --package-path PromptHubCLI -c release --product ph --show-bin-path)"
+          mkdir -p dist/archive
+          cp "$BIN_PATH/ph" dist/archive/ph
+          tar -C dist/archive -czf dist/ph-macos-arm64.tar.gz ph
+          ARCHIVE_SHA256="$(shasum -a 256 dist/ph-macos-arm64.tar.gz | awk '{print $1}')"
+          ARCHIVE_URL="https://github.com/${REPOSITORY}/releases/download/${TAG_NAME}/ph-macos-arm64.tar.gz"
+
+          sed \
+            -e "s|__VERSION__|${VERSION}|g" \
+            -e "s|__ARCHIVE_URL__|${ARCHIVE_URL}|g" \
+            -e "s|__ARCHIVE_SHA256__|${ARCHIVE_SHA256}|g" \
+            tools/homebrew/ph.rb.template > dist/ph.rb
+
+          printf '%s\n' "$ARCHIVE_SHA256" > dist/ph-macos-arm64.sha256
+
+          echo "archive_sha256=$ARCHIVE_SHA256" >> "$GITHUB_OUTPUT"
+          echo "archive_url=$ARCHIVE_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/ph-macos-arm64.tar.gz
+            dist/ph-macos-arm64.sha256
+            dist/ph.rb

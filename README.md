@@ -50,6 +50,17 @@ PromptHub introduces a unified interface to manage context and skills for variou
 - **Drafts & Previews**: Edit skills securely in local drafts before publishing them to the CLI folders
 - **Project Scope**: Install skills globally or restrict them to a specific project folder
 
+### PromptHub CLI Package
+
+The standalone CLI now lives in `PromptHubCLI/` and exposes a real `ph` executable for exported prompts and agent skill operations.
+
+- Build locally: `swift build --package-path PromptHubCLI -c release --product ph`
+- Test locally: `swift test --package-path PromptHubCLI`
+- Command examples: `ph prompt list`, `ph prompt show`, `ph skill exports`, `ph skill install`, `ph skill list`
+- Release automation: pushing a `ph-vX.Y.Z` tag triggers the GitHub Actions workflow that publishes a release binary plus a Homebrew formula asset
+
+See `PromptHubCLI/README.md` for install and release details.
+
 ## 🧪 Prompt Testing Features
 
 PromptHub now includes powerful prompt testing capabilities that allow you to:
