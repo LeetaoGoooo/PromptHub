@@ -51,11 +51,21 @@ extension PromptDetail {
     }
 
     func versionDetailSheet(_ version: PromptHistory) -> some View {
-        VStack(alignment: .leading, spacing: 20) {
+        let isCurrentVersion = history.first?.id == version.id
+
+        return VStack(alignment: .leading, spacing: 20) {
             HStack {
-                Text("Version \(version.version) Details").font(.title2).fontWeight(.semibold)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Version \(version.version)")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    Text(isCurrentVersion ? "Current editor version" : "Read-only history preview")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
-                Button("Dismiss") { selectedHistoryVersion = nil }.buttonStyle(PlainButtonStyle())
+                Button("Dismiss") { selectedHistoryVersion = nil }
+                    .buttonStyle(.bordered)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Created: \(version.createdAt, formatter: dateFormatter)").font(.subheadline)
@@ -71,20 +81,40 @@ extension PromptDetail {
             }
             HStack {
                 Spacer()
-                Button { copyPromptToClipboard(version.promptText) } label: {
-                    Label("Copy Content", systemImage: "doc.on.doc").padding(8)
-                }.buttonStyle(PlainButtonStyle())
                 Button {
-                    isPreviewingOldVersion = true
-                    editablePrompt = version.promptText
-                    selectedHistoryVersion = nil
+                    let copied = copyPromptToClipboard(version.promptText)
+                    showToastMsg(
+                        msg: copied ? "Copied version \(version.version)" : "Failed to copy version \(version.version)",
+                        alertType: copied ? .complete(Color.green) : .error(Color.red)
+                    )
                 } label: {
-                    Label("Preview in Editor", systemImage: "eye").padding(8)
-                }.buttonStyle(PlainButtonStyle())
+                    Label("Copy Content", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(.bordered)
+                Button {
+                    applyHistoryVersionToEditor(version)
+                } label: {
+                    Label(isCurrentVersion ? "Already Current" : "Apply to Editor", systemImage: isCurrentVersion ? "checkmark.circle" : "arrow.down.doc")
+                }
+                .disabled(isCurrentVersion)
+                .modifier(HistoryApplyButtonStyle(isCurrentVersion: isCurrentVersion))
+                .help(isCurrentVersion ? "This version is already current" : "Create a new current version from this history entry")
                 Spacer()
             }
         }
         .padding()
         .frame(width: 600, height: 500)
+    }
+}
+
+private struct HistoryApplyButtonStyle: ViewModifier {
+    let isCurrentVersion: Bool
+
+    func body(content: Content) -> some View {
+        if isCurrentVersion {
+            content.buttonStyle(.bordered)
+        } else {
+            content.buttonStyle(.borderedProminent)
+        }
     }
 }

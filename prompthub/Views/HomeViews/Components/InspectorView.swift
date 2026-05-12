@@ -4,10 +4,7 @@ import AlertToast
 
 struct InspectorView: View {
     @Bindable var prompt: Prompt
-    @Binding var showOlderVersions: Bool
     @Binding var selectedHistoryVersion: PromptHistory?
-    @Binding var isPreviewingOldVersion: Bool
-    @Binding var editablePrompt: String
     
     // Toast Binding (Passed from parent)
     let showToastMsg: (String, AlertToast.AlertType) -> Void
@@ -157,13 +154,12 @@ struct InspectorView: View {
                                     // Actions for History Item
                                     HStack(spacing: 4) {
                                         Button {
-                                            isPreviewingOldVersion = true
-                                            editablePrompt = item.promptText
+                                            selectedHistoryVersion = item
                                         } label: {
                                             Image(systemName: "eye")
                                         }
                                         .buttonStyle(.plain)
-                                        .help("Preview")
+                                        .help("View version")
                                         
                                         Button {
                                             _ = copyPromptToClipboard(item.promptText)

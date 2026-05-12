@@ -87,6 +87,37 @@ extension PromptDetail {
     }
 
     @MainActor
+    func applyHistoryVersionToEditor(_ version: PromptHistory) {
+        if history.first?.id == version.id {
+            selectedHistoryVersion = nil
+            showToastMsg(msg: "Version \(version.version) is already current", alertType: .complete(Color.orange))
+            return
+        }
+
+        let nextVersion = (prompt.history?.map(\ .version).max() ?? 0) + 1
+        let newHistory = prompt.createHistory(prompt: version.promptText, version: nextVersion)
+        newHistory.createdAt = Date()
+        newHistory.updatedAt = Date()
+        newHistory.version = nextVersion
+        modelContext.insert(newHistory)
+
+        do {
+            try modelContext.save()
+            isPreviewingOldVersion = true
+            editablePrompt = version.promptText
+            PromptHubBridge.shared.exportPrompt(prompt)
+            selectedHistoryVersion = nil
+            showToastMsg(msg: "Applied version \(version.version) as v\(nextVersion)", alertType: .complete(Color.green))
+            Task { @MainActor in
+                isPreviewingOldVersion = false
+            }
+        } catch {
+            modelContext.delete(newHistory)
+            showToastMsg(msg: "Failed to apply version: \(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
     func modifyPromptWithOpenAIStream() async {
         guard let latestHistory = history.first else { return }
         guard let selectedService = servicesManager.get(servicesManager.selectedServiceID) else {

@@ -18,7 +18,6 @@ struct PromptDetail: View {
     @FocusState var focusedField: FocusableField?
 
     @State var editablePrompt: String = ""
-    @State var showOlderVersions: Bool = false
     @State var selectedHistoryVersion: PromptHistory?
     @State var isPreviewingOldVersion: Bool = false
     @State var isGenerating = false
@@ -88,10 +87,7 @@ struct PromptDetail: View {
                 Divider()
                 InspectorView(
                     prompt: prompt,
-                    showOlderVersions: $showOlderVersions,
                     selectedHistoryVersion: $selectedHistoryVersion,
-                    isPreviewingOldVersion: $isPreviewingOldVersion,
-                    editablePrompt: $editablePrompt,
                     showToastMsg: showToastMsg,
                     copyPromptToClipboard: copyPromptToClipboard,
                     deleteHistoryItem: { modelContext.delete($0) },
