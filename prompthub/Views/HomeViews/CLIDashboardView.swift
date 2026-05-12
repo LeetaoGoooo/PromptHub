@@ -11,7 +11,6 @@ struct CLIDashboardView: View {
     @State private var loadError: String?
     @State private var selectedDirectory: CLIDirectory?
     @State private var showingAccessManager = false
-    @State private var showingInstallHint = false
     @State private var showingCLISettingsHint = false
     @State private var copiedCommand: String?
     @State private var agentFilter: CLIAgentFilter = .all
@@ -72,11 +71,6 @@ struct CLIDashboardView: View {
         .sheet(isPresented: $showingAccessManager) {
             CLIAccessManagerView()
         }
-        .alert("Install Skill", isPresented: $showingInstallHint) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Use Discover or My Skills to install a skill, then return here to verify which agents received it.")
-        }
         .alert("CLI Settings", isPresented: $showingCLISettingsHint) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -129,8 +123,7 @@ struct CLIDashboardView: View {
                     isGranted: cliAccess.hasAccess(to: selectedDirectory),
                     projectSkills: skills(for: selectedDirectory).filter { !$0.isGlobal },
                     globalSkills: skills(for: selectedDirectory).filter { $0.isGlobal },
-                    selectedProjectLabel: selectedProjectLabel,
-                    onInstallSkill: { showingInstallHint = true }
+                    selectedProjectLabel: selectedProjectLabel
                 )
                 .padding(PH.Spacing.detailH)
             } else {
@@ -152,62 +145,6 @@ struct CLIDashboardView: View {
         .background(PH.Color.detailBg)
     }
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "terminal")
-                            .foregroundStyle(.accent)
-                        Text("CLI Integration")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        if cliAccess.anyAccessGranted {
-                            StatusCapsule(title: "Active", tint: .green)
-                        }
-                    }
-                    Text("Install your Skills into any AI coding agent so they become part of every conversation automatically.")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 10) {
-                        HeaderMetric(title: "agents connected", value: "\(grantedDirectories.count)", systemImage: "cube")
-                        HeaderMetric(title: "skills installed", value: "\(totalInstalledCount)", systemImage: "wand.and.stars")
-                        HeaderMetric(title: "project", value: selectedProjectLabel, systemImage: "link")
-                    }
-                }
-
-                Spacer()
-
-                HStack(spacing: 8) {
-                    Button {
-                        showingInstallHint = true
-                    } label: {
-                        Label("Install Skill", systemImage: "square.stack.3d.up")
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    Button {
-                        showingAccessManager = true
-                    } label: {
-                        Label("Manage Access", systemImage: "slider.horizontal.3")
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-
-            if let loadError {
-                Text(loadError)
-                    .font(.callout)
-                    .foregroundStyle(.red)
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.red.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
-        }
-    }
-
     @ViewBuilder
     private var inspectorColumn: some View {
         CLIDashboardInspector(
@@ -215,7 +152,6 @@ struct CLIDashboardView: View {
             grantedDirectories: grantedDirectories,
             selectedProjectLabel: selectedProjectLabel,
             hasGeminiAccess: cliAccess.hasAccess(to: .gemini),
-            onInstallSkill: { showingInstallHint = true },
             onGrantAccess: { showingAccessManager = true },
             onChangeProject: chooseProjectRoot,
             onCLISettings: { showingCLISettingsHint = true }
@@ -449,7 +385,6 @@ private struct CLIAgentDetailContent: View {
     let projectSkills: [InstalledSkillSnapshot]
     let globalSkills: [InstalledSkillSnapshot]
     let selectedProjectLabel: String
-    let onInstallSkill: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -527,17 +462,6 @@ private struct CLIAgentDetailContent: View {
                     }
                 }
 
-                Divider().opacity(0.6)
-
-                // Quick action
-                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
-                    PHSectionHead(systemImage: "bolt", label: "Actions")
-                    Button(action: onInstallSkill) {
-                        Label("Install Skill…", systemImage: "square.stack.3d.up")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -707,7 +631,6 @@ private struct CLIDashboardInspector: View {
     let grantedDirectories: [CLIDirectory]
     let selectedProjectLabel: String
     let hasGeminiAccess: Bool
-    let onInstallSkill: () -> Void
     let onGrantAccess: () -> Void
     let onChangeProject: () -> Void
     let onCLISettings: () -> Void
@@ -772,17 +695,11 @@ private struct CLIDashboardInspector: View {
                 VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
                     PHSectionHead(systemImage: "bolt", label: "Actions")
                     VStack(spacing: 6) {
-                        Button(action: onInstallSkill) {
-                            Label("Install Skill…", systemImage: "square.stack.3d.up")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .buttonStyle(.borderedProminent)
-
                         Button(action: onGrantAccess) {
                             Label("Grant Agent Access", systemImage: "powerplug")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.borderedProminent)
 
                         Button(action: onChangeProject) {
                             Label("Change Project Folder", systemImage: "link")
