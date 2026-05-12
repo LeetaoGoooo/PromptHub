@@ -149,7 +149,7 @@ struct InstalledSkillsView: View {
                 Button(action: fetchInstalledSkills) {
                     Image(systemName: "arrow.clockwise")
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.accessoryBar)
                 .controlSize(.small)
                 .accessibilityLabel("Refresh installed skills")
                 .help("Refresh installed skills")
@@ -171,7 +171,7 @@ struct InstalledSkillsView: View {
                             }
                         }
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.accessoryBar)
                     .controlSize(.small)
                     .accessibilityLabel("Check for skill updates")
                     .help("Check all skills for available updates")
@@ -180,7 +180,7 @@ struct InstalledSkillsView: View {
                 Button(action: { showingAuditReport = true }) {
                     Image(systemName: "checklist")
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.accessoryBar)
                 .controlSize(.small)
                 .accessibilityLabel("Audit all installed skills")
                 .help("Audit all installed skills")
