@@ -278,7 +278,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
                     .padding(PH.Spacing.detailH)
             }
         }
-        .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
         .background(PH.Color.detailBg)
     }
 

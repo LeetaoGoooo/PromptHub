@@ -109,7 +109,7 @@ struct CLIDashboardView: View {
 
             connectedAgentsSection
         }
-        .frame(minWidth: 260, idealWidth: 280, maxWidth: 340, maxHeight: .infinity)
+        .frame(minWidth: 220, idealWidth: 260, maxWidth: 320, maxHeight: .infinity)
         .background(Color(NSColor.controlBackgroundColor))
     }
 
@@ -141,7 +141,7 @@ struct CLIDashboardView: View {
                 .padding(PH.Spacing.detailH)
             }
         }
-        .frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
         .background(PH.Color.detailBg)
     }
 
@@ -156,7 +156,7 @@ struct CLIDashboardView: View {
             onChangeProject: chooseProjectRoot,
             onCLISettings: { showingCLISettingsHint = true }
         )
-        .frame(minWidth: 240, idealWidth: 260, maxWidth: 300, maxHeight: .infinity)
+        .frame(minWidth: 220, idealWidth: 240, maxWidth: 280, maxHeight: .infinity)
         .background(Color(NSColor.controlBackgroundColor))
     }
 
