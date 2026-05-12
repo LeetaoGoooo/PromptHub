@@ -38,6 +38,29 @@ struct SkillLibraryRowCardStyle: ViewModifier {
 
 // MARK: - Metadata Block
 
+// MARK: - PH Section Head
+
+/// Section heading with SF icon + 1–2 word label (matches mock .ds-head style).
+struct PHSectionHead: View {
+    let systemImage: String
+    let label: String
+
+    var body: some View {
+        HStack(spacing: PH.Spacing.sectionHeadGap) {
+            Image(systemName: systemImage)
+                .font(.system(size: PH.Layout.iconSizeSm, weight: .regular))
+                .foregroundStyle(PH.Color.secondary)
+                .frame(width: PH.Layout.iconSizeSm, height: PH.Layout.iconSizeSm)
+            Text(label)
+                .font(PH.Font.sectionHead)
+                .foregroundStyle(PH.Color.secondary)
+                .textCase(.uppercase)
+                .tracking(0.3)
+        }
+        .padding(.bottom, PH.Spacing.sectionHeadMB)
+    }
+}
+
 // MARK: - PH Filter Chip
 
 /// Flat pill-shaped filter chip used in list-pane headers.

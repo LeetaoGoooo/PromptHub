@@ -359,12 +359,16 @@ struct InstalledSkillDetailPane: View {
     }
 
     private var summarySection: some View {
-        Text(summaryText)
-            .font(.body)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 14)
+        VStack(alignment: .leading, spacing: 0) {
+            PHSectionHead(systemImage: "doc.text", label: "Description")
+            Text(summaryText)
+                .font(PH.Font.body)
+                .foregroundStyle(PH.Color.secondary)
+                .lineSpacing(PH.Font.bodyLineSpacing)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, PH.Spacing.detailH)
+        .padding(.vertical, PH.Spacing.sectionV)
     }
 
     private var metadataStrip: some View {
@@ -420,7 +424,7 @@ struct InstalledSkillDetailPane: View {
 
     private var coverageSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("Agent Coverage")
+            PHSectionHead(systemImage: "checklist", label: "CLI Visibility")
 
             VStack(spacing: 0) {
                 ForEach(Array(coverageRows.enumerated()), id: \.offset) { index, row in
@@ -524,7 +528,7 @@ struct InstalledSkillDetailPane: View {
     private var diagnosticsSection: some View {
         HStack(alignment: .top, spacing: 32) {
             VStack(alignment: .leading, spacing: 12) {
-                sectionTitle("Skill Quality")
+                PHSectionHead(systemImage: "chart.bar", label: "Audit")
 
                 if isLoadingEffectiveness && effectiveness == nil {
                     Text("Analyzing SKILL.md…")
@@ -566,13 +570,15 @@ struct InstalledSkillDetailPane: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 18) {
-                SkillLibraryMetadataBlock(title: "Package", rows: [
+                PHSectionHead(systemImage: "shippingbox", label: "Package")
+                SkillLibraryMetadataBlock(title: "", rows: [
                     ("Identifier", skill.package.rawValue),
                     ("Managed", skill.isManagedByPromptHub ? "PromptHub managed" : "External install"),
                     ("Source", skill.displaySource ?? "Local only")
                 ])
 
-                SkillLibraryMetadataBlock(title: "Source Integrity", rows: [
+                PHSectionHead(systemImage: "checkmark.shield", label: "Scope")
+                SkillLibraryMetadataBlock(title: "", rows: [
                     ("Status", integritySummary),
                     ("SHA-256", sourceIntegrity?.localHash.map { String($0.prefix(16)) + "…" } ?? "Unavailable")
                 ])
