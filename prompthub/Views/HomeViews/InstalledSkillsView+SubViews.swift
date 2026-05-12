@@ -28,16 +28,74 @@ extension InstalledSkillsView {
             ) {
                 Button("Retry") { fetchInstalledSkills() }
             }
-        } else if filteredSkills.isEmpty {
-            SkillLibraryEmptyState(
-                title: searchText.isEmpty ? "No Skills Installed" : "No Matches",
-                systemImage: searchText.isEmpty ? "square.stack.3d.up.slash" : "magnifyingglass",
-                description: searchText.isEmpty
-                    ? "Install skills from the Skill Store to extend your agents' capabilities."
-                    : "Try a different search term."
-            )
         } else {
-            skillBrowser
+            VStack(spacing: 0) {
+                skillsPrimaryActionBar
+
+                if filteredSkills.isEmpty {
+                    SkillLibraryEmptyState(
+                        title: "No Matches",
+                        systemImage: "magnifyingglass",
+                        description: "Try a different search term."
+                    )
+                } else {
+                    skillBrowser
+                }
+            }
+        }
+    }
+
+    private var skillsPrimaryActionBar: some View {
+        HStack(spacing: 10) {
+            Button(action: fetchInstalledSkills) {
+                Label(installedWorkspaceStore.isLoading ? "Refreshing…" : "Refresh", systemImage: "arrow.clockwise")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.accentColor)
+            .disabled(installedWorkspaceStore.isLoading)
+            .help("Refresh installed skills")
+
+            Button(action: checkAllUpdates) {
+                HStack(spacing: 6) {
+                    if isCheckingUpdates {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                    }
+
+                    Text(isCheckingUpdates ? "Checking Updates…" : "Check Updates")
+
+                    if !isCheckingUpdates && !skillsWithUpdates.isEmpty {
+                        Text("\(skillsWithUpdates.count)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(Color.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.black.opacity(0.18))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(skillsWithUpdates.isEmpty ? .accentColor : .orange)
+            .disabled(isCheckingUpdates)
+            .help("Check all skills for available updates")
+
+            Button(action: { showingAuditReport = true }) {
+                Label("Audit Installed Skills", systemImage: "checklist")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.indigo)
+            .help("Audit all installed skills")
+
+            Spacer(minLength: 12)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background(Color(NSColor.windowBackgroundColor))
+        .overlay(alignment: .bottom) {
+            Divider().opacity(0.6)
         }
     }
 

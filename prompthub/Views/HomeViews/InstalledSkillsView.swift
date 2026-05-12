@@ -146,47 +146,6 @@ struct InstalledSkillsView: View {
 
                 Divider().frame(height: 14)
 
-                Button(action: fetchInstalledSkills) {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .buttonStyle(.accessoryBar)
-                .controlSize(.small)
-                .accessibilityLabel("Refresh installed skills")
-                .help("Refresh installed skills")
-
-                if isCheckingUpdates {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Button(action: checkAllUpdates) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                            if !skillsWithUpdates.isEmpty {
-                                Text("\(skillsWithUpdates.count)")
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 1)
-                                    .background(Color.orange)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                    }
-                    .buttonStyle(.accessoryBar)
-                    .controlSize(.small)
-                    .accessibilityLabel("Check for skill updates")
-                    .help("Check all skills for available updates")
-                }
-
-                Button(action: { showingAuditReport = true }) {
-                    Image(systemName: "checklist")
-                }
-                .buttonStyle(.accessoryBar)
-                .controlSize(.small)
-                .accessibilityLabel("Audit all installed skills")
-                .help("Audit all installed skills")
-
-                Divider().frame(height: 14)
-
                 CLIStatusIndicator(manager: cliAccessManager) {
                     showingCLIAccessManager = true
                 }
