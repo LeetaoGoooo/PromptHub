@@ -84,7 +84,10 @@ extension InstalledSkillsView {
             }
             .listStyle(.inset(alternatesRowBackgrounds: false))
             .scrollContentBackground(.hidden)
+            .contentMargins(.bottom, PH.Spacing.detailB, for: .scrollContent)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(NSColor.controlBackgroundColor))
     }
 
