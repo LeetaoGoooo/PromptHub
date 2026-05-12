@@ -14,6 +14,7 @@ struct CLIDashboardView: View {
     @State private var showingInstallHint = false
     @State private var showingCLISettingsHint = false
     @State private var copiedCommand: String?
+    @State private var agentFilter: CLIAgentFilter = .all
 
     private var grantedDirectories: [CLIDirectory] {
         CLIDirectory.allCases.filter { cliAccess.hasAccess(to: $0) }
@@ -57,41 +58,13 @@ struct CLIDashboardView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            Group {
-                if geometry.size.width >= 1180 {
-                    HStack(spacing: 0) {
-                        mainColumn(availableWidth: geometry.size.width - 320)
-                        Divider()
-                        inspectorColumn
-                    }
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            mainContent(availableWidth: geometry.size.width)
-                            Divider()
-                            CLIDashboardInspector(
-                                cliExecutablePath: cliExecutablePath,
-                                grantedDirectories: grantedDirectories,
-                                selectedProjectLabel: selectedProjectLabel,
-                                hasGeminiAccess: cliAccess.hasAccess(to: .gemini),
-                                onInstallSkill: { showingInstallHint = true },
-                                onGrantAccess: { showingAccessManager = true },
-                                onChangeProject: chooseProjectRoot,
-                                onCLISettings: { showingCLISettingsHint = true }
-                            )
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(NSColor.controlBackgroundColor))
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                        }
-                        .padding(20)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(NSColor.windowBackgroundColor))
+        HSplitView {
+            agentListPane
+            agentDetailPane
+            inspectorColumn
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.windowBackgroundColor))
         .task { await loadSkills() }
         .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in
             Task { await loadSkills() }
@@ -111,51 +84,72 @@ struct CLIDashboardView: View {
         }
     }
 
-    @ViewBuilder
-    private func mainColumn(availableWidth: CGFloat) -> some View {
-        ScrollView {
-            mainContent(availableWidth: availableWidth)
-                .padding(24)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-        }
-        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(NSColor.windowBackgroundColor))
-        .layoutPriority(1)
-    }
+    // MARK: - List pane (left)
 
-    @ViewBuilder
-    private var inspectorColumn: some View {
-        CLIDashboardInspector(
-            cliExecutablePath: cliExecutablePath,
-            grantedDirectories: grantedDirectories,
-            selectedProjectLabel: selectedProjectLabel,
-            hasGeminiAccess: cliAccess.hasAccess(to: .gemini),
-            onInstallSkill: { showingInstallHint = true },
-            onGrantAccess: { showingAccessManager = true },
-            onChangeProject: chooseProjectRoot,
-            onCLISettings: { showingCLISettingsHint = true }
-        )
-        .frame(minWidth: 290, idealWidth: 300, maxWidth: 320, maxHeight: .infinity)
+    private var agentListPane: some View {
+        VStack(spacing: 0) {
+            // Compact header
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Image(systemName: "terminal")
+                        .foregroundStyle(PH.Color.accent)
+                        .font(.system(size: 14, weight: .medium))
+                    Text("CLI Agents")
+                        .font(PH.Font.paneTitle)
+                        .foregroundStyle(PH.Color.primary)
+                    if cliAccess.anyAccessGranted {
+                        StatusCapsule(title: "Active", tint: .green)
+                    }
+                }
+                HStack(spacing: PH.Spacing.rowItemGap) {
+                    HeaderMetric(title: "agents", value: "\(grantedDirectories.count)", systemImage: "cube")
+                    HeaderMetric(title: "skills", value: "\(totalInstalledCount)", systemImage: "wand.and.stars")
+                }
+                .font(.caption)
+            }
+            .padding(.horizontal, PH.Spacing.rowH)
+            .padding(.top, PH.Spacing.toolbarV + 4)
+            .padding(.bottom, PH.Spacing.toolbarV)
+
+            Divider().opacity(0.5)
+
+            connectedAgentsSection
+        }
+        .frame(minWidth: 260, idealWidth: 280, maxWidth: 340, maxHeight: .infinity)
         .background(Color(NSColor.controlBackgroundColor))
     }
 
-    @ViewBuilder
-    private func mainContent(availableWidth: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 24) {
-            headerSection
-            CLIHowItWorksCard(onCopyCommand: copyCommand(_:), copiedCommand: copiedCommand, availableWidth: availableWidth)
-            connectedAgentsSection
-            installedSkillsSection(
-                title: "Skills — Project Scope",
-                subtitle: selectedProjectLabel + "  ·  ~/.agents/skills/",
-                skills: projectSkills
-            )
-            installedSkillsSection(
-                title: "Skills — Global Scope",
-                subtitle: "~/Library/Application Support/PromptHub",
-                skills: globalSkills
-            )
+    // MARK: - Detail pane (middle)
+
+    private var agentDetailPane: some View {
+        ScrollView {
+            if let selectedDirectory {
+                CLIAgentDetailContent(
+                    directory: selectedDirectory,
+                    isGranted: cliAccess.hasAccess(to: selectedDirectory),
+                    projectSkills: skills(for: selectedDirectory).filter { !$0.isGlobal },
+                    globalSkills: skills(for: selectedDirectory).filter { $0.isGlobal },
+                    selectedProjectLabel: selectedProjectLabel,
+                    onInstallSkill: { showingInstallHint = true }
+                )
+                .padding(PH.Spacing.detailH)
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "terminal")
+                        .font(.system(size: 32, weight: .light))
+                        .foregroundStyle(PH.Color.secondary)
+                    Text("Select an agent to inspect")
+                        .font(PH.Font.rowName)
+                        .foregroundStyle(PH.Color.secondary)
+                    CLIHowItWorksCard(onCopyCommand: copyCommand(_:), copiedCommand: copiedCommand, availableWidth: 560)
+                        .padding(.top, 8)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(PH.Spacing.detailH)
+            }
         }
+        .frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
+        .background(PH.Color.detailBg)
     }
 
     private var headerSection: some View {
@@ -214,7 +208,21 @@ struct CLIDashboardView: View {
         }
     }
 
-    @State private var agentFilter: CLIAgentFilter = .all
+    @ViewBuilder
+    private var inspectorColumn: some View {
+        CLIDashboardInspector(
+            cliExecutablePath: cliExecutablePath,
+            grantedDirectories: grantedDirectories,
+            selectedProjectLabel: selectedProjectLabel,
+            hasGeminiAccess: cliAccess.hasAccess(to: .gemini),
+            onInstallSkill: { showingInstallHint = true },
+            onGrantAccess: { showingAccessManager = true },
+            onChangeProject: chooseProjectRoot,
+            onCLISettings: { showingCLISettingsHint = true }
+        )
+        .frame(minWidth: 240, idealWidth: 260, maxWidth: 300, maxHeight: .infinity)
+        .background(Color(NSColor.controlBackgroundColor))
+    }
 
     private var filteredDirectories: [CLIDirectory] {
         switch agentFilter {
@@ -430,6 +438,109 @@ private struct CLIAgentListRow: View {
         .accessibilityLabel(directory.displayName)
         .accessibilityValue(subText)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+// MARK: - Agent detail content (middle pane)
+
+private struct CLIAgentDetailContent: View {
+    let directory: CLIDirectory
+    let isGranted: Bool
+    let projectSkills: [InstalledSkillSnapshot]
+    let globalSkills: [InstalledSkillSnapshot]
+    let selectedProjectLabel: String
+    let onInstallSkill: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Title + status
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(directory.displayName)
+                        .font(PH.Font.paneTitle)
+                        .foregroundStyle(PH.Color.primary)
+                    Spacer(minLength: 0)
+                    StatusCapsule(
+                        title: isGranted ? (projectSkills.isEmpty && globalSkills.isEmpty ? "Idle" : "Active") : "Disconnected",
+                        tint: isGranted ? (projectSkills.isEmpty && globalSkills.isEmpty ? .orange : .green) : .secondary
+                    )
+                }
+                Text("~/\(directory.rawValue)/")
+                    .font(PH.Font.mono)
+                    .foregroundStyle(PH.Color.secondary)
+            }
+
+            Divider().opacity(0.6)
+
+            if !isGranted {
+                // Not connected state
+                VStack(alignment: .leading, spacing: 12) {
+                    PHSectionHead(systemImage: "powerplug.fill", label: "Not Connected")
+                    Label("Grant folder access to install skills into this agent.", systemImage: "lock.open")
+                        .font(PH.Font.rowSub)
+                        .foregroundStyle(PH.Color.secondary)
+                }
+            } else {
+                // Global skills section
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "globe", label: "Global Skills")
+                    if globalSkills.isEmpty {
+                        Text("No global skills installed.")
+                            .font(PH.Font.rowSub)
+                            .foregroundStyle(PH.Color.secondary)
+                            .padding(PH.Spacing.rowH)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+                    } else {
+                        VStack(spacing: 2) {
+                            ForEach(globalSkills) { skill in
+                                CLISkillActivityRow(skill: skill, selectedDirectory: directory)
+                            }
+                        }
+                    }
+                }
+
+                Divider().opacity(0.6)
+
+                // Project skills section
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    HStack {
+                        PHSectionHead(systemImage: "folder", label: "Project Skills")
+                        Spacer(minLength: 0)
+                        Text(selectedProjectLabel)
+                            .font(PH.Font.mono)
+                            .foregroundStyle(PH.Color.secondary)
+                    }
+                    if projectSkills.isEmpty {
+                        Text("No project-scoped skills installed.")
+                            .font(PH.Font.rowSub)
+                            .foregroundStyle(PH.Color.secondary)
+                            .padding(PH.Spacing.rowH)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+                    } else {
+                        VStack(spacing: 2) {
+                            ForEach(projectSkills) { skill in
+                                CLISkillActivityRow(skill: skill, selectedDirectory: directory)
+                            }
+                        }
+                    }
+                }
+
+                Divider().opacity(0.6)
+
+                // Quick action
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "bolt", label: "Actions")
+                    Button(action: onInstallSkill) {
+                        Label("Install Skill…", systemImage: "square.stack.3d.up")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
 

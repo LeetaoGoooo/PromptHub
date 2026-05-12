@@ -54,6 +54,10 @@ struct PromptBrowserItem: Identifiable {
     let secondaryActionSystemImage: String?
     let onSecondaryAction: (() -> Void)?
     let quickActions: [PromptBrowserQuickAction]
+    /// Whether the prompt has external sources attached. Used for the Sources filter.
+    var hasExternalSources: Bool = false
+    /// Whether the prompt is shared publicly or with others. Used for the Shared filter.
+    var isShared: Bool = false
 
     init(
         id: String,
@@ -72,7 +76,9 @@ struct PromptBrowserItem: Identifiable {
         secondaryActionTitle: String?,
         secondaryActionSystemImage: String?,
         onSecondaryAction: (() -> Void)?,
-        quickActions: [PromptBrowserQuickAction] = []
+        quickActions: [PromptBrowserQuickAction] = [],
+        hasExternalSources: Bool = false,
+        isShared: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -91,6 +97,8 @@ struct PromptBrowserItem: Identifiable {
         self.secondaryActionSystemImage = secondaryActionSystemImage
         self.onSecondaryAction = onSecondaryAction
         self.quickActions = quickActions
+        self.hasExternalSources = hasExternalSources
+        self.isShared = isShared
     }
 }
 
@@ -149,8 +157,8 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
         switch listFilter {
         case .all:     return allItems
         case .ready:   return allItems.filter { !$0.promptText.isEmpty }
-        case .shared:  return allItems.filter { $0.badges.contains(where: { $0.title == "Shared" || $0.title == "Public" }) }
-        case .sources: return allItems.filter { $0.badges.contains(where: { $0.title == "Sources" }) }
+        case .shared:  return allItems.filter { $0.isShared }
+        case .sources: return allItems.filter { $0.hasExternalSources }
         }
     }
 
@@ -186,6 +194,24 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
         }
     }
 
+    /// Empty state shown inside the list pane when the current filter yields no results.
+    private var filteredEmptyStateView: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 28, weight: .light))
+                .foregroundStyle(PH.Color.secondary)
+            Text("No results for \"\(listFilter.rawValue)\"")
+                .font(PH.Font.rowName)
+                .foregroundStyle(PH.Color.primary)
+            Text("Try a different filter or clear the current one.")
+                .font(PH.Font.rowSub)
+                .foregroundStyle(PH.Color.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(24)
+    }
+
     private var listPane: some View {
         VStack(spacing: 0) {
             // Chip filter strip
@@ -204,6 +230,9 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
             .overlay(alignment: .bottom) { Divider().opacity(0.6) }
 
             ScrollView {
+                if filteredItems.isEmpty {
+                    filteredEmptyStateView
+                } else {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(sections) { section in
                         let sectionItems = section.items.filter { item in
@@ -235,6 +264,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
                 }
                 .padding(.horizontal, PH.Spacing.rowV)
                 .padding(.bottom, PH.Spacing.detailB)
+                }
             }
         }
         .frame(minWidth: 280, idealWidth: 316, maxWidth: 380, maxHeight: .infinity)
@@ -308,6 +338,7 @@ private struct PromptBrowserRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(isSelected ? PH.Color.accentTint : .clear)
             .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+            .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(item.title)

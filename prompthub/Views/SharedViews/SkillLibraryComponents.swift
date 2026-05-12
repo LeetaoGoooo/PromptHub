@@ -80,6 +80,7 @@ struct PHFilterChip: View {
                     RoundedRectangle(cornerRadius: PH.Spacing.chipCorner)
                         .fill(isActive ? PH.Color.accentTint : PH.Color.chipBg)
                 )
+                .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.chipCorner))
         }
         .buttonStyle(.plain)
     }

@@ -118,7 +118,9 @@ struct MyPromptsView: View {
                                 isDisabled: false,
                                 onSelect: { optimizingPrompt = prompt }
                             )
-                        ]
+                        ],
+                        hasExternalSources: !((prompt.externalSources?.isEmpty) ?? true),
+                        isShared: matchingSharedCreation(for: prompt) != nil
                     )
                 }
             )

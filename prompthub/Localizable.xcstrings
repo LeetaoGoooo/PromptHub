@@ -71,9 +71,6 @@
     "%lld catalog skills" : {
 
     },
-    "%lld installed skills" : {
-
-    },
     "%lld of %lld checks passed" : {
       "localizations" : {
         "en" : {
@@ -163,6 +160,9 @@
       }
     },
     "Absolute path to the shared skills directory (e.g. an NFS mount)." : {
+
+    },
+    "Active" : {
 
     },
     "Add" : {
@@ -539,6 +539,9 @@
     "CLI Integration" : {
 
     },
+    "CLI ready — no agents connected" : {
+
+    },
     "CLI Settings" : {
 
     },
@@ -683,12 +686,6 @@
       }
     },
     "Connect a **private GitHub repo** (e.g. `owner/repo` → `SKILL.md` files inside) to install your team's internal skills." : {
-
-    },
-    "Connected AI Agents" : {
-
-    },
-    "Content" : {
 
     },
     "Copied to clipboard" : {
@@ -970,6 +967,9 @@
 
     },
     "Discard" : {
+
+    },
+    "Disconnected" : {
 
     },
     "Dismiss" : {
@@ -1320,6 +1320,9 @@
     "Format: owner/repo — no https:// prefix required." : {
 
     },
+    "Fully operational" : {
+
+    },
     "General" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1473,6 +1476,9 @@
 
     },
     "Identifier:" : {
+
+    },
+    "Idle" : {
 
     },
     "Image Viewer" : {
@@ -1866,6 +1872,9 @@
       }
     },
     "New Skill Draft" : {
+
+    },
+    "No agents match the current filter." : {
 
     },
     "No bookmark data received." : {
@@ -2670,6 +2679,9 @@
       }
     },
     "Setup Progress" : {
+
+    },
+    "Setup required" : {
 
     },
     "SHA-256  %@…" : {
