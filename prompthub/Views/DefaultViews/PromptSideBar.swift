@@ -17,9 +17,6 @@ struct PromptSideBar: View {
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
 
     @Binding var promptSelection: PromptSelection
-    @Binding var searchText: String
-    let searchPlaceholder: String
-    let isSearchEnabled: Bool
     let onCreateNewPrompt: () -> Void
     let onCreateNewSkill: () -> Void
 
@@ -64,40 +61,12 @@ struct PromptSideBar: View {
 
     @ViewBuilder
     private var sidebarHeader: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("PromptHub")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.primary)
-
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField(searchPlaceholder, text: $searchText)
-                    .textFieldStyle(.plain)
-                    .disabled(!isSearchEnabled)
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.tertiary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color(NSColor.controlBackgroundColor).opacity(isSearchEnabled ? 1 : 0.72))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .opacity(isSearchEnabled ? 1 : 0.72)
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 14)
-        .padding(.bottom, 8)
+        Text("PromptHub")
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 12)
+            .padding(.top, 14)
+            .padding(.bottom, 8)
     }
 
     private var promptsNavigationSection: some View {

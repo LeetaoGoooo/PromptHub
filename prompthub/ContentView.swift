@@ -68,9 +68,6 @@ struct ContentView: View {
             PromptSideBar(
                 installedWorkspaceStore: installedWorkspaceStore,
                 promptSelection: $promptSelection,
-                searchText: $searchText,
-                searchPlaceholder: searchPrompt,
-                isSearchEnabled: isSidebarSearchEnabled,
                 onCreateNewPrompt: createNewPrompt,
                 onCreateNewSkill: createNewSkillDraft
             )
@@ -113,6 +110,7 @@ struct ContentView: View {
             }
             .navigationTitle(navigationTitle)
             .toolbar { toolbarContent }
+            .searchable(text: $searchText, placement: .toolbar, prompt: searchPrompt)
             .onKeyPress(.escape) {
                 if case .prompt = promptSelection { promptSelection = .allPrompts; return .handled }
                 if case .skill = promptSelection  { promptSelection = .mySkills; return .handled }
