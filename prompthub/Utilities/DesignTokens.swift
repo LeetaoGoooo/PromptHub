@@ -3,6 +3,7 @@
 // Source of truth: screens/skills-unified-workbench-mock.html, prompts-*, agents-*
 // All raw values are frozen — change here, not inline.
 
+import AppKit
 import SwiftUI
 
 // MARK: - PH (PromptHub design namespace)
@@ -11,33 +12,126 @@ enum PH {}
 // MARK: Color Tokens
 extension PH {
     enum Color {
+        private static func adaptive(light: NSColor, dark: NSColor) -> SwiftUI.Color {
+            SwiftUI.Color(
+                nsColor: NSColor(name: nil) { appearance in
+                    let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                    return isDark ? dark : light
+                }
+            )
+        }
+
+        private static func rgba(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, _ alpha: CGFloat = 1) -> NSColor {
+            NSColor(
+                srgbRed: red / 255,
+                green: green / 255,
+                blue: blue / 255,
+                alpha: alpha
+            )
+        }
+
         // Text
-        static let primary   = SwiftUI.Color(red: 0.122, green: 0.161, blue: 0.251)  // #1f2940
-        static let secondary = SwiftUI.Color(red: 0.341, green: 0.388, blue: 0.490)  // #57637d
-        static let tertiary  = SwiftUI.Color(red: 0.510, green: 0.565, blue: 0.659)  // #8290a8
+        static var primary: SwiftUI.Color { SwiftUI.Color(nsColor: .labelColor) }
+        static var secondary: SwiftUI.Color { SwiftUI.Color(nsColor: .secondaryLabelColor) }
+        static var tertiary: SwiftUI.Color { SwiftUI.Color(nsColor: .tertiaryLabelColor) }
 
         // Accent
-        static let accent    = SwiftUI.Color(red: 0.239, green: 0.404, blue: 0.843)  // #3d67d7
-        static let accentTint = SwiftUI.Color(red: 0.239, green: 0.404, blue: 0.843).opacity(0.10)
+        static var accent: SwiftUI.Color {
+            adaptive(
+                light: rgba(61, 103, 215),
+                dark: rgba(126, 166, 255)
+            )
+        }
+        static var accentTint: SwiftUI.Color {
+            adaptive(
+                light: rgba(61, 103, 215, 0.10),
+                dark: rgba(48, 63, 97)
+            )
+        }
 
         // Status
-        static let statusOK   = SwiftUI.Color(red: 0.102, green: 0.478, blue: 0.337)  // #1a7a56
-        static let statusWarn = SwiftUI.Color(red: 0.659, green: 0.373, blue: 0.078)  // #a85f14
-        static let statusFail = SwiftUI.Color(red: 0.627, green: 0.251, blue: 0.314)  // #a04050
+        static var statusOK: SwiftUI.Color {
+            adaptive(
+                light: rgba(26, 122, 86),
+                dark: rgba(88, 201, 149)
+            )
+        }
+        static var statusWarn: SwiftUI.Color {
+            adaptive(
+                light: rgba(168, 95, 20),
+                dark: rgba(240, 171, 79)
+            )
+        }
+        static var statusFail: SwiftUI.Color {
+            adaptive(
+                light: rgba(160, 64, 80),
+                dark: rgba(255, 138, 152)
+            )
+        }
 
         // Surfaces
-        static let stroke     = SwiftUI.Color(red: 0.122, green: 0.176, blue: 0.290).opacity(0.09)
-        static let strokeSoft = SwiftUI.Color(red: 0.122, green: 0.176, blue: 0.290).opacity(0.055)
-        static let sidebarBg  = SwiftUI.Color(red: 0.129, green: 0.173, blue: 0.282).opacity(0.042)
-        static let detailBg   = SwiftUI.Color.white.opacity(0.28)
-        static let chipBg     = SwiftUI.Color(red: 0.122, green: 0.176, blue: 0.290).opacity(0.055)
-        static let badgeBg    = SwiftUI.Color(red: 0.122, green: 0.176, blue: 0.290).opacity(0.07)
-        static let filterBg   = SwiftUI.Color.white.opacity(0.30)
-        static let buttonBg   = SwiftUI.Color.white.opacity(0.52)
-        static let buttonBorder = SwiftUI.Color(red: 0.122, green: 0.176, blue: 0.290).opacity(0.09)
+        static var stroke: SwiftUI.Color {
+            adaptive(
+                light: rgba(31, 45, 74, 0.09),
+                dark: rgba(255, 255, 255, 0.16)
+            )
+        }
+        static var strokeSoft: SwiftUI.Color {
+            adaptive(
+                light: rgba(31, 45, 74, 0.055),
+                dark: rgba(255, 255, 255, 0.10)
+            )
+        }
+        static var sidebarBg: SwiftUI.Color {
+            adaptive(
+                light: rgba(33, 44, 72, 0.042),
+                dark: rgba(255, 255, 255, 0.06)
+            )
+        }
+        static var detailBg: SwiftUI.Color {
+            adaptive(
+                light: rgba(255, 255, 255, 0.28),
+                dark: rgba(31, 36, 46)
+            )
+        }
+        static var chipBg: SwiftUI.Color {
+            adaptive(
+                light: rgba(31, 45, 74, 0.055),
+                dark: rgba(255, 255, 255, 0.10)
+            )
+        }
+        static var badgeBg: SwiftUI.Color {
+            adaptive(
+                light: rgba(31, 45, 74, 0.07),
+                dark: rgba(255, 255, 255, 0.12)
+            )
+        }
+        static var filterBg: SwiftUI.Color {
+            adaptive(
+                light: rgba(255, 255, 255, 0.30),
+                dark: rgba(255, 255, 255, 0.12)
+            )
+        }
+        static var buttonBg: SwiftUI.Color {
+            adaptive(
+                light: rgba(255, 255, 255, 0.52),
+                dark: rgba(255, 255, 255, 0.10)
+            )
+        }
+        static var buttonBorder: SwiftUI.Color {
+            adaptive(
+                light: rgba(31, 45, 74, 0.09),
+                dark: rgba(255, 255, 255, 0.16)
+            )
+        }
 
         // Dot status (6px inline indicator)
-        static let dotNeutral = SwiftUI.Color(red: 0.592, green: 0.635, blue: 0.729)  // #97a2bb
+        static var dotNeutral: SwiftUI.Color {
+            adaptive(
+                light: rgba(151, 162, 187),
+                dark: rgba(127, 138, 163)
+            )
+        }
     }
 }
 
