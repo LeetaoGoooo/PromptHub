@@ -229,66 +229,45 @@ private struct PromptBrowserRow: View {
 
     var body: some View {
         Button(action: onSelect) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: item.systemImage)
-                    .foregroundStyle(item.iconTint)
-                    .frame(width: 18, height: 18)
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(item.iconTint.opacity(isSelected ? 0.18 : 0.10))
-                    )
+            VStack(alignment: .leading, spacing: PH.Spacing.rowGap) {
+                // Line 1: name + first badge (model chip) right-aligned
+                HStack(spacing: 0) {
+                    Text(item.title)
+                        .font(PH.Font.rowName)
+                        .foregroundStyle(PH.Color.primary)
+                        .lineLimit(1)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(item.title)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
+                    Spacer(minLength: 0)
 
-                        Spacer(minLength: 8)
-
-                        if let trailingDetail = item.trailingDetail, !trailingDetail.isEmpty {
-                            Text(trailingDetail)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Text(item.summary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-
-                    if !item.badges.isEmpty {
-                        HStack(spacing: 6) {
-                            ForEach(item.badges) { badge in
-                                Text(badge.title)
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(badge.tint)
-                                    .padding(.horizontal, 7)
-                                    .padding(.vertical, 3)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 999)
-                                            .fill(badge.tint.opacity(0.12))
-                                    )
-                            }
-                        }
+                    if let firstBadge = item.badges.first {
+                        Text(firstBadge.title)
+                            .font(PH.Font.chip)
+                            .foregroundStyle(firstBadge.tint)
+                            .padding(.horizontal, PH.Spacing.chipH)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: PH.Spacing.chipCorner)
+                                    .fill(firstBadge.tint.opacity(0.10))
+                            )
                     }
                 }
+
+                // Line 2: sub info from summary (truncated 1 line)
+                Text(item.summary)
+                    .font(PH.Font.rowSub)
+                    .foregroundStyle(PH.Color.tertiary)
+                    .lineLimit(1)
             }
-            .padding(14)
+            .padding(.vertical, PH.Spacing.rowH)
+            .padding(.horizontal, PH.Spacing.rowV)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.20) : Color.clear, lineWidth: 0.8)
-            )
+            .background(isSelected ? PH.Color.accentTint : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(item.title)
+        .accessibilityValue(item.summary)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
