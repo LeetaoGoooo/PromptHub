@@ -163,6 +163,14 @@ struct ContentView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            switch promptSelection {
+            case .allPrompts, .mine, .shared, .explore, .prompt:
+                PromptsWorkspacePicker(promptSelection: $promptSelection)
+            default:
+                EmptyView()
+            }
+        }
         ToolbarItem(placement: .primaryAction) {
             switch promptSelection {
             case .mySkills:

@@ -68,6 +68,62 @@ struct SkillsWorkspacePicker: View {
     }
 }
 
+// MARK: - Prompts Workspace Picker
+
+enum PromptsWorkspaceTab: String, CaseIterable, Identifiable {
+    case all
+    case mine
+    case shared
+    case explore
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all:     return "All"
+        case .mine:    return "Mine"
+        case .shared:  return "Shared"
+        case .explore: return "Explore"
+        }
+    }
+}
+
+struct PromptsWorkspacePicker: View {
+    @Binding var promptSelection: PromptSelection
+
+    private var selectedTab: Binding<PromptsWorkspaceTab> {
+        Binding(
+            get: {
+                switch promptSelection {
+                case .mine:    return .mine
+                case .shared:  return .shared
+                case .explore: return .explore
+                default:       return .all
+                }
+            },
+            set: { newValue in
+                switch newValue {
+                case .all:     promptSelection = .allPrompts
+                case .mine:    promptSelection = .mine
+                case .shared:  promptSelection = .shared
+                case .explore: promptSelection = .explore
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        Picker("Prompts Workspace", selection: selectedTab) {
+            ForEach(PromptsWorkspaceTab.allCases) { tab in
+                Text(tab.title).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+        .frame(width: 240)
+        .labelsHidden()
+    }
+}
+
 // MARK: - Liquid Glass Material
 
 /// Bridges NSVisualEffectView into SwiftUI for true macOS vibrancy.

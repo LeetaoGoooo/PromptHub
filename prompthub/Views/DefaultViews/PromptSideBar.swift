@@ -105,17 +105,15 @@ struct PromptSideBar: View {
             sidebarSectionHeader("Prompts")
 
             VStack(spacing: 6) {
-                sidebarSelectionButton(title: "All Prompts", icon: "square.grid.2x2", meta: metaCount(promptsCount), isActive: promptSelection == .allPrompts || isPromptDetailSelected) {
-                    promptSelection = .allPrompts
-                }
-                sidebarSelectionButton(title: "My Prompts", icon: "person", meta: metaCount(prompts.count), isActive: promptSelection == .mine) {
-                    promptSelection = .mine
-                }
-                sidebarSelectionButton(title: "Shared with Me", icon: "link", meta: metaCount(sharedCreations.count), isActive: promptSelection == .shared) {
-                    promptSelection = .shared
-                }
-                sidebarSelectionButton(title: "Explore Gallery", icon: "sparkles", meta: metaCount(galleryCount), isActive: promptSelection == .explore) {
-                    promptSelection = .explore
+                sidebarSelectionButton(
+                    title: "Prompts",
+                    icon: "square.grid.2x2",
+                    meta: metaCount(promptsCount),
+                    isActive: promptSelection == .allPrompts || promptSelection == .mine || promptSelection == .shared || promptSelection == .explore || isPromptDetailSelected
+                ) {
+                    if promptSelection != .allPrompts && promptSelection != .mine && promptSelection != .shared && promptSelection != .explore && !isPromptDetailSelected {
+                        promptSelection = .allPrompts
+                    }
                 }
             }
         }
