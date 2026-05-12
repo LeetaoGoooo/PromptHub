@@ -249,7 +249,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
             }
         }
         .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(PH.Color.detailBg)
     }
 
     private func syncSelection() {

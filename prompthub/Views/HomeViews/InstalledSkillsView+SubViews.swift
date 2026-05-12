@@ -151,6 +151,7 @@ extension InstalledSkillsView {
                 )
                 .padding(24)
             }
+            .background(PH.Color.detailBg)
         } else {
             SkillLibraryEmptyState(
                 title: "No Skill Selected",

@@ -660,7 +660,7 @@ struct InstalledSkillDetailPane: View {
 
     private var sectionDivider: some View {
         Divider()
-            .overlay(Color(NSColor.separatorColor).opacity(0.4))
+            .overlay(PH.Color.stroke)
     }
 
     // MARK: - Icon generation
