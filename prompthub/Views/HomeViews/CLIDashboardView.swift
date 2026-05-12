@@ -603,38 +603,64 @@ private struct CLIDashboardInspector: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                InspectorPanel(title: "Setup Status") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        SetupStatusRow(
-                            title: cliExecutablePath == nil ? "CLI not detected" : "CLI installed",
-                            subtitle: cliExecutablePath ?? "Install with brew install prompthub",
-                            isDone: cliExecutablePath != nil,
-                            chipTitle: cliExecutablePath == nil ? nil : "Detected"
-                        )
-                        SetupStatusRow(
-                            title: "Agent dirs granted",
-                            subtitle: grantedDirectories.isEmpty ? "Grant access to .claude, .cursor, .codex and more" : grantedDirectories.map(\.displayName).joined(separator: " · "),
-                            isDone: !grantedDirectories.isEmpty,
-                            chipTitle: nil
-                        )
-                        SetupStatusRow(
-                            title: "Project selected",
-                            subtitle: selectedProjectLabel,
-                            isDone: selectedProjectLabel != "No project selected",
-                            chipTitle: nil
-                        )
-                        SetupStatusRow(
-                            title: "Gemini CLI",
-                            subtitle: hasGeminiAccess ? "Connected" : "Grant ~/.gemini/ access to connect",
-                            isDone: hasGeminiAccess,
-                            chipTitle: hasGeminiAccess ? nil : "Optional"
-                        )
+            VStack(alignment: .leading, spacing: 20) {
+                // Connection section
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "powerplug", label: "Connection")
+                    SetupStatusRow(
+                        title: cliExecutablePath == nil ? "CLI not detected" : "CLI installed",
+                        subtitle: cliExecutablePath ?? "Install with brew install prompthub",
+                        isDone: cliExecutablePath != nil,
+                        chipTitle: cliExecutablePath == nil ? nil : "Detected"
+                    )
+                    SetupStatusRow(
+                        title: "Gemini CLI",
+                        subtitle: hasGeminiAccess ? "Connected" : "Grant ~/.gemini/ access to connect",
+                        isDone: hasGeminiAccess,
+                        chipTitle: hasGeminiAccess ? nil : "Optional"
+                    )
+                }
+
+                Divider().opacity(0.6)
+
+                // Paths section
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "folder.badge.gear", label: "Paths")
+                    SetupStatusRow(
+                        title: "Agent directories",
+                        subtitle: grantedDirectories.isEmpty ? "Grant access to .claude, .cursor, .codex and more" : grantedDirectories.map(\.displayName).joined(separator: " · "),
+                        isDone: !grantedDirectories.isEmpty,
+                        chipTitle: nil
+                    )
+                    SetupStatusRow(
+                        title: "Project folder",
+                        subtitle: selectedProjectLabel,
+                        isDone: selectedProjectLabel != "No project selected",
+                        chipTitle: nil
+                    )
+                }
+
+                Divider().opacity(0.6)
+
+                // Status section
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "checkmark.shield", label: "Status")
+                    HStack(spacing: PH.Spacing.rowItemGap) {
+                        Circle()
+                            .fill(cliExecutablePath != nil ? PH.Color.statusOK : PH.Color.statusWarn)
+                            .frame(width: PH.Layout.statusDotSize, height: PH.Layout.statusDotSize)
+                        Text(cliExecutablePath != nil ? (grantedDirectories.isEmpty ? "CLI ready — no agents connected" : "Fully operational") : "Setup required")
+                            .font(PH.Font.rowSub)
+                            .foregroundStyle(PH.Color.secondary)
                     }
                 }
 
-                InspectorPanel(title: "Quick Actions") {
-                    VStack(spacing: 8) {
+                Divider().opacity(0.6)
+
+                // Actions section
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "bolt", label: "Actions")
+                    VStack(spacing: 6) {
                         Button(action: onInstallSkill) {
                             Label("Install Skill…", systemImage: "square.stack.3d.up")
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -661,7 +687,7 @@ private struct CLIDashboardInspector: View {
                     }
                 }
             }
-            .padding(18)
+            .padding(PH.Spacing.detailH)
         }
     }
 }
