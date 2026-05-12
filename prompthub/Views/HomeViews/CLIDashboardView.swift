@@ -214,20 +214,51 @@ struct CLIDashboardView: View {
         }
     }
 
-    private var connectedAgentsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Connected AI Agents")
-                .font(.headline)
+    @State private var agentFilter: CLIAgentFilter = .all
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 240), spacing: 14)], spacing: 14) {
-                ForEach(sortedDirectories) { directory in
-                    CLIAgentWorkspaceCard(
-                        directory: directory,
-                        isGranted: cliAccess.hasAccess(to: directory),
-                        skills: skills(for: directory),
-                        isSelected: selectedDirectory == directory,
-                        onTap: { selectedDirectory = directory }
-                    )
+    private var filteredDirectories: [CLIDirectory] {
+        switch agentFilter {
+        case .all:       return sortedDirectories
+        case .connected: return sortedDirectories.filter { cliAccess.hasAccess(to: $0) }
+        case .attention: return sortedDirectories.filter { !cliAccess.hasAccess(to: $0) || skills(for: $0).isEmpty }
+        }
+    }
+
+    private var connectedAgentsSection: some View {
+        VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadGap) {
+            PHSectionHead(systemImage: "cube", label: "Connected AI Agents")
+
+            // Filter chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: PH.Spacing.toolbarGap) {
+                    ForEach(CLIAgentFilter.allCases, id: \.rawValue) { filter in
+                        PHFilterChip(label: filter.rawValue, isActive: agentFilter == filter) {
+                            agentFilter = filter
+                        }
+                    }
+                }
+                .padding(.vertical, PH.Spacing.toolbarV)
+            }
+
+            // 2-line agent rows
+            if filteredDirectories.isEmpty {
+                Text("No agents match the current filter.")
+                    .font(PH.Font.rowSub)
+                    .foregroundStyle(PH.Color.secondary)
+                    .padding(PH.Spacing.detailH)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+            } else {
+                VStack(spacing: 2) {
+                    ForEach(filteredDirectories) { directory in
+                        CLIAgentListRow(
+                            directory: directory,
+                            isGranted: cliAccess.hasAccess(to: directory),
+                            skills: skills(for: directory),
+                            isSelected: selectedDirectory == directory,
+                            onTap: { selectedDirectory = directory }
+                        )
+                    }
                 }
             }
         }
@@ -338,6 +369,67 @@ private struct StatusCapsule: View {
             .padding(.vertical, 4)
             .background(tint.opacity(0.12))
             .clipShape(Capsule())
+    }
+}
+
+private enum CLIAgentFilter: String, CaseIterable {
+    case all       = "All"
+    case connected = "Connected"
+    case attention = "Attention"
+}
+
+private struct CLIAgentListRow: View {
+    let directory: CLIDirectory
+    let isGranted: Bool
+    let skills: [InstalledSkillSnapshot]
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    private var statusDot: Color { isGranted && !skills.isEmpty ? PH.Color.statusOK : (isGranted ? PH.Color.statusWarn : PH.Color.secondary) }
+    private var subText: String {
+        if !isGranted { return "Not connected · Grant folder access" }
+        if skills.isEmpty { return "Connected · No skills installed" }
+        let names = skills.prefix(3).map(\.displayName).joined(separator: ", ")
+        let extra = skills.count > 3 ? " +\(skills.count - 3)" : ""
+        return "\(skills.count) skill\(skills.count == 1 ? "" : "s") · \(names)\(extra)"
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: PH.Spacing.rowGap) {
+                // Line 1: name + status chip
+                HStack(spacing: 0) {
+                    Text(directory.displayName)
+                        .font(PH.Font.rowName)
+                        .foregroundStyle(PH.Color.primary)
+                    Spacer(minLength: 0)
+                    Text(isGranted ? (skills.isEmpty ? "Idle" : "Active") : "Disconnected")
+                        .font(PH.Font.statusLabel)
+                        .foregroundStyle(isGranted ? (skills.isEmpty ? PH.Color.statusWarn : PH.Color.statusOK) : PH.Color.secondary)
+                }
+                // Line 2: dot + sub-text
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(statusDot)
+                        .frame(width: PH.Layout.statusDotSize, height: PH.Layout.statusDotSize)
+                    Text(subText)
+                        .font(PH.Font.rowSub)
+                        .foregroundStyle(PH.Color.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            .padding(.horizontal, PH.Spacing.rowH)
+            .padding(.vertical, PH.Spacing.rowV)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isSelected ? PH.Color.accentTint : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+            .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(directory.displayName)
+        .accessibilityValue(subText)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
