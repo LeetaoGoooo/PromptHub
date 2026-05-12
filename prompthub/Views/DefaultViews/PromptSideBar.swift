@@ -44,9 +44,11 @@ struct PromptSideBar: View {
             sidebarHeader
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 0) {
                     promptsNavigationSection
+                    Divider().opacity(0.5).padding(.vertical, 10)
                     skillsNavigationSection
+                    Divider().opacity(0.5).padding(.vertical, 10)
                     agentsNavigationSection
                 }
                 .padding(.horizontal, 12)
@@ -57,6 +59,7 @@ struct PromptSideBar: View {
             sidebarFooter
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(PH.Color.sidebarBg)
     }
 
     @ViewBuilder
@@ -151,10 +154,10 @@ struct PromptSideBar: View {
     @ViewBuilder
     private func sidebarSectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(.secondary)
+            .font(PH.Font.sectionHead)
+            .foregroundStyle(PH.Color.secondary)
             .textCase(.uppercase)
-            .tracking(0.8)
+            .tracking(0.3)
     }
 
     @ViewBuilder
@@ -270,7 +273,7 @@ struct PromptSideBar: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .background(isActive ? Color.accentColor.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(isActive ? PH.Color.accentTint : Color.clear, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
         }
         .buttonStyle(.plain)
     }
