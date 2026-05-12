@@ -81,6 +81,30 @@ struct InstalledSkillDetailPane: View {
         linkedDraft?.displayName ?? "No draft linked"
     }
 
+    private var visibilitySummary: String {
+        if skill.agents.isEmpty {
+            return "No CLIs configured"
+        }
+
+        if isLoadingVisibility {
+            return "Checking CLI visibility…"
+        }
+
+        if visibleAgentCount == 0 && missingAgentCount == 0 {
+            return "Visibility not scanned yet"
+        }
+
+        if missingAgentCount == 0 {
+            return "\(visibleAgentCount) visible"
+        }
+
+        if visibleAgentCount == 0 {
+            return "\(missingAgentCount) missing"
+        }
+
+        return "\(visibleAgentCount) visible · \(missingAgentCount) missing"
+    }
+
     private var visibleAgentCount: Int {
         agentVisibility.filter { $0.status == .visible }.count
     }
@@ -195,25 +219,16 @@ struct InstalledSkillDetailPane: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 22) {
             headerSection
-            sectionDivider
-            summarySection
-            sectionDivider
-            metadataStrip
-            sectionDivider
-            coverageSection
-            sectionDivider
+            quickActionsSection
+            overviewSection
             diagnosticsSection
-            sectionDivider
+            coverageSection
             footerSection
         }
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.82))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(NSColor.separatorColor).opacity(0.45), lineWidth: 0.8)
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(SkillStoreInspectorChrome())
         .sheet(isPresented: $showingUpdateDiff) {
             SkillUpdateDiffSheet(skill: skill) { showingUpdateDiff = false }
         }
@@ -295,35 +310,8 @@ struct InstalledSkillDetailPane: View {
 
             Spacer(minLength: 12)
 
-            HStack(spacing: 10) {
-                qualityPill
-
-                if skill.package.remoteInstallDescriptor != nil {
-                    Button("Review Update") { showingUpdateDiff = true }
-                        .buttonStyle(.bordered)
-                }
-
-                Button(linkedDraft == nil ? "Duplicate to Draft" : "Open Draft", action: onEditDraft)
-                    .buttonStyle(.bordered)
-
-                Menu {
-                    if skill.url != nil {
-                        Button("Open Source Page", action: onOpenSourcePage)
-                    }
-
-                    if skill.package.remoteInstallDescriptor != nil {
-                        Button("Review Update", action: { showingUpdateDiff = true })
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .frame(width: 30, height: 30)
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-            }
+            qualityPill
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
     }
 
     private var qualityPill: some View {
@@ -358,52 +346,107 @@ struct InstalledSkillDetailPane: View {
         }
     }
 
-    private var summarySection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            PHSectionHead(systemImage: "doc.text", label: "Description")
+    private var quickActionsSection: some View {
+        detailSectionCard {
+            PHSectionHead(systemImage: "sparkles", label: "Quick Actions")
+
+            VStack(alignment: .leading, spacing: 10) {
+                primaryActionButtons
+                footerActionButtons
+            }
+        }
+    }
+
+    private var primaryActionButtons: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                Button(linkedDraft == nil ? "Duplicate to Draft" : "Open Draft", action: onEditDraft)
+                    .buttonStyle(.borderedProminent)
+
+                if skill.package.remoteInstallDescriptor != nil {
+                    Button("Review Update") { showingUpdateDiff = true }
+                        .buttonStyle(.bordered)
+                }
+
+                if skill.url != nil {
+                    Button("Open Source Page", action: onOpenSourcePage)
+                        .buttonStyle(.bordered)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Button(linkedDraft == nil ? "Duplicate to Draft" : "Open Draft", action: onEditDraft)
+                    .buttonStyle(.borderedProminent)
+
+                if skill.package.remoteInstallDescriptor != nil {
+                    Button("Review Update") { showingUpdateDiff = true }
+                        .buttonStyle(.bordered)
+                }
+
+                if skill.url != nil {
+                    Button("Open Source Page", action: onOpenSourcePage)
+                        .buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+
+    private var overviewSection: some View {
+        detailSectionCard {
+            PHSectionHead(systemImage: "doc.text", label: "Overview")
+
             Text(summaryText)
                 .font(PH.Font.body)
                 .foregroundStyle(PH.Color.secondary)
                 .lineSpacing(PH.Font.bodyLineSpacing)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            metadataStrip
+
+            SkillLibraryMetadataBlock(title: "Connections", rows: [
+                ("Linked Draft", linkedDraftSummary),
+                ("Connected CLIs", coverageSummary),
+                ("Visibility", visibilitySummary)
+            ])
         }
-        .padding(.horizontal, PH.Spacing.detailH)
-        .padding(.vertical, PH.Spacing.sectionV)
     }
 
     private var metadataStrip: some View {
-        HStack(alignment: .center, spacing: 8) {
-            InstalledSkillBadge(
-                title: skill.isGlobal ? "Global" : "Project",
-                icon: skill.isGlobal ? "globe" : "folder",
-                foreground: skill.isGlobal ? .blue : .mint,
-                background: (skill.isGlobal ? Color.blue : Color.mint).opacity(0.14)
-            )
+        VStack(alignment: .leading, spacing: 10) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .center, spacing: 8) {
+                    InstalledSkillBadge(
+                        title: skill.isGlobal ? "Global" : "Project",
+                        icon: skill.isGlobal ? "globe" : "folder",
+                        foreground: skill.isGlobal ? .blue : .mint,
+                        background: (skill.isGlobal ? Color.blue : Color.mint).opacity(0.14)
+                    )
 
-            InstalledSkillBadge(
-                title: skill.isManagedByPromptHub ? "PromptHub managed" : "External install",
-                icon: skill.isManagedByPromptHub ? "checkmark.circle" : "arrow.triangle.branch",
-                foreground: skill.isManagedByPromptHub ? .green : .orange,
-                background: (skill.isManagedByPromptHub ? Color.green : Color.orange).opacity(0.14)
-            )
+                    InstalledSkillBadge(
+                        title: skill.isManagedByPromptHub ? "PromptHub managed" : "External install",
+                        icon: skill.isManagedByPromptHub ? "checkmark.circle" : "arrow.triangle.branch",
+                        foreground: skill.isManagedByPromptHub ? .green : .orange,
+                        background: (skill.isManagedByPromptHub ? Color.green : Color.orange).opacity(0.14)
+                    )
 
-            InstalledSkillBadge(
-                title: sourceBadgeTitle,
-                icon: sourceBadgeIcon,
-                foreground: sourceBadgeColor,
-                background: sourceBadgeColor.opacity(0.12)
-            )
+                    InstalledSkillBadge(
+                        title: sourceBadgeTitle,
+                        icon: sourceBadgeIcon,
+                        foreground: sourceBadgeColor,
+                        background: sourceBadgeColor.opacity(0.12)
+                    )
 
-            if let localHash = sourceIntegrity?.localHash {
-                Text("SHA-256  \(String(localHash.prefix(12)))…")
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color(NSColor.windowBackgroundColor), in: Capsule())
+                    if let localHash = sourceIntegrity?.localHash {
+                        Text("SHA-256  \(String(localHash.prefix(12)))…")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(PH.Color.buttonBg, in: Capsule())
+                    }
+                }
+                .padding(.vertical, 1)
             }
-
-            Spacer(minLength: 12)
 
             HStack(spacing: 6) {
                 Text("Identifier:")
@@ -415,15 +458,13 @@ struct InstalledSkillDetailPane: View {
                     .lineLimit(1)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(NSColor.windowBackgroundColor), in: Capsule())
+                    .background(PH.Color.buttonBg, in: Capsule())
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
     }
 
     private var coverageSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        detailSectionCard {
             PHSectionHead(systemImage: "checklist", label: "CLI Visibility")
 
             VStack(spacing: 0) {
@@ -454,8 +495,6 @@ struct InstalledSkillDetailPane: View {
             }
             .padding(.top, 2)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
     }
 
     private func coverageCell(for entry: (agent: AgentWorkflow, visibility: SkillAgentVisibility?)) -> some View {
@@ -526,126 +565,171 @@ struct InstalledSkillDetailPane: View {
     }
 
     private var diagnosticsSection: some View {
-        HStack(alignment: .top, spacing: 32) {
-            VStack(alignment: .leading, spacing: 12) {
-                PHSectionHead(systemImage: "chart.bar", label: "Audit")
+        detailSectionCard {
+            PHSectionHead(systemImage: "waveform.path.ecg", label: "Diagnostics")
 
-                if isLoadingEffectiveness && effectiveness == nil {
-                    Text("Analyzing SKILL.md…")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if qualityChecks.isEmpty {
-                    Text("Quality analysis not available.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(Array(qualityChecks.enumerated()), id: \.offset) { index, check in
-                            HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: check.passed ? "checkmark.circle" : "xmark.circle")
-                                    .foregroundStyle(check.passed ? Color.green : Color.red)
-                                    .font(.caption)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 32) {
+                    auditDiagnosticsBlock
+                    integrityDiagnosticsBlock
+                }
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(check.title)
-                                        .font(.callout)
-                                    if !check.passed, let hint = check.hint, !hint.isEmpty {
-                                        Text(hint)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
+                VStack(alignment: .leading, spacing: 18) {
+                    auditDiagnosticsBlock
+                    integrityDiagnosticsBlock
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var auditDiagnosticsBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Audit")
+                .font(.headline)
+
+            if isLoadingEffectiveness && effectiveness == nil {
+                Text("Analyzing SKILL.md…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if qualityChecks.isEmpty {
+                Text("Quality analysis not available.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(qualityChecks.enumerated()), id: \.offset) { index, check in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: check.passed ? "checkmark.circle" : "xmark.circle")
+                                .foregroundStyle(check.passed ? Color.green : Color.red)
+                                .font(.caption)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(check.title)
+                                    .font(.callout)
+                                if !check.passed, let hint = check.hint, !hint.isEmpty {
+                                    Text(hint)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-
-                                Spacer(minLength: 0)
                             }
-                            .padding(.vertical, 7)
 
-                            if index < qualityChecks.count - 1 {
-                                Divider()
-                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 7)
+
+                        if index < qualityChecks.count - 1 {
+                            Divider()
                         }
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            VStack(alignment: .leading, spacing: 18) {
-                PHSectionHead(systemImage: "shippingbox", label: "Package")
-                SkillLibraryMetadataBlock(title: "", rows: [
-                    ("Identifier", skill.package.rawValue),
-                    ("Managed", skill.isManagedByPromptHub ? "PromptHub managed" : "External install"),
-                    ("Source", skill.displaySource ?? "Local only")
-                ])
-
-                PHSectionHead(systemImage: "checkmark.shield", label: "Scope")
-                SkillLibraryMetadataBlock(title: "", rows: [
-                    ("Status", integritySummary),
-                    ("SHA-256", sourceIntegrity?.localHash.map { String($0.prefix(16)) + "…" } ?? "Unavailable")
-                ])
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
+    }
+
+    private var integrityDiagnosticsBlock: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SkillLibraryMetadataBlock(title: "Package", rows: [
+                ("Identifier", skill.package.rawValue),
+                ("Managed", skill.isManagedByPromptHub ? "PromptHub managed" : "External install"),
+                ("Source", skill.displaySource ?? "Local only")
+            ])
+
+            SkillLibraryMetadataBlock(title: "Integrity", rows: [
+                ("Status", integritySummary),
+                ("Quality", qualitySummary),
+                ("SHA-256", sourceIntegrity?.localHash.map { String($0.prefix(16)) + "…" } ?? "Unavailable")
+            ])
+        }
     }
 
     private var footerSection: some View {
-        HStack(spacing: 12) {
-            Text(footerStatusText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: 12)
-
-            footerActionButtons
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        Text(footerStatusText)
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 
     @ViewBuilder
     private var footerActionButtons: some View {
-        HStack(spacing: 10) {
-            if isRemoving {
-                Label("Removing…", systemImage: "hourglass")
-                    .foregroundStyle(.secondary)
-            } else {
-                Button("Remove", role: .destructive, action: onRemoveAll)
-                    .buttonStyle(.bordered)
+        if isRemoving {
+            Label("Removing…", systemImage: "hourglass")
+                .foregroundStyle(.secondary)
+        } else if isAdding {
+            Label("Updating CLIs…", systemImage: "hourglass")
+                .foregroundStyle(.secondary)
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    Button("Remove", role: .destructive, action: onRemoveAll)
+                        .buttonStyle(.bordered)
 
-                Menu {
                     if !skill.agents.isEmpty {
-                        ForEach(skill.agents, id: \.rawValue) { agent in
-                            Button(role: .destructive) { onRemoveAgent(agent) } label: {
-                                Label("Remove from \(agent.displayName)", systemImage: "trash")
+                        Menu {
+                            ForEach(skill.agents, id: \.rawValue) { agent in
+                                Button(role: .destructive) { onRemoveAgent(agent) } label: {
+                                    Label("Remove from \(agent.displayName)", systemImage: "trash")
+                                }
                             }
+                        } label: {
+                            Label("Manage CLIs", systemImage: "slider.horizontal.3")
                         }
+                        .menuStyle(.borderedButton)
                     }
-                } label: {
-                    Label("Manage CLIs", systemImage: "slider.horizontal.3")
-                }
-                .menuStyle(.borderedButton)
-            }
 
-            if isAdding {
-                Label("Updating CLIs…", systemImage: "hourglass")
-                    .foregroundStyle(.secondary)
-            } else if supportsAddTargets {
-                Menu {
-                    if addableAgents.count > 1 {
-                        Button { onAddAgents(addableAgents) } label: {
-                            Label("Add All Missing CLIs", systemImage: "plus.circle")
+                    if supportsAddTargets {
+                        Menu {
+                            if addableAgents.count > 1 {
+                                Button { onAddAgents(addableAgents) } label: {
+                                    Label("Add All Missing CLIs", systemImage: "plus.circle")
+                                }
+                            }
+                            ForEach(addableAgents, id: \.rawValue) { agent in
+                                Button { onAddAgents([agent]) } label: {
+                                    Label("Add \(agent.displayName)", systemImage: "plus")
+                                }
+                            }
+                        } label: {
+                            Label("Add CLI", systemImage: "plus")
                         }
+                        .menuStyle(.borderedButton)
                     }
-                    ForEach(addableAgents, id: \.rawValue) { agent in
-                        Button { onAddAgents([agent]) } label: {
-                            Label("Add \(agent.displayName)", systemImage: "plus")
-                        }
-                    }
-                } label: {
-                    Label("Add CLI", systemImage: "plus")
                 }
-                .menuStyle(.borderedButton)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Button("Remove", role: .destructive, action: onRemoveAll)
+                        .buttonStyle(.bordered)
+
+                    if !skill.agents.isEmpty {
+                        Menu {
+                            ForEach(skill.agents, id: \.rawValue) { agent in
+                                Button(role: .destructive) { onRemoveAgent(agent) } label: {
+                                    Label("Remove from \(agent.displayName)", systemImage: "trash")
+                                }
+                            }
+                        } label: {
+                            Label("Manage CLIs", systemImage: "slider.horizontal.3")
+                        }
+                        .menuStyle(.borderedButton)
+                    }
+
+                    if supportsAddTargets {
+                        Menu {
+                            if addableAgents.count > 1 {
+                                Button { onAddAgents(addableAgents) } label: {
+                                    Label("Add All Missing CLIs", systemImage: "plus.circle")
+                                }
+                            }
+                            ForEach(addableAgents, id: \.rawValue) { agent in
+                                Button { onAddAgents([agent]) } label: {
+                                    Label("Add \(agent.displayName)", systemImage: "plus")
+                                }
+                            }
+                        } label: {
+                            Label("Add CLI", systemImage: "plus")
+                        }
+                        .menuStyle(.borderedButton)
+                    }
+                }
             }
         }
     }
@@ -661,6 +745,19 @@ struct InstalledSkillDetailPane: View {
     private var sectionDivider: some View {
         Divider()
             .overlay(PH.Color.stroke)
+    }
+
+    private func detailSectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(18)
+        .background(PH.Color.detailBg, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(PH.Color.strokeSoft, lineWidth: 0.8)
+        )
     }
 
     // MARK: - Icon generation
