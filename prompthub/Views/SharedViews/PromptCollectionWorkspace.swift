@@ -334,90 +334,80 @@ private struct PromptBrowserDetail: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: item.systemImage)
-                        .foregroundStyle(item.iconTint)
-                        .font(.headline)
-                        .frame(width: 32, height: 32)
-                        .background(item.iconTint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(item.title)
-                            .font(.title2.weight(.semibold))
-                        Text(item.summary)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 0)
-                }
+        VStack(alignment: .leading, spacing: 20) {
+            // Detail header: title + badges
+            VStack(alignment: .leading, spacing: 8) {
+                Text(item.title)
+                    .font(PH.Font.paneTitle)
+                    .foregroundStyle(PH.Color.primary)
 
                 if !item.badges.isEmpty {
-                    HStack(spacing: 6) {
+                    HStack(spacing: PH.Spacing.toolbarGap) {
                         ForEach(item.badges) { badge in
                             Text(badge.title)
-                                .font(.caption.weight(.medium))
+                                .font(PH.Font.chip)
                                 .foregroundStyle(badge.tint)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(badge.tint.opacity(0.12), in: Capsule())
+                                .padding(.horizontal, PH.Spacing.chipH)
+                                .padding(.vertical, 2)
+                                .background(badge.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: PH.Spacing.chipCorner))
                         }
                     }
                 }
             }
 
-            if !item.metadata.isEmpty || !variables.isEmpty {
-                PromptCollectionInspectorPanel(title: "Properties") {
-                    VStack(alignment: .leading, spacing: 14) {
-                        if !item.metadata.isEmpty {
-                            PromptCollectionKVList(items: item.metadata.map { ($0.label, $0.value) })
-                        }
+            Divider().opacity(0.6)
 
-                        if !variables.isEmpty {
-                            Divider()
+            // Body section
+            VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                PHSectionHead(systemImage: "text.alignleft", label: "Content")
+                Text(item.promptText.isEmpty ? "No prompt content." : item.promptText)
+                    .font(PH.Font.monoBody)
+                    .foregroundStyle(PH.Color.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+                    .lineSpacing(4)
+                    .padding(PH.Spacing.detailH)
+                    .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: 8))
+            }
 
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Variables")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
-
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8, alignment: .leading)], alignment: .leading, spacing: 8) {
-                                    ForEach(variables, id: \.self) { variable in
-                                        Text("{{\(variable)}}")
-                                            .font(.caption.monospaced())
-                                            .foregroundStyle(.accent)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 5)
-                                            .background(Color.accentColor.opacity(0.10), in: Capsule())
-                                    }
-                                }
-                            }
+            // Variables section
+            if !variables.isEmpty {
+                Divider().opacity(0.6)
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "curlybraces", label: "Variables")
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 110), spacing: PH.Spacing.toolbarGap, alignment: .leading)],
+                        alignment: .leading,
+                        spacing: PH.Spacing.toolbarGap
+                    ) {
+                        ForEach(variables, id: \.self) { variable in
+                            Text("{{\(variable)}}")
+                                .font(PH.Font.mono)
+                                .foregroundStyle(PH.Color.accent)
+                                .padding(.horizontal, PH.Spacing.chipH + 2)
+                                .padding(.vertical, 3)
+                                .background(PH.Color.accentTint, in: Capsule())
                         }
                     }
                 }
             }
 
+            // Context / metadata section
+            if !item.metadata.isEmpty {
+                Divider().opacity(0.6)
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "info.circle", label: "Context")
+                    PromptCollectionKVList(items: item.metadata.map { ($0.label, $0.value) })
+                }
+            }
+
+            // Quick actions
             if !detailActions.isEmpty {
-                PromptCollectionInspectorPanel(title: "Quick Actions") {
+                Divider().opacity(0.6)
+                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
+                    PHSectionHead(systemImage: "bolt", label: "Actions")
                     PromptQuickActionWrap(actions: detailActions)
                 }
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Content")
-                    .font(.headline)
-
-                ScrollView {
-                    Text(item.promptText)
-                        .font(.system(.body, design: .monospaced))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(16)
-                        .textSelection(.enabled)
-                }
-                .frame(minHeight: 220, idealHeight: 280, maxHeight: 280)
-                .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
