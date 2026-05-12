@@ -267,7 +267,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
                 }
             }
         }
-        .frame(minWidth: 280, idealWidth: 316, maxWidth: 380, maxHeight: .infinity)
+        .frame(minWidth: 240, idealWidth: 300, maxWidth: 380, maxHeight: .infinity)
         .background(Color(NSColor.controlBackgroundColor))
     }
 
@@ -278,7 +278,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
                     .padding(PH.Spacing.detailH)
             }
         }
-        .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
         .background(PH.Color.detailBg)
     }
 
