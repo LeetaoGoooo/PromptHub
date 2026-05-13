@@ -210,10 +210,20 @@ public struct SkillSourceIntegrity: Codable, Sendable, Equatable {
     }
 }
 
-// MARK: - Skill Effectiveness
+// MARK: - Skill Structural Quality
+//
+// These types describe the *structural* health of a SKILL.md file: presence of
+// frontmatter, a usage section, examples, and similar textual signals. They
+// are part of PromptHub's audit layer and intentionally do NOT measure
+// behavioral correctness. Behavioral evaluation lives in a separate layer
+// (see plans/skill-eval-final-plan.md).
+//
+// Backwards compatibility: the legacy `SkillEffectiveness*` and
+// `EffectivenessTier` names are kept as deprecated typealiases so existing
+// app-side callers still compile while they migrate.
 
 /// A single structural check on a SKILL.md file.
-public struct SkillEffectivenessCheck: Codable, Sendable, Equatable {
+public struct SkillStructuralQualityCheck: Codable, Sendable, Equatable {
     /// Human-readable title, e.g. "Has frontmatter description".
     public let title: String
     /// Short explanation of why this check matters.
@@ -231,8 +241,8 @@ public struct SkillEffectivenessCheck: Codable, Sendable, Equatable {
     }
 }
 
-/// Effectiveness tier derived from the overall score.
-public enum EffectivenessTier: String, Codable, Sendable, Equatable {
+/// Structural quality tier derived from the overall score.
+public enum StructuralQualityTier: String, Codable, Sendable, Equatable {
     /// 80–100 % of checks pass.
     case excellent
     /// 60–79 % of checks pass.
@@ -261,29 +271,40 @@ public enum EffectivenessTier: String, Codable, Sendable, Equatable {
     }
 }
 
-/// Aggregate effectiveness report for an installed SKILL.md.
-public struct SkillEffectivenessReport: Codable, Sendable, Equatable {
-    public let checks: [SkillEffectivenessCheck]
+/// Aggregate structural-quality report for an installed SKILL.md.
+public struct SkillStructuralQualityReport: Codable, Sendable, Equatable {
+    public let checks: [SkillStructuralQualityCheck]
     /// 0.0 … 1.0
     public let score: Double
-    public let tier: EffectivenessTier
+    public let tier: StructuralQualityTier
     /// Whether the SKILL.md file was found at all.
     public let fileFound: Bool
 
-    public init(checks: [SkillEffectivenessCheck], score: Double, tier: EffectivenessTier, fileFound: Bool) {
+    public init(checks: [SkillStructuralQualityCheck], score: Double, tier: StructuralQualityTier, fileFound: Bool) {
         self.checks = checks
         self.score = score
         self.tier = tier
         self.fileFound = fileFound
     }
 
-    public static let notFound = SkillEffectivenessReport(
+    public static let notFound = SkillStructuralQualityReport(
         checks: [],
         score: 0,
         tier: .poor,
         fileFound: false
     )
 }
+
+// MARK: - Deprecated Effectiveness aliases
+
+@available(*, deprecated, renamed: "SkillStructuralQualityCheck")
+public typealias SkillEffectivenessCheck = SkillStructuralQualityCheck
+
+@available(*, deprecated, renamed: "StructuralQualityTier")
+public typealias EffectivenessTier = StructuralQualityTier
+
+@available(*, deprecated, renamed: "SkillStructuralQualityReport")
+public typealias SkillEffectivenessReport = SkillStructuralQualityReport
 
 // MARK: - Skill Update / Rollback
 
@@ -1001,14 +1022,18 @@ public actor SkillCatalogService {
     /// Analyzes the locally installed SKILL.md for structural quality signals.
     ///
     /// The checks are purely structural/textual — no network access is required.
+    /// This is the audit-layer signal: it answers "is this skill well-formed",
+    /// not "does this skill behave correctly". Behavioral proof belongs to the
+    /// evaluation layer.
+    ///
     /// - Parameters:
     ///   - skillName: Full package name or short skill name.
     ///   - isGlobal: Whether to look in the global or project skill root.
-    /// - Returns: An `SkillEffectivenessReport` with individual check results and an overall score.
-    public func checkEffectiveness(
+    /// - Returns: A `SkillStructuralQualityReport` with individual check results and an overall score.
+    public func checkStructuralQuality(
         skillName: String,
         isGlobal: Bool = true
-    ) -> SkillEffectivenessReport {
+    ) -> SkillStructuralQualityReport {
         let short = sanitizePathComponent(shortSkillName(fromPackage: skillName))
 
         // Locate the SKILL.md from the first agent that has a configured root.
@@ -1029,10 +1054,10 @@ public actor SkillCatalogService {
             return .notFound
         }
 
-        let checks = Self.runEffectivenessChecks(on: content)
+        let checks = Self.runStructuralQualityChecks(on: content)
         let passedCount = checks.filter(\.passed).count
         let score = checks.isEmpty ? 0.0 : Double(passedCount) / Double(checks.count)
-        let tier: EffectivenessTier = {
+        let tier: StructuralQualityTier = {
             switch score {
             case 0.8...: return .excellent
             case 0.6..<0.8: return .good
@@ -1041,11 +1066,20 @@ public actor SkillCatalogService {
             }
         }()
 
-        return SkillEffectivenessReport(checks: checks, score: score, tier: tier, fileFound: true)
+        return SkillStructuralQualityReport(checks: checks, score: score, tier: tier, fileFound: true)
+    }
+
+    /// Deprecated alias for `checkStructuralQuality(skillName:isGlobal:)`.
+    @available(*, deprecated, renamed: "checkStructuralQuality(skillName:isGlobal:)")
+    public func checkEffectiveness(
+        skillName: String,
+        isGlobal: Bool = true
+    ) -> SkillStructuralQualityReport {
+        checkStructuralQuality(skillName: skillName, isGlobal: isGlobal)
     }
 
     /// Pure function: run all structural checks on raw SKILL.md content.
-    private static func runEffectivenessChecks(on content: String) -> [SkillEffectivenessCheck] {
+    private static func runStructuralQualityChecks(on content: String) -> [SkillStructuralQualityCheck] {
         let lines = content.components(separatedBy: .newlines)
         let lower = content.lowercased()
         let headings = lines.filter { $0.hasPrefix("#") }.map { $0.lowercased() }
@@ -1093,43 +1127,43 @@ public actor SkillCatalogService {
         let hasToolRefs = lower.contains("file") || lower.contains("command") || lower.contains("tool") || lower.contains("function")
 
         return [
-            SkillEffectivenessCheck(
+            SkillStructuralQualityCheck(
                 title: "YAML frontmatter",
                 rationale: "Frontmatter lets agents extract structured metadata.",
                 passed: hasFrontmatter,
                 hint: hasFrontmatter ? nil : "Add `---` frontmatter with at least a `description:` field."
             ),
-            SkillEffectivenessCheck(
+            SkillStructuralQualityCheck(
                 title: "Non-empty description",
                 rationale: "A clear description helps agents decide when to invoke this skill.",
                 passed: hasDescription,
                 hint: hasDescription ? nil : "Add a `description:` field with at least a sentence."
             ),
-            SkillEffectivenessCheck(
+            SkillStructuralQualityCheck(
                 title: "Title heading",
                 rationale: "A `# Title` heading makes the skill scannable.",
                 passed: hasTitle,
                 hint: hasTitle ? nil : "Add a top-level `# SkillName` heading."
             ),
-            SkillEffectivenessCheck(
+            SkillStructuralQualityCheck(
                 title: "Usage section",
                 rationale: "An explicit usage or 'when to use' section sets invocation expectations.",
                 passed: hasUsageSection,
                 hint: hasUsageSection ? nil : "Add a `## Usage` or `## When to use` section."
             ),
-            SkillEffectivenessCheck(
+            SkillStructuralQualityCheck(
                 title: "Code or command examples",
                 rationale: "Concrete examples improve agent reliability.",
                 passed: hasCodeBlock,
                 hint: hasCodeBlock ? nil : "Add at least one fenced code block with an example."
             ),
-            SkillEffectivenessCheck(
+            SkillStructuralQualityCheck(
                 title: "Substantial content",
                 rationale: "Thin skill files often lack enough context for reliable agent behavior.",
                 passed: isSubstantial,
                 hint: isSubstantial ? nil : "Expand the skill file with more detail (aim for > 150 characters of body content)."
             ),
-            SkillEffectivenessCheck(
+            SkillStructuralQualityCheck(
                 title: "Tool or file references",
                 rationale: "Referencing tools or files grounds the skill in practical usage.",
                 passed: hasToolRefs,
