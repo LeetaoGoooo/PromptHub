@@ -117,7 +117,8 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
         agentSkillRoots: [
             .codex: .init(global: codexGlobal, project: codexProject)
         ],
-        localSkillRoots: []
+        localSkillRoots: [],
+        skillLockFileURLs: []
     )
 
     try await service.install(
@@ -199,7 +200,8 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
         agentSkillRoots: [
             .codex: .init(global: codexGlobal, project: codexProject)
         ],
-        localSkillRoots: []
+        localSkillRoots: [],
+        skillLockFileURLs: []
     )
 
     try await service.install(
@@ -218,6 +220,168 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
             atPath: codexGlobal.appendingPathComponent("vercel-react-best-practices/SKILL.md").path
         )
     )
+}
+
+@Test func remoteGitHubInstallCopiesSiblingPackageFiles() async throws {
+    let (session, handlerID) = SkillKitMockURLProtocol.makeSession { request in
+        let url = try #require(request.url)
+        let path = url.path
+
+        if url.host == "api.github.com", path == "/repos/acme/toolbox" {
+            let body = #"{"default_branch":"main","html_url":"https://github.com/acme/toolbox","stargazers_count":7}"#
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, Data(body.utf8))
+        }
+
+        if url.host == "api.github.com", path == "/repos/acme/toolbox/git/trees/main" {
+            let body = #"{"tree":[{"path":"skills/demo-skill/SKILL.md","type":"blob"},{"path":"skills/demo-skill/scripts/run.sh","type":"blob"},{"path":"skills/demo-skill/assets/icon.txt","type":"blob"}]}"#
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, Data(body.utf8))
+        }
+
+        if url.host == "raw.githubusercontent.com",
+           path == "/acme/toolbox/main/skills/demo-skill/SKILL.md" {
+            let body = """
+            ---
+            name: demo-skill
+            description: Remote package install
+            ---
+
+            # Demo
+            """
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "text/plain"])!
+            return (response, Data(body.utf8))
+        }
+
+        if url.host == "raw.githubusercontent.com",
+           path == "/acme/toolbox/main/skills/demo-skill/scripts/run.sh" {
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "text/plain"])!
+            return (response, Data("echo shipped".utf8))
+        }
+
+        if url.host == "raw.githubusercontent.com",
+           path == "/acme/toolbox/main/skills/demo-skill/assets/icon.txt" {
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "text/plain"])!
+            return (response, Data("icon".utf8))
+        }
+
+        let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+        return (response, Data(#"{"message":"Not found"}"#.utf8))
+    }
+
+    let fileManager = FileManager.default
+    let base = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
+    defer {
+        SkillKitMockURLProtocol.removeHandler(for: handlerID)
+        try? fileManager.removeItem(at: base)
+    }
+
+    let installRoot = base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true)
+    let codexGlobal = base.appendingPathComponent(".codex/skills", isDirectory: true)
+    let codexProject = base.appendingPathComponent("workspace/.agents/skills", isDirectory: true)
+
+    let service = SkillCatalogService(
+        session: session,
+        fileManager: fileManager,
+        apiBaseURL: URL(string: "https://skills.invalid"),
+        installRootURL: installRoot,
+        agentSkillRoots: [
+            .codex: .init(global: codexGlobal, project: codexProject)
+        ],
+        localSkillRoots: []
+    )
+
+    try await service.install(
+        request: SkillInstallRequest(
+            source: "acme/toolbox",
+            skillNames: ["demo-skill"],
+            targetAgents: [.codex],
+            isGlobal: true
+        )
+    )
+
+    #expect(fileManager.fileExists(atPath: installRoot.appendingPathComponent("global/codex/acme_toolbox_demo-skill/scripts/run.sh").path))
+    #expect(fileManager.fileExists(atPath: codexGlobal.appendingPathComponent("demo-skill/assets/icon.txt").path))
+}
+
+@Test func remoteGitHubInstallRejectsMismatchedRepositoryRootSkill() async throws {
+    let (session, handlerID) = SkillKitMockURLProtocol.makeSession { request in
+        let url = try #require(request.url)
+        let path = url.path
+
+        if url.host == "api.github.com", path == "/repos/acme/toolbox" {
+            let body = #"{"default_branch":"main","html_url":"https://github.com/acme/toolbox","stargazers_count":7}"#
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, Data(body.utf8))
+        }
+
+        if url.host == "api.github.com", path == "/repos/acme/toolbox/git/trees/main" {
+            let body = #"{"tree":[{"path":"SKILL.md","type":"blob"}]}"#
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, Data(body.utf8))
+        }
+
+        if url.host == "raw.githubusercontent.com",
+           path == "/acme/toolbox/main/SKILL.md" {
+            let body = """
+            ---
+            name: other-skill
+            description: Wrong root skill
+            ---
+
+            # Other Skill
+            """
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "text/plain"])!
+            return (response, Data(body.utf8))
+        }
+
+        let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+        return (response, Data(#"{"message":"Not found"}"#.utf8))
+    }
+
+    let fileManager = FileManager.default
+    let base = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
+    defer {
+        SkillKitMockURLProtocol.removeHandler(for: handlerID)
+        try? fileManager.removeItem(at: base)
+    }
+
+    let installRoot = base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true)
+    let codexGlobal = base.appendingPathComponent(".codex/skills", isDirectory: true)
+    let codexProject = base.appendingPathComponent("workspace/.agents/skills", isDirectory: true)
+
+    let service = SkillCatalogService(
+        session: session,
+        fileManager: fileManager,
+        apiBaseURL: URL(string: "https://skills.invalid"),
+        installRootURL: installRoot,
+        agentSkillRoots: [
+            .codex: .init(global: codexGlobal, project: codexProject)
+        ],
+        localSkillRoots: [],
+        skillLockFileURLs: []
+    )
+
+    var didThrow = false
+    do {
+        try await service.install(
+            request: SkillInstallRequest(
+                source: "acme/toolbox",
+                skillNames: ["demo-skill"],
+                targetAgents: [.codex],
+                isGlobal: true
+            )
+        )
+    } catch {
+        didThrow = true
+    }
+
+    #expect(didThrow)
+
+    let installed = try await service.listInstalledSkills()
+    #expect(!installed.contains(where: { $0.name == "acme/toolbox@demo-skill" }))
 }
 
 @Test func listInstalledSkillsIncludesLocalRoots() async throws {
@@ -289,6 +453,74 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
 
     let skills = try await service.listInstalledSkills()
     #expect(skills.contains(where: { $0.name == "demo-skill" && $0.isInstalled && $0.isGlobal }))
+}
+
+@Test func installLocalCopiesPackageDirectoryContentsAndTracksInstalledPaths() async throws {
+    let fileManager = FileManager.default
+    let base = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
+    defer { try? fileManager.removeItem(at: base) }
+
+    let packageDirectory = base.appendingPathComponent("source/demo-skill", isDirectory: true)
+    let scriptsDirectory = packageDirectory.appendingPathComponent("scripts", isDirectory: true)
+    try fileManager.createDirectory(at: scriptsDirectory, withIntermediateDirectories: true)
+
+    let markdown = """
+    ---
+    name: demo-skill
+    description: Copies package contents
+    ---
+
+    # Demo
+    """
+    try markdown.write(
+        to: packageDirectory.appendingPathComponent("SKILL.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+    try "echo shipped".write(
+        to: scriptsDirectory.appendingPathComponent("run.sh"),
+        atomically: true,
+        encoding: .utf8
+    )
+
+    let installRoot = base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true)
+    let codexGlobal = base.appendingPathComponent(".codex/skills", isDirectory: true)
+    let codexProject = base.appendingPathComponent("workspace/.codex/skills", isDirectory: true)
+
+    let service = SkillCatalogService(
+        session: .shared,
+        fileManager: fileManager,
+        apiBaseURL: nil,
+        installRootURL: installRoot,
+        agentSkillRoots: [
+            .codex: .init(global: codexGlobal, project: codexProject)
+        ],
+        localSkillRoots: [],
+        skillLockFileURLs: []
+    )
+
+    try await service.installLocal(
+        name: "demo-skill",
+        markdown: markdown,
+        packageDirectoryURL: packageDirectory,
+        isGlobal: true,
+        targetAgents: [.codex]
+    )
+
+    let managedInstallPath = installRoot
+        .appendingPathComponent("global/codex/demo-skill", isDirectory: true)
+        .path
+    let mirroredInstallPath = codexGlobal
+        .appendingPathComponent("demo-skill", isDirectory: true)
+        .path
+
+    #expect(fileManager.fileExists(atPath: (managedInstallPath as NSString).appendingPathComponent("scripts/run.sh")))
+    #expect(fileManager.fileExists(atPath: (mirroredInstallPath as NSString).appendingPathComponent("scripts/run.sh")))
+
+    let installed = try await service.listInstalledSkills()
+    let skill = try #require(installed.first(where: { $0.name == "demo-skill" && $0.isGlobal }))
+    #expect(skill.installedPaths.contains(managedInstallPath))
 }
 
 @Test func listInstalledSkillsMergesLocalDisplayNameWithSanitizedPackage() async throws {

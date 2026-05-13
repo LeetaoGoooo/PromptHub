@@ -207,7 +207,9 @@ struct SkillCLIServiceTests {
                     scope: .project,
                     agents: [.codex],
                     url: nil,
-                    isManagedByPromptHub: true
+                    isManagedByPromptHub: true,
+                    installedPaths: [],
+                    projectDisplayNames: []
                 ),
                 InstalledSkillSnapshot(
                     package: package,
@@ -216,7 +218,9 @@ struct SkillCLIServiceTests {
                     scope: .global,
                     agents: [.geminiCLI, .codex],
                     url: nil,
-                    isManagedByPromptHub: true
+                    isManagedByPromptHub: true,
+                    installedPaths: [],
+                    projectDisplayNames: []
                 )
             ]
         )
