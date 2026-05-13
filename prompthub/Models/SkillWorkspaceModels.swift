@@ -95,11 +95,18 @@ struct InstalledSkillSnapshot: Identifiable, Equatable, Sendable {
     let agents: [AgentWorkflow]
     let url: String?
     let isManagedByPromptHub: Bool
+    let installedPaths: [String]
+    let projectDisplayNames: [String]
 
     var id: String { "\(package.normalizedKey)-\(scope.rawValue)" }
     var isGlobal: Bool { scope == .global }
     var displayName: String { package.displayName }
     var displaySource: String? { package.displaySource }
+}
+
+enum InstalledSkillsLens: String, CaseIterable, Sendable {
+    case activeProject = "Active Project"
+    case allSavedProjects = "All Saved Projects"
 }
 
 struct CatalogSkillInstallationState: Equatable, Sendable {

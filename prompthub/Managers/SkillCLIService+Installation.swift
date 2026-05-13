@@ -22,10 +22,10 @@ extension SkillCLIService {
         } catch { throw mapError(error) }
     }
 
-    func addLocalSkill(name: String, markdown: String, isGlobal: Bool = true, targetAgents: [AgentWorkflow] = AgentWorkflow.defaultTargets, projectRootURL: URL? = nil) async throws {
+    func addLocalSkill(name: String, markdown: String, packageDirectoryURL: URL? = nil, isGlobal: Bool = true, targetAgents: [AgentWorkflow] = AgentWorkflow.defaultTargets, projectRootURL: URL? = nil) async throws {
         do {
             try await cliAccessManager.withAccess {
-                try await self.makeCatalog(projectRootURL: projectRootURL).installLocal(name: name, markdown: markdown, isGlobal: isGlobal, targetAgents: targetAgents)
+                try await self.makeCatalog(projectRootURL: projectRootURL).installLocal(name: name, markdown: markdown, packageDirectoryURL: packageDirectoryURL, isGlobal: isGlobal, targetAgents: targetAgents)
             }
         } catch { throw mapError(error) }
     }
@@ -69,13 +69,14 @@ extension SkillCLIService {
         case .localShared:
             let sharedRoot = URL(fileURLWithPath: source.location, isDirectory: true)
             for skillName in skillNames {
-                let skillFile = sharedRoot.appendingPathComponent(skillName).appendingPathComponent("SKILL.md")
+                let packageDirectoryURL = sharedRoot.appendingPathComponent(skillName, isDirectory: true)
+                let skillFile = packageDirectoryURL.appendingPathComponent("SKILL.md")
                 guard let markdown = try? String(contentsOf: skillFile, encoding: .utf8), !markdown.isEmpty else {
                     throw CLIError.fileIOError("SKILL.md not found at \(skillFile.path)")
                 }
                 do {
                     try await cliAccessManager.withAccess {
-                        try await self.makeCatalog(projectRootURL: projectRootURL).installLocal(name: skillName, markdown: markdown, isGlobal: isGlobal, targetAgents: targetAgents)
+                        try await self.makeCatalog(projectRootURL: projectRootURL).installLocal(name: skillName, markdown: markdown, packageDirectoryURL: packageDirectoryURL, isGlobal: isGlobal, targetAgents: targetAgents)
                     }
                 } catch { throw mapError(error) }
             }

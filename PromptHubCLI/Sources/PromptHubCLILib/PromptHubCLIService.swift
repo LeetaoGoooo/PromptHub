@@ -41,6 +41,7 @@ public struct PromptHubExportedAsset: Codable, Equatable, Identifiable, Sendable
     public let category: String?
     public let tags: [String]
     public let path: String
+    public let packageDirectoryPath: String?
     public let markdown: String
     public let body: String
 }
@@ -180,6 +181,9 @@ public final class PromptHubCLIService {
         try await catalog.installLocal(
             name: installName,
             markdown: exportedSkill.markdown,
+            packageDirectoryURL: exportedSkill.packageDirectoryPath.map {
+                URL(fileURLWithPath: $0, isDirectory: true)
+            },
             isGlobal: scope.isGlobal,
             targetAgents: effectiveAgents
         )
@@ -202,20 +206,27 @@ public final class PromptHubCLIService {
 
         let files = try fileManager.contentsOfDirectory(
             at: directoryURL,
-            includingPropertiesForKeys: nil,
+            includingPropertiesForKeys: [.isDirectoryKey],
             options: [.skipsHiddenFiles]
         )
 
         return files
-            .filter { $0.pathExtension.lowercased() == "md" }
-            .compactMap { fileURL in
+            .filter { assetURL in
+                switch kind {
+                case .prompt:
+                    return assetURL.pathExtension.lowercased() == "md"
+                case .skill:
+                    return isExportedSkillFile(assetURL) || isExportedSkillPackageDirectory(assetURL)
+                }
+            }
+            .compactMap { assetURL in
                 do {
-                    return try parseAsset(from: fileURL, kind: kind)
+                    return try parseAsset(from: assetURL, kind: kind)
                 } catch PromptHubCLIError.invalidMarkdown {
-                    fputs("warning: skipping malformed exported \(kind.displayName) at \(fileURL.path)\n", stderr)
+                    fputs("warning: skipping malformed exported \(kind.displayName) at \(assetURL.path)\n", stderr)
                     return nil
                 } catch {
-                    fputs("warning: skipping unreadable exported \(kind.displayName) at \(fileURL.path): \(error.localizedDescription)\n", stderr)
+                    fputs("warning: skipping unreadable exported \(kind.displayName) at \(assetURL.path): \(error.localizedDescription)\n", stderr)
                     return nil
                 }
             }
@@ -225,16 +236,18 @@ public final class PromptHubCLIService {
     }
 
     private func parseAsset(
-        from fileURL: URL,
+        from assetURL: URL,
         kind: PromptHubExportedAssetKind
     ) throws -> PromptHubExportedAsset {
-        let markdown = try String(contentsOf: fileURL, encoding: .utf8)
+        let isDirectory = (try? assetURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        let markdownURL = isDirectory ? assetURL.appendingPathComponent("SKILL.md") : assetURL
+        let markdown = try String(contentsOf: markdownURL, encoding: .utf8)
         guard let parsed = SkillMarkdownDocument.parse(markdown: markdown) else {
-            throw PromptHubCLIError.invalidMarkdown(fileURL.path)
+            throw PromptHubCLIError.invalidMarkdown(markdownURL.path)
         }
 
         let metadata = parsed.metadata
-        let fileStem = fileURL.deletingPathExtension().lastPathComponent
+        let fileStem = isDirectory ? assetURL.lastPathComponent : assetURL.deletingPathExtension().lastPathComponent
         let name = SkillMarkdownDocument.stringValue(for: "name", in: metadata) ?? fileStem
         let slug = SkillMarkdownDocument.stringValue(for: "slug", in: metadata)
         let id = SkillMarkdownDocument.stringValue(for: "id", in: metadata) ?? fileStem
@@ -250,10 +263,23 @@ public final class PromptHubCLIService {
             exportedAt: SkillMarkdownDocument.stringValue(for: "exported_at", in: metadata),
             category: SkillMarkdownDocument.stringValue(for: "category", in: metadata),
             tags: SkillMarkdownDocument.stringArrayValue(for: "tags", in: metadata),
-            path: fileURL.path,
+            path: assetURL.path,
+            packageDirectoryPath: isDirectory ? assetURL.path : nil,
             markdown: markdown,
             body: parsed.instructions
         )
+    }
+
+    private func isExportedSkillFile(_ assetURL: URL) -> Bool {
+        assetURL.pathExtension.lowercased() == "md"
+    }
+
+    private func isExportedSkillPackageDirectory(_ assetURL: URL) -> Bool {
+        let isDirectory = (try? assetURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        guard isDirectory else {
+            return false
+        }
+        return fileManager.fileExists(atPath: assetURL.appendingPathComponent("SKILL.md").path)
     }
 
     private func resolveAsset(

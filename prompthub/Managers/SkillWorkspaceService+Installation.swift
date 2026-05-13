@@ -50,6 +50,7 @@ extension SkillWorkspaceService {
         let localSkill = try loadLocalSkill(from: selectedURL)
         try await cliService.addLocalSkill(
             name: localSkill.name, markdown: localSkill.markdown,
+            packageDirectoryURL: localSkill.packageDirectoryURL,
             isGlobal: scope == .global, targetAgents: targetAgents, projectRootURL: projectRootURL
         )
         notifyInstallationsChanged()

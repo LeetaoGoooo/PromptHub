@@ -91,6 +91,7 @@ public struct SkillInfo: Codable, Identifiable, Equatable, Sendable {
     public var installedAgents: [AgentWorkflow]
     public var installedScopes: [SkillInstallScope]
     public var isManagedByPromptHub: Bool
+    public var installedPaths: [String]
 
     public init(
         name: String,
@@ -100,7 +101,8 @@ public struct SkillInfo: Codable, Identifiable, Equatable, Sendable {
         url: String? = nil,
         installedAgents: [AgentWorkflow] = [],
         installedScopes: [SkillInstallScope] = [],
-        isManagedByPromptHub: Bool = true
+        isManagedByPromptHub: Bool = true,
+        installedPaths: [String] = []
     ) {
         self.name = name
         self.description = description
@@ -110,6 +112,7 @@ public struct SkillInfo: Codable, Identifiable, Equatable, Sendable {
         self.installedAgents = installedAgents
         self.installedScopes = installedScopes
         self.isManagedByPromptHub = isManagedByPromptHub
+        self.installedPaths = installedPaths
     }
 }
 
@@ -423,6 +426,16 @@ public actor SkillCatalogService {
         let stars: Int
     }
 
+    private struct RemoteSkillPackageFile {
+        let relativePath: String
+        let data: Data
+    }
+
+    private struct RemoteSkillPackage {
+        let markdown: String
+        let files: [RemoteSkillPackageFile]
+    }
+
     private struct SkillLockSnapshot: Codable {
         let lastSelectedAgents: [String]?
         let skills: [String: SkillLockEntry]?
@@ -608,7 +621,10 @@ public actor SkillCatalogService {
                 url: record.url,
                 installedAgents: agents,
                 installedScopes: [record.isGlobal ? .global : .project],
-                isManagedByPromptHub: true
+                isManagedByPromptHub: true,
+                installedPaths: record.installDirectories.map {
+                    installRootURL.appendingPathComponent($0, isDirectory: true).path
+                }
             )
         }
 
@@ -657,7 +673,13 @@ public actor SkillCatalogService {
 
         for skillName in request.skillNames {
             let package = "\(owner)/\(repo)@\(skillName)"
-            let markdown = try await fetchSkillMarkdown(owner: owner, repo: repo, skillName: skillName)
+            let remotePackage = try? await fetchSkillPackageFromGitHub(owner: owner, repo: repo, skillName: skillName)
+            let markdown: String
+            if let remotePackage {
+                markdown = remotePackage.markdown
+            } else {
+                markdown = try await fetchSkillMarkdown(owner: owner, repo: repo, skillName: skillName)
+            }
             let description = extractDescription(fromMarkdown: markdown)
 
             var installDirectories: [String] = []
@@ -665,6 +687,7 @@ public actor SkillCatalogService {
                 let relativeDir = try writeManagedSkillMarkdown(
                     markdown,
                     package: package,
+                    packageFiles: remotePackage?.files,
                     agent: agent,
                     isGlobal: request.isGlobal
                 )
@@ -673,6 +696,7 @@ public actor SkillCatalogService {
                 try writeExternalSkillMarkdown(
                     markdown,
                     package: package,
+                    packageFiles: remotePackage?.files,
                     agent: agent,
                     isGlobal: request.isGlobal
                 )
@@ -716,6 +740,7 @@ public actor SkillCatalogService {
     public func installLocal(
         name: String,
         markdown: String,
+        packageDirectoryURL: URL? = nil,
         isGlobal: Bool = true,
         targetAgents: [AgentWorkflow] = AgentWorkflow.defaultTargets
     ) throws {
@@ -736,17 +761,19 @@ public actor SkillCatalogService {
 
         var installDirectories: [String] = []
         for agent in agents {
-            let relativeDir = try writeManagedSkillMarkdown(
+            let relativeDir = try writeManagedSkillPackage(
                 markdown,
                 package: package,
+                packageDirectoryURL: packageDirectoryURL,
                 agent: agent,
                 isGlobal: isGlobal
             )
             installDirectories.append(relativeDir)
 
-            try writeExternalSkillMarkdown(
+            try writeExternalSkillPackage(
                 markdown,
                 package: package,
+                packageDirectoryURL: packageDirectoryURL,
                 agent: agent,
                 isGlobal: isGlobal
             )
@@ -2000,6 +2027,34 @@ public actor SkillCatalogService {
         return text
     }
 
+    private func requestDataAbsolute(url: URL) async throws -> Data {
+        var request = URLRequest(url: url)
+        applyCommonHeaders(to: &request, accept: "application/octet-stream")
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw SkillKitError.networkError(error.localizedDescription)
+        }
+
+        guard let http = response as? HTTPURLResponse else {
+            throw SkillKitError.invalidResponse
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw SkillKitError.requestFailed(
+                code: http.statusCode,
+                message: normalizedErrorMessage(from: data, response: http)
+            )
+        }
+        if looksLikeHTMLDocument(data: data, response: http) {
+            throw SkillKitError.invalidResponse
+        }
+
+        return data
+    }
+
     private func applyCommonHeaders(to request: inout URLRequest, accept: String) {
         request.httpMethod = "GET"
         request.timeoutInterval = 15
@@ -2193,8 +2248,7 @@ public actor SkillCatalogService {
     private func fetchSkillMarkdownFromGitHub(owner: String, repo: String, skillName: String) async throws -> String {
         let candidatePaths = [
             "skills/\(skillName)/SKILL.md",
-            "\(skillName)/SKILL.md",
-            "SKILL.md"
+            "\(skillName)/SKILL.md"
         ]
         let metadata = try? await fetchGitHubRepoMetadata(owner: owner, repo: repo)
         let branches = resolveCandidateBranches(preferred: metadata?.defaultBranch)
@@ -2219,22 +2273,101 @@ public actor SkillCatalogService {
         }
 
         for branch in branches {
-            if let path = try? await discoverSkillMarkdownPathViaGitHubTree(
+            guard let path = try? await discoverSkillMarkdownPathViaGitHubTree(
                 owner: owner,
                 repo: repo,
                 skillName: skillName,
                 branch: branch
-            ), let rawURL = buildRawGitHubURL(owner: owner, repo: repo, branch: branch, path: path) {
-                do {
-                    let markdown = try await requestStringAbsolute(url: rawURL)
-                    if isLikelyMarkdown(markdown) {
-                        return markdown
-                    }
-                } catch let error as SkillKitError {
-                    lastError = error
-                } catch {
-                    lastError = .networkError(error.localizedDescription)
+            ), let rawURL = buildRawGitHubURL(owner: owner, repo: repo, branch: branch, path: path) else {
+                continue
+            }
+
+            do {
+                let markdown = try await requestStringAbsolute(url: rawURL)
+                guard isLikelyMarkdown(markdown) else {
+                    continue
                 }
+                if path == "SKILL.md",
+                   !matchesRequestedRepositoryRootSkill(markdown, requestedSkillName: skillName, repoName: repo) {
+                    continue
+                }
+                return markdown
+            } catch let error as SkillKitError {
+                lastError = error
+            } catch {
+                lastError = .networkError(error.localizedDescription)
+            }
+        }
+
+        throw lastError
+    }
+
+    private func fetchSkillPackageFromGitHub(owner: String, repo: String, skillName: String) async throws -> RemoteSkillPackage {
+        let metadata = try? await fetchGitHubRepoMetadata(owner: owner, repo: repo)
+        let branches = resolveCandidateBranches(preferred: metadata?.defaultBranch)
+        var lastError: SkillKitError = .invalidResponse
+
+        for branch in branches {
+            do {
+                let tree = try await loadGitHubTreeEntries(owner: owner, repo: repo, branch: branch)
+                guard let skillMarkdownPath = discoverSkillMarkdownPath(in: tree, skillName: skillName) else {
+                    continue
+                }
+
+                let packageRootPath = (skillMarkdownPath as NSString).deletingLastPathComponent
+                let packagePrefix = packageRootPath.isEmpty ? "" : packageRootPath + "/"
+                let packageBlobPaths = tree.compactMap { item -> String? in
+                    guard let type = item["type"] as? String, type == "blob",
+                          let path = item["path"] as? String else {
+                        return nil
+                    }
+
+                    if path == skillMarkdownPath {
+                        return path
+                    }
+
+                    guard !packagePrefix.isEmpty, path.hasPrefix(packagePrefix) else {
+                        return nil
+                    }
+                    return path
+                }
+                .sorted()
+
+                var files: [RemoteSkillPackageFile] = []
+                var markdown: String?
+
+                for path in packageBlobPaths {
+                    guard let rawURL = buildRawGitHubURL(owner: owner, repo: repo, branch: branch, path: path) else {
+                        continue
+                    }
+
+                    let data = try await requestDataAbsolute(url: rawURL)
+                    let relativePath: String
+                    if packageRootPath.isEmpty {
+                        relativePath = path
+                    } else {
+                        relativePath = String(path.dropFirst(packagePrefix.count))
+                    }
+                    files.append(RemoteSkillPackageFile(relativePath: relativePath, data: data))
+
+                    if relativePath.caseInsensitiveCompare("SKILL.md") == .orderedSame,
+                       let decodedMarkdown = String(data: data, encoding: .utf8) {
+                        markdown = decodedMarkdown
+                    }
+                }
+
+                guard let markdown, isLikelyMarkdown(markdown) else {
+                    continue
+                }
+                if skillMarkdownPath == "SKILL.md",
+                   !matchesRequestedRepositoryRootSkill(markdown, requestedSkillName: skillName, repoName: repo) {
+                    continue
+                }
+                return RemoteSkillPackage(markdown: markdown, files: files)
+            } catch let error as SkillKitError {
+                lastError = error
+            } catch {
+                lastError = .networkError(error.localizedDescription)
             }
         }
 
@@ -2247,24 +2380,35 @@ public actor SkillCatalogService {
         skillName: String,
         branch: String
     ) async throws -> String? {
+        let tree = try await loadGitHubTreeEntries(owner: owner, repo: repo, branch: branch)
+        return discoverSkillMarkdownPath(in: tree, skillName: skillName)
+    }
+
+    private func loadGitHubTreeEntries(owner: String, repo: String, branch: String) async throws -> [[String: Any]] {
         guard var components = URLComponents(
             string: "https://api.github.com/repos/\(owner)/\(repo)/git/trees/\(branch)"
         ) else {
-            return nil
+            throw SkillKitError.invalidResponse
         }
         components.queryItems = [URLQueryItem(name: "recursive", value: "1")]
         guard let url = components.url else {
-            return nil
+            throw SkillKitError.invalidResponse
         }
 
         let json = try await requestJSONAbsolute(url: url)
         guard let dictionary = json as? [String: Any],
               let tree = dictionary["tree"] as? [[String: Any]] else {
-            return nil
+            throw SkillKitError.invalidResponse
         }
 
-        let lowerSkill = skillName.lowercased()
+        return tree
+    }
+
+    private func discoverSkillMarkdownPath(in tree: [[String: Any]], skillName: String) -> String? {
+        let lowerSkill = sanitizeSkillIdentifier(skillName)
         var fallbackPath: String?
+        var repositoryRootPath: String?
+
         for item in tree {
             guard let type = item["type"] as? String, type == "blob",
                   let path = item["path"] as? String else {
@@ -2279,12 +2423,32 @@ public actor SkillCatalogService {
             if lowerPath.hasSuffix("/\(lowerSkill)/skill.md") || lowerPath == "\(lowerSkill)/skill.md" {
                 return path
             }
+
+            if lowerPath == "skill.md" {
+                repositoryRootPath = path
+                continue
+            }
+
             if fallbackPath == nil && (lowerPath.contains("/skills/") || lowerPath.contains(lowerSkill)) {
                 fallbackPath = path
             }
         }
 
-        return fallbackPath
+        return fallbackPath ?? repositoryRootPath
+    }
+
+    private func matchesRequestedRepositoryRootSkill(
+        _ markdown: String,
+        requestedSkillName: String,
+        repoName: String
+    ) -> Bool {
+        let normalizedRequested = sanitizeSkillIdentifier(requestedSkillName)
+
+        if let extractedName = extractSkillName(fromMarkdown: markdown) {
+            return sanitizeSkillIdentifier(extractedName) == normalizedRequested
+        }
+
+        return sanitizeSkillIdentifier(repoName) == normalizedRequested
     }
 
     private func buildRawGitHubURL(owner: String, repo: String, branch: String, path: String) -> URL? {
@@ -2736,7 +2900,8 @@ public actor SkillCatalogService {
                         url: nil,
                         installedAgents: agents,
                         installedScopes: [inferredScope],
-                        isManagedByPromptHub: false
+                        isManagedByPromptHub: false,
+                        installedPaths: [fileURL.deletingLastPathComponent().path]
                     )
                 )
             }
@@ -2815,7 +2980,8 @@ public actor SkillCatalogService {
                     url: nil,
                     installedAgents: AgentWorkflow(rawValue: agent).map { [$0] } ?? [],
                     installedScopes: [isGlobal ? .global : .project],
-                    isManagedByPromptHub: true
+                    isManagedByPromptHub: true,
+                    installedPaths: [fileURL.deletingLastPathComponent().path]
                 )
             )
         }
@@ -3067,13 +3233,15 @@ public actor SkillCatalogService {
                         url: existing.url ?? entry.url,
                         installedAgents: Array(Set(existing.installedAgents + entry.installedAgents)).sorted { $0.rawValue < $1.rawValue },
                         installedScopes: sortedScopes(Array(Set(existing.installedScopes + entry.installedScopes))),
-                        isManagedByPromptHub: existing.isManagedByPromptHub || entry.isManagedByPromptHub
+                        isManagedByPromptHub: existing.isManagedByPromptHub || entry.isManagedByPromptHub,
+                        installedPaths: Array(Set(existing.installedPaths + entry.installedPaths)).sorted()
                     )
                 } else {
                     existing.url = existing.url ?? entry.url
                     existing.installedAgents = Array(Set(existing.installedAgents + entry.installedAgents)).sorted { $0.rawValue < $1.rawValue }
                     existing.installedScopes = sortedScopes(Array(Set(existing.installedScopes + entry.installedScopes)))
                     existing.isManagedByPromptHub = existing.isManagedByPromptHub || entry.isManagedByPromptHub
+                    existing.installedPaths = Array(Set(existing.installedPaths + entry.installedPaths)).sorted()
                 }
                 mergedByKey[key] = existing
             } else {
@@ -3332,6 +3500,25 @@ public actor SkillCatalogService {
     private func writeManagedSkillMarkdown(
         _ markdown: String,
         package: String,
+        packageFiles: [RemoteSkillPackageFile]? = nil,
+        agent: AgentWorkflow,
+        isGlobal: Bool
+    ) throws -> String {
+        try writeManagedSkillPackage(
+            markdown,
+            package: package,
+            packageDirectoryURL: nil,
+            packageFiles: packageFiles,
+            agent: agent,
+            isGlobal: isGlobal
+        )
+    }
+
+    private func writeManagedSkillPackage(
+        _ markdown: String,
+        package: String,
+        packageDirectoryURL: URL?,
+        packageFiles: [RemoteSkillPackageFile]? = nil,
         agent: AgentWorkflow,
         isGlobal: Bool
     ) throws -> String {
@@ -3340,36 +3527,97 @@ public actor SkillCatalogService {
         let relativeDir = "\(scope)/\(agent.rawValue)/\(packageFolder)"
         let targetDir = installRootURL.appendingPathComponent(relativeDir, isDirectory: true)
 
+        try writeSkillPackageContents(
+            markdown: markdown,
+            packageDirectoryURL: packageDirectoryURL,
+            packageFiles: packageFiles,
+            to: targetDir
+        )
+
+        return relativeDir
+    }
+
+    private func writeSkillPackageContents(
+        markdown: String,
+        packageDirectoryURL: URL?,
+        packageFiles: [RemoteSkillPackageFile]? = nil,
+        to targetDir: URL
+    ) throws {
+        let parentDirectory = targetDir.deletingLastPathComponent()
+
         do {
-            if !fileManager.fileExists(atPath: targetDir.path) {
-                try fileManager.createDirectory(at: targetDir, withIntermediateDirectories: true)
+            if !fileManager.fileExists(atPath: parentDirectory.path) {
+                try fileManager.createDirectory(at: parentDirectory, withIntermediateDirectories: true)
             }
-            let fileURL = targetDir.appendingPathComponent("SKILL.md")
-            try markdown.write(to: fileURL, atomically: true, encoding: .utf8)
+
+            if fileManager.fileExists(atPath: targetDir.path) {
+                try fileManager.removeItem(at: targetDir)
+            }
+
+            if let packageDirectoryURL {
+                try fileManager.copyItem(at: packageDirectoryURL, to: targetDir)
+            } else if let packageFiles, !packageFiles.isEmpty {
+                try fileManager.createDirectory(at: targetDir, withIntermediateDirectories: true)
+                for packageFile in packageFiles {
+                    let relativePath = packageFile.relativePath.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !relativePath.isEmpty, !relativePath.contains("..") else {
+                        continue
+                    }
+
+                    let fileURL = targetDir.appendingPathComponent(relativePath)
+                    let fileParent = fileURL.deletingLastPathComponent()
+                    if !fileManager.fileExists(atPath: fileParent.path) {
+                        try fileManager.createDirectory(at: fileParent, withIntermediateDirectories: true)
+                    }
+                    try packageFile.data.write(to: fileURL, options: .atomic)
+                }
+
+                let skillFileURL = targetDir.appendingPathComponent("SKILL.md")
+                if !fileManager.fileExists(atPath: skillFileURL.path) {
+                    try markdown.write(to: skillFileURL, atomically: true, encoding: .utf8)
+                }
+            } else {
+                try fileManager.createDirectory(at: targetDir, withIntermediateDirectories: true)
+                let fileURL = targetDir.appendingPathComponent("SKILL.md")
+                try markdown.write(to: fileURL, atomically: true, encoding: .utf8)
+            }
         } catch {
             throw SkillKitError.fileIOError(error.localizedDescription)
         }
-
-        return relativeDir
     }
 
     private func writeExternalSkillMarkdown(
         _ markdown: String,
         package: String,
+        packageFiles: [RemoteSkillPackageFile]? = nil,
+        agent: AgentWorkflow,
+        isGlobal: Bool
+    ) throws {
+        try writeExternalSkillPackage(
+            markdown,
+            package: package,
+            packageDirectoryURL: nil,
+            packageFiles: packageFiles,
+            agent: agent,
+            isGlobal: isGlobal
+        )
+    }
+
+    private func writeExternalSkillPackage(
+        _ markdown: String,
+        package: String,
+        packageDirectoryURL: URL?,
+        packageFiles: [RemoteSkillPackageFile]? = nil,
         agent: AgentWorkflow,
         isGlobal: Bool
     ) throws {
         let targetDir = externalSkillDirectory(package: package, agent: agent, isGlobal: isGlobal)
-
-        do {
-            if !fileManager.fileExists(atPath: targetDir.path) {
-                try fileManager.createDirectory(at: targetDir, withIntermediateDirectories: true)
-            }
-            let fileURL = targetDir.appendingPathComponent("SKILL.md")
-            try markdown.write(to: fileURL, atomically: true, encoding: .utf8)
-        } catch {
-            throw SkillKitError.fileIOError(error.localizedDescription)
-        }
+        try writeSkillPackageContents(
+            markdown: markdown,
+            packageDirectoryURL: packageDirectoryURL,
+            packageFiles: packageFiles,
+            to: targetDir
+        )
     }
 
     private func externalSkillDirectory(package: String, agent: AgentWorkflow, isGlobal: Bool) -> URL {
