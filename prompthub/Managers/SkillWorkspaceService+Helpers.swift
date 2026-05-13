@@ -36,7 +36,7 @@ extension SkillWorkspaceService {
         let package = SkillPackageReference(rawValue: skill.name)
         let matchedSnapshots = installedSkills
             .filter { matches(installedPackage: SkillPackageReference(rawValue: $0.name), against: package) }
-            .map(Self.makeInstalledSnapshot)
+            .map { Self.makeInstalledSnapshot($0) }
 
         if !matchedSnapshots.isEmpty {
             return installationState(for: package, registry: makeInstallationRegistry(from: matchedSnapshots))
@@ -52,7 +52,7 @@ extension SkillWorkspaceService {
         )
     }
 
-    func loadLocalSkill(from selectedURL: URL) throws -> (name: String, markdown: String) {
+    func loadLocalSkill(from selectedURL: URL) throws -> (name: String, markdown: String, packageDirectoryURL: URL?) {
         let isDirectory  = (try? selectedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         let skillFileURL: URL
         let fallbackName: String
@@ -65,7 +65,7 @@ extension SkillWorkspaceService {
         }
         let markdown      = try String(contentsOf: skillFileURL, encoding: .utf8)
         let extractedName = extractSkillName(fromMarkdown: markdown) ?? fallbackName
-        return (name: extractedName, markdown: markdown)
+        return (name: extractedName, markdown: markdown, packageDirectoryURL: isDirectory ? selectedURL : nil)
     }
 
     private func extractSkillName(fromMarkdown markdown: String) -> String? {
@@ -101,7 +101,10 @@ extension SkillWorkspaceService {
 
     // MARK: - Static Sorting / Mapping Helpers
 
-    static func makeInstalledSnapshot(_ item: SkillCLIService.SkillInfo) -> InstalledSkillSnapshot {
+    static func makeInstalledSnapshot(
+        _ item: SkillCLIService.SkillInfo,
+        projectDisplayNames: [String] = []
+    ) -> InstalledSkillSnapshot {
         InstalledSkillSnapshot(
             package: SkillPackageReference(rawValue: item.name),
             packageName: item.name,
@@ -109,8 +112,36 @@ extension SkillWorkspaceService {
             scope: item.isGlobal ? .global : .project,
             agents: sortAgents(item.installedAgents),
             url: item.url,
-            isManagedByPromptHub: item.isManagedByPromptHub
+            isManagedByPromptHub: item.isManagedByPromptHub,
+            installedPaths: item.installedPaths,
+            projectDisplayNames: projectDisplayNames
         )
+    }
+
+    func mergeInstalledSnapshots(_ snapshots: [InstalledSkillSnapshot]) -> [InstalledSkillSnapshot] {
+        guard !snapshots.isEmpty else { return [] }
+
+        var merged: [String: InstalledSkillSnapshot] = [:]
+        for snapshot in snapshots {
+            let key = snapshot.id
+            if let existing = merged[key] {
+                merged[key] = InstalledSkillSnapshot(
+                    package: existing.package,
+                    packageName: existing.packageName,
+                    summary: existing.summary.isEmpty ? snapshot.summary : existing.summary,
+                    scope: existing.scope,
+                    agents: Self.sortAgents(existing.agents + snapshot.agents),
+                    url: existing.url ?? snapshot.url,
+                    isManagedByPromptHub: existing.isManagedByPromptHub || snapshot.isManagedByPromptHub,
+                    installedPaths: Array(Set(existing.installedPaths + snapshot.installedPaths)).sorted(),
+                    projectDisplayNames: Array(Set(existing.projectDisplayNames + snapshot.projectDisplayNames)).sorted()
+                )
+            } else {
+                merged[key] = snapshot
+            }
+        }
+
+        return Array(merged.values).sorted(by: Self.sortInstalledSnapshots)
     }
 
     static func makeCatalogSkill(_ item: SkillCLIService.SkillInfo) -> CatalogSkill {

@@ -29,8 +29,13 @@ extension SkillDraftDetailView {
 
     func createVersionSnapshot() {
         do {
-            _ = try draftService.snapshotVersion(for: skill, using: instructionsText, in: modelContext)
+            if hasUnsavedChanges {
+                saveSelectedFile()
+            }
+            let instructions = skill.latestVersion?.instructions ?? instructionsText
+            _ = try draftService.snapshotVersion(for: skill, using: instructions, in: modelContext)
             showToastMsg("Saved \(skill.latestVersion?.version ?? "new")")
+            loadPackageWorkspace(resetSelection: false)
         } catch {
             showToastMsg("Failed to save snapshot: \(error.localizedDescription)")
         }
@@ -40,6 +45,7 @@ extension SkillDraftDetailView {
         do {
             _ = try draftService.snapshotVersion(for: skill, using: version.instructions, in: modelContext)
             instructionsText = version.instructions
+            loadPackageWorkspace(resetSelection: false)
             showToastMsg("Duplicated \(version.version) into a new latest draft")
         } catch {
             showToastMsg("Failed to duplicate version: \(error.localizedDescription)")
@@ -48,12 +54,22 @@ extension SkillDraftDetailView {
 
     func copySkillMarkdown() {
         NSPasteboard.general.clearContents()
-        let markdown = draftService.exportMarkdown(for: skill)
+        let markdown: String
+        if selectedRelativePath == "SKILL.md", !editorText.isEmpty {
+            markdown = editorText
+        } else if let packageMarkdown = try? draftService.readTextFile(relativePath: "SKILL.md", for: skill) {
+            markdown = packageMarkdown
+        } else {
+            markdown = draftService.exportMarkdown(for: skill)
+        }
         let didCopy = NSPasteboard.general.setString(markdown, forType: .string)
         showToastMsg(didCopy ? "Copied SKILL.md" : "Failed to copy SKILL.md", alertType: didCopy ? .complete(.green) : .error(.red))
     }
 
     func installDraft() {
+        if hasUnsavedChanges {
+            saveSelectedFile()
+        }
         isInstalling = true
         let agents = selectedAgents.isEmpty ? AgentWorkflow.defaultTargets : Array(selectedAgents).sorted { $0.rawValue < $1.rawValue }
         Task {
@@ -61,6 +77,7 @@ extension SkillDraftDetailView {
                 try await draftService.installDraft(skill, scope: installScope, targetAgents: agents, in: modelContext)
                 isInstalling = false
                 showToastMsg("Installed \(skill.displayName)", alertType: .complete(.green))
+                loadPackageWorkspace(resetSelection: false)
             } catch {
                 isInstalling = false
                 showToastMsg("Failed to install draft: \(error.localizedDescription)")

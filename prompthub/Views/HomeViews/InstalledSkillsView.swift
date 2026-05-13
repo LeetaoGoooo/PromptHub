@@ -38,6 +38,7 @@ struct InstalledSkillsView: View {
     @State var isCheckingUpdates = false
     @State var updatingSkill: InstalledSkillSnapshot?
     @State var listFilter: ListFilter = .all
+    @State var installedSkillsLens: InstalledSkillsLens = .activeProject
 
     // MARK: - List filter
     enum ListFilter: String, CaseIterable {
@@ -127,22 +128,9 @@ struct InstalledSkillsView: View {
 
                 Divider().frame(height: 14)
 
-                Menu {
-                    Button { chooseProjectRoot() }
-                    label: { Label("Choose Project…", systemImage: "folder") }
-
-                    if workspaceService.selectedProjectRootURL != nil {
-                        Button(role: .destructive) { workspaceService.setSelectedProjectRootURL(nil) }
-                        label: { Label("Clear Project", systemImage: "xmark.circle") }
-                    }
-                } label: {
-                    Label(workspaceService.selectedProjectDisplayName, systemImage: "folder")
-                        .labelStyle(.titleAndIcon)
+                SkillProjectPickerPopover(workspaceService: workspaceService) {
+                    chooseProjectRoot()
                 }
-                .menuStyle(.button)
-                .menuIndicator(.hidden)
-                .controlSize(.small)
-                .fixedSize()
 
                 Divider().frame(height: 14)
 
@@ -153,8 +141,10 @@ struct InstalledSkillsView: View {
         } content: {
             VStack(spacing: 0) {
                 mainContentView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 nonFatalErrorBanner
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .onAppear { syncSelection() }
         .sheet(isPresented: $showingAuditReport) {

@@ -15,11 +15,16 @@ extension InstalledSkillsView {
         isLoadingEffectiveness = true
         installedWorkspaceStore.refresh(
             authoredDraftCount: skillDrafts.count,
-            hasCLIAccess: cliAccessManager.anyAccessGranted
+            hasCLIAccess: cliAccessManager.anyAccessGranted,
+            lens: installedSkillsLens
         )
     }
 
     func removeSkill(_ skill: InstalledSkillSnapshot, targetAgents: [AgentWorkflow]? = nil) {
+        guard allowsMutation(for: skill) else {
+            installedWorkspaceStore.setError("Switch to Active Project before removing project-scoped skills.")
+            return
+        }
         withAnimation(.easeInOut(duration: 0.2)) {
             removingSkillIDs.insert(skill.id)
             installedWorkspaceStore.setError(nil)
@@ -48,6 +53,10 @@ extension InstalledSkillsView {
 
     func addSkillTargets(_ skill: InstalledSkillSnapshot, agents: [AgentWorkflow]) {
         guard !agents.isEmpty else { return }
+        guard allowsMutation(for: skill) else {
+            installedWorkspaceStore.setError("Switch to Active Project before changing CLI targets for project-scoped skills.")
+            return
+        }
         withAnimation(.easeInOut(duration: 0.2)) {
             addingSkillIDs.insert(skill.id)
             installedWorkspaceStore.setError(nil)
@@ -73,6 +82,13 @@ extension InstalledSkillsView {
 
     func linkedDraft(for skill: InstalledSkillSnapshot) -> Skill? {
         draftService.matchingDraft(for: skill, in: skillDrafts)
+    }
+
+    func allowsMutation(for skill: InstalledSkillSnapshot) -> Bool {
+        if installedSkillsLens == .allSavedProjects && !skill.isGlobal {
+            return false
+        }
+        return true
     }
 
     func openDraft(for installedSkill: InstalledSkillSnapshot) {
@@ -102,11 +118,13 @@ extension InstalledSkillsView {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = true
         panel.prompt = "Select"
-        panel.message = "Choose the project folder whose CLI skill roots should be managed."
-        guard panel.runModal() == .OK, let selectedURL = panel.url else { return }
-        workspaceService.setSelectedProjectRootURL(selectedURL)
+        panel.message = "Choose one or more project folders whose CLI skill roots should be managed."
+        guard panel.runModal() == .OK else { return }
+        let selectedURLs = panel.urls
+        guard !selectedURLs.isEmpty else { return }
+        workspaceService.addProjectRootURLs(selectedURLs, selecting: selectedURLs.last)
     }
 
     func removalMessage(for pending: PendingRemoval) -> String {

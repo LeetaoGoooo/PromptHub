@@ -22,11 +22,10 @@ struct InstalledSkillDetailPane: View {
     @State private var showingUpdateDiff = false
 
     private let iconSymbols = [
-        "shippingbox.fill", "terminal.fill", "server.rack",
-        "folder.badge.gearshape", "square.stack.3d.up.fill", "globe.americas.fill"
+        "hammer.fill", "paintpalette.fill", "terminal.fill",
+        "wand.and.stars", "cpu.fill", "shippingbox.fill", "doc.text.magnifyingglass"
     ]
-
-    private let iconColors: [Color] = [.blue, .green, .orange, .teal, .indigo, .mint]
+    private let iconColors: [Color] = [.blue, .orange, .green, .pink, .mint, .indigo, .teal]
 
     private var addableAgents: [AgentWorkflow] {
         AgentWorkflow.defaultTargets.filter { !skill.agents.contains($0) }
@@ -75,6 +74,22 @@ struct InstalledSkillDetailPane: View {
         }
 
         return skill.agents.map(\.displayName).joined(separator: ", ")
+    }
+
+    private var projectSummary: String {
+        if skill.isGlobal {
+            return "Global only"
+        }
+
+        if skill.projectDisplayNames.count == 1, let project = skill.projectDisplayNames.first {
+            return project
+        }
+
+        if skill.projectDisplayNames.count > 1 {
+            return skill.projectDisplayNames.joined(separator: ", ")
+        }
+
+        return "Current project"
     }
 
     private var linkedDraftSummary: String {
@@ -148,7 +163,16 @@ struct InstalledSkillDetailPane: View {
     }
 
     private var topStatusText: String {
-        "Installed \(skill.isGlobal ? "globally" : "for this project") · \(skill.isManagedByPromptHub ? "PromptHub managed" : "external install")"
+        let scopeSummary: String
+        if skill.isGlobal {
+            scopeSummary = "installed globally"
+        } else if skill.projectDisplayNames.count > 1 {
+            scopeSummary = "installed across \(skill.projectDisplayNames.count) saved projects"
+        } else {
+            scopeSummary = "installed for this project"
+        }
+
+        return "\(scopeSummary.capitalized) · \(skill.isManagedByPromptHub ? "PromptHub managed" : "external install")"
     }
 
     private var qualityBadgeText: String {
@@ -216,6 +240,27 @@ struct InstalledSkillDetailPane: View {
 
     private var qualityChecks: [SkillEffectivenessCheck] {
         effectiveness?.checks ?? []
+    }
+
+    private var installedPackagePaths: [String] {
+        let paths = skill.installedPaths.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        if !paths.isEmpty {
+            return Array(Set(paths)).sorted()
+        }
+
+        if let localSkillFilePath {
+            return [URL(fileURLWithPath: localSkillFilePath).deletingLastPathComponent().path]
+        }
+
+        return []
+    }
+
+    private var localSkillFilePath: String? {
+        sourceIntegrity?.localPath
+    }
+
+    private var editDraftButtonTitle: String {
+        linkedDraft == nil ? "Create Editable Draft" : "Edit Draft"
     }
 
     var body: some View {
@@ -292,20 +337,12 @@ struct InstalledSkillDetailPane: View {
 
     private var headerSection: some View {
         HStack(alignment: .top, spacing: 16) {
-            HStack(alignment: .top, spacing: 14) {
-                Image(systemName: iconSymbol)
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(iconColor)
-                    .frame(width: 44, height: 44)
-                    .background(iconColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(skill.displayName)
-                        .font(.title2.weight(.semibold))
-                    Text(topStatusText)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(skill.displayName)
+                    .font(.title2.weight(.semibold))
+                Text(topStatusText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 12)
@@ -360,11 +397,16 @@ struct InstalledSkillDetailPane: View {
     private var primaryActionButtons: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
-                Button(linkedDraft == nil ? "Duplicate to Draft" : "Open Draft", action: onEditDraft)
+                Button(editDraftButtonTitle, action: onEditDraft)
                     .buttonStyle(.borderedProminent)
 
                 if skill.package.remoteInstallDescriptor != nil {
                     Button("Review Update") { showingUpdateDiff = true }
+                        .buttonStyle(.bordered)
+                }
+
+                if !installedPackagePaths.isEmpty || localSkillFilePath != nil {
+                    Button("Reveal Installed Files", action: revealInstalledFiles)
                         .buttonStyle(.bordered)
                 }
 
@@ -375,11 +417,16 @@ struct InstalledSkillDetailPane: View {
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                Button(linkedDraft == nil ? "Duplicate to Draft" : "Open Draft", action: onEditDraft)
+                Button(editDraftButtonTitle, action: onEditDraft)
                     .buttonStyle(.borderedProminent)
 
                 if skill.package.remoteInstallDescriptor != nil {
                     Button("Review Update") { showingUpdateDiff = true }
+                        .buttonStyle(.bordered)
+                }
+
+                if !installedPackagePaths.isEmpty || localSkillFilePath != nil {
+                    Button("Reveal Installed Files", action: revealInstalledFiles)
                         .buttonStyle(.bordered)
                 }
 
@@ -404,10 +451,24 @@ struct InstalledSkillDetailPane: View {
             metadataStrip
 
             SkillLibraryMetadataBlock(title: "Connections", rows: [
+                ("Projects", projectSummary),
                 ("Linked Draft", linkedDraftSummary),
                 ("Connected CLIs", coverageSummary),
                 ("Visibility", visibilitySummary)
             ])
+
+            if !installedPackagePaths.isEmpty {
+                SkillLibraryMetadataBlock(
+                    title: installedPackagePaths.count > 1 ? "Installed Packages" : "Installed Package",
+                    rows: installedPackagePaths.enumerated().map { index, path in
+                        (installedPackagePaths.count > 1 ? "Path \(index + 1)" : "Path", path)
+                    }
+                )
+            } else if let localSkillFilePath {
+                SkillLibraryMetadataBlock(title: "Installed Files", rows: [
+                    ("Primary File", localSkillFilePath)
+                ])
+            }
         }
     }
 
@@ -647,6 +708,17 @@ struct InstalledSkillDetailPane: View {
         Text(footerStatusText)
             .font(.caption)
             .foregroundStyle(.secondary)
+    }
+
+    private func revealInstalledFiles() {
+        let packageURLs = installedPackagePaths.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        if !packageURLs.isEmpty {
+            NSWorkspace.shared.activateFileViewerSelecting(packageURLs)
+            return
+        }
+
+        guard let localSkillFilePath else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: localSkillFilePath)])
     }
 
     @ViewBuilder

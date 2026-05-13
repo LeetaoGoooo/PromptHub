@@ -18,9 +18,11 @@ final class SkillDraftService {
     }
 
     private let cliService: SkillCLIService
+    private let packageStore: SkillDraftPackageStore
 
-    init(cliService: SkillCLIService = .shared) {
+    init(cliService: SkillCLIService = .shared, packageStore: SkillDraftPackageStore = .shared) {
         self.cliService = cliService
+        self.packageStore = packageStore
     }
 
     func createDraft(
@@ -93,9 +95,11 @@ final class SkillDraftService {
         in context: ModelContext
     ) async throws {
         let markdown = exportMarkdown(for: draft)
+        let packageDirectoryURL = try packageStore.ensurePackage(for: draft, canonicalSkillMarkdown: markdown)
         try await cliService.addLocalSkill(
             name: draft.installationName,
             markdown: markdown,
+            packageDirectoryURL: packageDirectoryURL,
             isGlobal: scope == .global,
             targetAgents: targetAgents
         )
@@ -106,8 +110,74 @@ final class SkillDraftService {
 
     func deleteDraft(_ draft: Skill, in context: ModelContext) throws {
         PromptHubBridge.shared.removeSkill(draft)
+        packageStore.removePackage(for: draft)
         context.delete(draft)
         try context.save()
+    }
+
+    func ensurePackage(for draft: Skill) throws -> URL {
+        try packageStore.ensurePackage(for: draft, canonicalSkillMarkdown: exportMarkdown(for: draft))
+    }
+
+    func packageItems(for draft: Skill) throws -> [SkillDraftPackageItem] {
+        try packageStore.packageItems(for: draft, canonicalSkillMarkdown: exportMarkdown(for: draft))
+    }
+
+    func readTextFile(relativePath: String, for draft: Skill) throws -> String {
+        try packageStore.readTextFile(relativePath: relativePath, for: draft, canonicalSkillMarkdown: exportMarkdown(for: draft))
+    }
+
+    func isEditableTextFile(relativePath: String, for draft: Skill) throws -> Bool {
+        try packageStore.isEditableTextFile(relativePath: relativePath, for: draft, canonicalSkillMarkdown: exportMarkdown(for: draft))
+    }
+
+    func createPackageItem(
+        named name: String,
+        kind: SkillDraftPackageStore.NewItemKind,
+        parentRelativePath: String?,
+        for draft: Skill
+    ) throws -> String {
+        try packageStore.createItem(
+            named: name,
+            kind: kind,
+            parentRelativePath: parentRelativePath,
+            for: draft,
+            canonicalSkillMarkdown: exportMarkdown(for: draft)
+        )
+    }
+
+    func revealPackageItem(relativePath: String?, for draft: Skill) throws {
+        try packageStore.reveal(relativePath: relativePath, for: draft, canonicalSkillMarkdown: exportMarkdown(for: draft))
+    }
+
+    func openPackageItemExternally(relativePath: String, for draft: Skill) throws {
+        try packageStore.openInDefaultApp(relativePath: relativePath, for: draft, canonicalSkillMarkdown: exportMarkdown(for: draft))
+    }
+
+    func saveEditedFile(
+        relativePath: String,
+        content: String,
+        for draft: Skill,
+        in context: ModelContext
+    ) throws {
+        if relativePath == "SKILL.md" {
+            try applyEditedMarkdown(content, to: draft, in: context)
+            try packageStore.writeTextFile(relativePath: relativePath, content: content, for: draft, canonicalSkillMarkdown: content)
+            PromptHubBridge.shared.exportSkill(draft)
+            return
+        }
+
+        try packageStore.writeTextFile(
+            relativePath: relativePath,
+            content: content,
+            for: draft,
+            canonicalSkillMarkdown: exportMarkdown(for: draft)
+        )
+    }
+
+    func synchronizeDraftFromPackage(for draft: Skill, in context: ModelContext) throws {
+        let markdown = try readTextFile(relativePath: "SKILL.md", for: draft)
+        try applyEditedMarkdown(markdown, to: draft, in: context)
     }
 
     func matchingDraft(
@@ -215,6 +285,33 @@ final class SkillDraftService {
 
         let version = skill.createVersion(version: versionLabel, instructions: instructions)
         return (skill, version)
+    }
+
+    private func applyEditedMarkdown(_ markdown: String, to draft: Skill, in context: ModelContext) throws {
+        let normalizedMarkdown = markdown.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parsed = SkillParser.parse(markdown: normalizedMarkdown)
+        let metadata = parsed?.metadata ?? [:]
+
+        let nextName = SkillParser.stringValue(for: "name", in: metadata) ?? draft.displayName
+        draft.name = nextName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? draft.displayName : nextName
+        draft.slug = Skill.makeSlug(from: draft.name)
+        draft.desc = nonEmpty(SkillParser.stringValue(for: "description", in: metadata))
+        draft.category = SkillParser.stringValue(for: "category", in: metadata) ?? draft.category
+        draft.identifier = SkillParser.stringValue(for: "identifier", in: metadata) ?? makeIdentifier(for: draft.name)
+        draft.tags = SkillParser.stringArrayValue(for: "tags", in: metadata)
+        draft.inputSchema = nonEmpty(SkillParser.stringValue(for: "inputSchema", in: metadata))
+        draft.outputSchema = nonEmpty(SkillParser.stringValue(for: "outputSchema", in: metadata))
+        draft.safetyPolicy = nonEmpty(SkillParser.stringValue(for: "safetyPolicy", in: metadata))
+
+        let latestVersion = try ensureLatestVersion(for: draft, in: context)
+        latestVersion.instructions = parsed?.instructions ?? normalizedMarkdown
+        latestVersion.parentSkillID = draft.id
+        if let versionLabel = nonEmpty(SkillParser.stringValue(for: "version", in: metadata)) {
+            latestVersion.version = versionLabel
+        }
+
+        draft.touch()
+        try context.save()
     }
 
     private func nonEmpty(_ value: String?) -> String? {

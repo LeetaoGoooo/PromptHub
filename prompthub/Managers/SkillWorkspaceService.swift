@@ -31,12 +31,41 @@ final class SkillWorkspaceService {
         self.projectSelectionStore = projectSelectionStore
     }
 
+    var savedProjectRootURLs: [URL] { projectSelectionStore.savedProjectRootURLs }
+    var savedProjectCount: Int { savedProjectRootURLs.count }
     var selectedProjectRootURL: URL? { projectSelectionStore.selectedProjectRootURL }
-    var selectedProjectDisplayName: String { selectedProjectRootURL?.lastPathComponent ?? "Choose Project" }
+    var selectedProjectDisplayName: String {
+        selectedProjectRootURL.map(projectDisplayName(for:)) ?? "Choose Project"
+    }
+
+    var selectedProjectMenuLabel: String {
+        guard let selectedProjectRootURL else {
+            return savedProjectCount > 0 ? "Projects (\(savedProjectCount))" : "Choose Project"
+        }
+
+        let activeProjectName = projectDisplayName(for: selectedProjectRootURL)
+        let extraProjects = max(savedProjectCount - 1, 0)
+        return extraProjects > 0 ? "\(activeProjectName) +\(extraProjects)" : activeProjectName
+    }
 
     func setSelectedProjectRootURL(_ url: URL?) {
         projectSelectionStore.setSelectedProjectRootURL(url)
         NotificationCenter.default.post(name: .skillProjectSelectionDidChange, object: nil)
+    }
+
+    func addProjectRootURLs(_ urls: [URL], selecting selectedURL: URL? = nil) {
+        projectSelectionStore.addProjectRootURLs(urls, selecting: selectedURL)
+        NotificationCenter.default.post(name: .skillProjectSelectionDidChange, object: nil)
+    }
+
+    func removeProjectRootURL(_ url: URL) {
+        projectSelectionStore.removeProjectRootURL(url)
+        NotificationCenter.default.post(name: .skillProjectSelectionDidChange, object: nil)
+    }
+
+    func projectDisplayName(for url: URL) -> String {
+        let name = url.lastPathComponent.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? url.path : name
     }
 
     // MARK: - Queries
@@ -48,7 +77,12 @@ final class SkillWorkspaceService {
 
         let availableSkills = try await availableTask
         let installedInfos  = try await installedTask
-        let installedSkills = installedInfos.map(Self.makeInstalledSnapshot).sorted(by: Self.sortInstalledSnapshots)
+        let projectNames = selectedProjectRootURL.map { [projectDisplayName(for: $0)] } ?? []
+        let installedSkills = installedInfos
+            .map { info in
+                Self.makeInstalledSnapshot(info, projectDisplayNames: info.isGlobal ? [] : projectNames)
+            }
+            .sorted(by: Self.sortInstalledSnapshots)
         let registry        = makeInstallationRegistry(from: installedSkills)
         let catalogSkills   = availableSkills.map(Self.makeCatalogSkill)
 
@@ -60,13 +94,42 @@ final class SkillWorkspaceService {
         )
     }
 
-    func listInstalledSkills() async throws -> [InstalledSkillSnapshot] {
-        let infos = try await cliService.listInstalledSkills(projectRootURL: selectedProjectRootURL)
-        return infos.map(Self.makeInstalledSnapshot).sorted(by: Self.sortInstalledSnapshots)
+    func listInstalledSkills(lens: InstalledSkillsLens = .activeProject) async throws -> [InstalledSkillSnapshot] {
+        switch lens {
+        case .activeProject:
+            let infos = try await cliService.listInstalledSkills(projectRootURL: selectedProjectRootURL)
+            let projectNames = selectedProjectRootURL.map { [projectDisplayName(for: $0)] } ?? []
+            return infos
+                .map { info in
+                    Self.makeInstalledSnapshot(info, projectDisplayNames: info.isGlobal ? [] : projectNames)
+                }
+                .sorted(by: Self.sortInstalledSnapshots)
+
+        case .allSavedProjects:
+            var collectedSnapshots: [InstalledSkillSnapshot] = []
+
+            let globalInfos = try await cliService.listInstalledSkills(projectRootURL: nil)
+            collectedSnapshots.append(contentsOf: globalInfos.map { Self.makeInstalledSnapshot($0) })
+
+            for projectURL in savedProjectRootURLs {
+                let projectInfos = try await cliService.listInstalledSkills(projectRootURL: projectURL)
+                let projectNames = [projectDisplayName(for: projectURL)]
+                collectedSnapshots.append(
+                    contentsOf: projectInfos.map { info in
+                        Self.makeInstalledSnapshot(info, projectDisplayNames: info.isGlobal ? [] : projectNames)
+                    }
+                )
+            }
+
+            return mergeInstalledSnapshots(collectedSnapshots)
+        }
     }
 
-    func loadInstalledWorkspace(authoredDraftCount: Int = 0) async throws -> InstalledSkillsWorkspaceSnapshot {
-        let installedSkills = try await listInstalledSkills()
+    func loadInstalledWorkspace(
+        authoredDraftCount: Int = 0,
+        lens: InstalledSkillsLens = .activeProject
+    ) async throws -> InstalledSkillsWorkspaceSnapshot {
+        let installedSkills = try await listInstalledSkills(lens: lens)
         return makeInstalledWorkspace(from: installedSkills, authoredDraftCount: authoredDraftCount)
     }
 
@@ -129,6 +192,7 @@ final class InstalledSkillsWorkspaceStore: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var revision = 0
+    @Published private(set) var lens: InstalledSkillsLens = .activeProject
 
     private let workspaceService: SkillWorkspaceService
     private var refreshTask: Task<Void, Never>?
@@ -143,8 +207,9 @@ final class InstalledSkillsWorkspaceStore: ObservableObject {
         snapshot.installedSkills
     }
 
-    func refresh(authoredDraftCount: Int, hasCLIAccess: Bool) {
+    func refresh(authoredDraftCount: Int, hasCLIAccess: Bool, lens: InstalledSkillsLens = .activeProject) {
         refreshTask?.cancel()
+        self.lens = lens
 
         guard hasCLIAccess else {
             snapshot = .empty
@@ -160,7 +225,8 @@ final class InstalledSkillsWorkspaceStore: ObservableObject {
         refreshTask = Task { [workspaceService] in
             do {
                 let snapshot = try await workspaceService.loadInstalledWorkspace(
-                    authoredDraftCount: authoredDraftCount
+                    authoredDraftCount: authoredDraftCount,
+                    lens: lens
                 )
                 guard !Task.isCancelled else { return }
                 await MainActor.run {

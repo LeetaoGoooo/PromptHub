@@ -6,9 +6,12 @@ struct InstalledSkillListRow: View {
     let skill: InstalledSkillSnapshot
     let isRemoving: Bool
     let isSelected: Bool
+    var projectNames: [String] = []
     var hasUpdate: Bool = false
     var onSelect: () -> Void = {}
     var onUpdate: (() -> Void)?
+
+    @State private var isHovering = false
 
     // Quick quality hint derived from agent coverage — no async audit needed in list.
     private var qualityHint: (label: String, color: Color)? {
@@ -20,9 +23,32 @@ struct InstalledSkillListRow: View {
     }
 
     private var subText: String {
-        let scope = skill.isGlobal ? "Global" : "Project"
+        let scope: String = {
+            if skill.isGlobal {
+                return "Global"
+            }
+            if projectNames.count == 1, let projectName = projectNames.first {
+                return projectName
+            }
+            if projectNames.count > 1 {
+                return "\(projectNames.count) projects"
+            }
+            return "Project"
+        }()
         let origin = skill.isManagedByPromptHub ? "Managed" : "External"
         return "\(scope) · \(origin)"
+    }
+
+    private var backgroundFill: Color {
+        if isSelected {
+            return PH.Color.accentTint
+        }
+
+        if isHovering {
+            return PH.Color.accentTint.opacity(0.18)
+        }
+
+        return .clear
     }
 
     var body: some View {
@@ -87,9 +113,20 @@ struct InstalledSkillListRow: View {
             .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
         }
         .buttonStyle(.plain)
-        .background(isSelected ? PH.Color.accentTint : .clear)
+        .background(backgroundFill)
+        .overlay {
+            RoundedRectangle(cornerRadius: PH.Spacing.rowCorner)
+                .stroke(PH.Color.stroke.opacity(isHovering && !isSelected ? 1 : 0), lineWidth: 1)
+        }
         .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+        .offset(y: isHovering && !isSelected ? PH.Motion.hoverLift : 0)
+        .scaleEffect(isHovering && !isSelected ? PH.Motion.hoverScale : 1)
+        .shadow(color: Color.black.opacity(isHovering && !isSelected ? 0.05 : 0), radius: isHovering ? 8 : 0, x: 0, y: isHovering ? 4 : 0)
         .opacity(isRemoving ? 0.55 : 1)
+        .animation(PH.Motion.hover, value: isHovering)
+        .onHover { hovering in
+            isHovering = hovering
+        }
         .accessibilityLabel(skill.displayName)
         .accessibilityValue(subText)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)

@@ -254,6 +254,9 @@
     "All supported CLIs already have this skill in %@ scope." : {
 
     },
+    "Already Current" : {
+
+    },
     "Already installed in %@: %@." : {
       "localizations" : {
         "en" : {
@@ -290,6 +293,9 @@
           }
         }
       }
+    },
+    "Apply to Editor" : {
+
     },
     "Apply Update" : {
 
@@ -412,7 +418,13 @@
         }
       }
     },
+    "Audit" : {
+
+    },
     "Audit all installed skills" : {
+
+    },
+    "Audit Installed Skills" : {
 
     },
     "Auditing %@…" : {
@@ -486,10 +498,13 @@
     "Check all skills for available updates" : {
 
     },
-    "Check for skill updates" : {
+    "Check Updates" : {
 
     },
     "Checking source…" : {
+
+    },
+    "Checking Updates…" : {
 
     },
     "Choose one or more models to test" : {
@@ -849,6 +864,9 @@
         }
       }
     },
+    "Create a new current version from this history entry" : {
+
+    },
     "Create a new prompt (Cmd+N)" : {
 
     },
@@ -893,6 +911,9 @@
           }
         }
       }
+    },
+    "Current editor version" : {
+
     },
     "Default" : {
 
@@ -2156,9 +2177,6 @@
     "Press the keyboard shortcut to quickly search for prompts from anywhere in the app." : {
 
     },
-    "Preview" : {
-
-    },
     "Preview in Editor" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2337,6 +2355,9 @@
         }
       }
     },
+    "PromptHub CLI release status" : {
+
+    },
     "PromptHub needs permission to read and write each agent's config directory. Press **Cmd+Shift+.** in the Finder panel to show hidden folders." : {
 
     },
@@ -2428,6 +2449,9 @@
     "Re-run" : {
 
     },
+    "Read-only history preview" : {
+
+    },
     "Received image data directly. Implement loading from Data." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2465,6 +2489,9 @@
 
     },
     "Refreshing installations…" : {
+
+    },
+    "Refreshing…" : {
 
     },
     "Remove" : {
@@ -2972,6 +2999,9 @@
         }
       }
     },
+    "The app-side directory integration is implemented, but the public PromptHub CLI installer has not shipped yet. Until the CLI package, tests, and release pipeline are published, Homebrew install and `ph` command examples should not be treated as available to users." : {
+
+    },
     "The local SKILL.md matches the remote version." : {
 
     },
@@ -2984,6 +3014,9 @@
           }
         }
       }
+    },
+    "This version is already current" : {
+
     },
     "Toggle Diff View" : {
 
@@ -3149,6 +3182,7 @@
       }
     },
     "Version %lld Details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3167,6 +3201,9 @@
           }
         }
       }
+    },
+    "View version" : {
+
     },
     "Visibility scan not available." : {
 

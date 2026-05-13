@@ -90,6 +90,17 @@ extension InstalledSkillsView {
             .help("Audit all installed skills")
 
             Spacer(minLength: 12)
+
+            Picker("Project View", selection: $installedSkillsLens) {
+                ForEach(InstalledSkillsLens.allCases, id: \.rawValue) { lens in
+                    Text(lens.rawValue).tag(lens)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 260)
+            .onChange(of: installedSkillsLens) { _, _ in
+                fetchInstalledSkills()
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -122,12 +133,28 @@ extension InstalledSkillsView {
 
             installedListHeaderBar
 
+            if installedSkillsLens == .allSavedProjects && !workspaceService.savedProjectRootURLs.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: "folder.badge.person.crop")
+                        .foregroundStyle(.secondary)
+                    Text("Aggregate view is read-only for project-scoped installs. Switch back to Active Project to remove skills or change CLI targets.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.72))
+                .overlay(alignment: .bottom) { Divider().opacity(0.45) }
+            }
+
             List {
                 ForEach(filteredSkills) { skill in
                     InstalledSkillListRow(
                         skill: skill,
                         isRemoving: removingSkillIDs.contains(skill.id),
                         isSelected: selectedSkillID == skill.id,
+                        projectNames: skill.projectDisplayNames,
                         hasUpdate: skillsWithUpdates.contains(skill.id),
                         onSelect: { selectedSkillID = skill.id },
                         onUpdate: skillsWithUpdates.contains(skill.id) ? {

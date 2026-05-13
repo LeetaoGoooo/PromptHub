@@ -15,22 +15,9 @@ extension SkillStoreView {
 
             if isInstallingLocalSkill { ProgressView().controlSize(.small) }
 
-            Menu {
-                Button { chooseProjectRoot() }
-                label: { Label("Choose Project…", systemImage: "folder") }
-
-                if workspaceService.selectedProjectRootURL != nil {
-                    Button(role: .destructive) { workspaceService.setSelectedProjectRootURL(nil) }
-                    label: { Label("Clear Project", systemImage: "xmark.circle") }
-                }
-            } label: {
-                Label(workspaceService.selectedProjectDisplayName, systemImage: "folder")
-                    .labelStyle(.titleAndIcon)
+            SkillProjectPickerPopover(workspaceService: workspaceService) {
+                chooseProjectRoot()
             }
-            .menuStyle(.button)
-            .menuIndicator(.hidden)
-            .controlSize(.small)
-            .fixedSize()
 
             Button { fetchSkills(query: searchText) } label: { Image(systemName: "arrow.clockwise") }
                 .buttonStyle(.borderless)

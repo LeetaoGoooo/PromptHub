@@ -234,7 +234,7 @@ struct CLIDashboardView: View {
             } else {
                 VStack(spacing: 10) {
                     ForEach(skills) { skill in
-                        CLISkillActivityRow(skill: skill, selectedDirectory: selectedDirectory)
+                        CLISkillActivityRow(skill: skill, selectedDirectory: selectedDirectory, selectedProjectName: nil)
                     }
                 }
             }
@@ -421,7 +421,7 @@ private struct CLIAgentDetailContent: View {
                     } else {
                         VStack(spacing: 2) {
                             ForEach(globalSkills) { skill in
-                                CLISkillActivityRow(skill: skill, selectedDirectory: directory)
+                                CLISkillActivityRow(skill: skill, selectedDirectory: directory, selectedProjectName: nil)
                             }
                         }
                     }
@@ -448,7 +448,13 @@ private struct CLIAgentDetailContent: View {
                     } else {
                         VStack(spacing: 2) {
                             ForEach(projectSkills) { skill in
-                                CLISkillActivityRow(skill: skill, selectedDirectory: directory)
+                                CLISkillActivityRow(
+                                    skill: skill,
+                                    selectedDirectory: directory,
+                                    selectedProjectName: selectedProjectLabel == "No project selected"
+                                        ? nil
+                                        : selectedProjectLabel.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                                )
                             }
                         }
                     }
@@ -575,22 +581,27 @@ private struct FlexibleChipWrap: View {
 private struct CLISkillActivityRow: View {
     let skill: InstalledSkillSnapshot
     let selectedDirectory: CLIDirectory?
+    let selectedProjectName: String?
 
     private var filteredAgents: [AgentWorkflow] {
         guard let selectedDirectory else { return skill.agents }
         return skill.agents.filter { $0.cliDirectory == selectedDirectory }
     }
 
+    private var installationSummary: String {
+        if skill.isGlobal {
+            return "installed globally"
+        }
+
+        if let selectedProjectName, !selectedProjectName.isEmpty {
+            return "installed in \(selectedProjectName)"
+        }
+
+        return "installed in project"
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(skill.isGlobal ? Color.green.opacity(0.14) : Color.accentColor.opacity(0.14))
-                    .frame(width: 34, height: 34)
-                Image(systemName: "square.stack.3d.up.fill")
-                    .foregroundStyle(skill.isGlobal ? .green : .accentColor)
-            }
-
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(skill.displayName)
@@ -602,7 +613,7 @@ private struct CLISkillActivityRow: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text((filteredAgents.isEmpty ? skill.agents : filteredAgents).map(\.displayName).joined(separator: " · ") + " · installed " + (skill.isGlobal ? "globally" : "in project only"))
+                Text((filteredAgents.isEmpty ? skill.agents : filteredAgents).map(\.displayName).joined(separator: " · ") + " · " + installationSummary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

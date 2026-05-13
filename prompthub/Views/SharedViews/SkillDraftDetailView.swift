@@ -18,30 +18,60 @@ struct SkillDraftDetailView: View {
     @State var showToast = false
     @State var toastTitle = ""
     @State var toastType: AlertToast.AlertType = .regular
+    @State var packageItems: [SkillDraftPackageItem] = []
+    @State var selectedRelativePath: String = "SKILL.md"
+    @State var editorText = ""
+    @State var persistedEditorText = ""
+    @State var selectedItemIsEditableText = true
+    @State var isLoadingPackage = false
+    @State var showingNewItemSheet = false
+    @State var newItemKind: SkillDraftPackageStore.NewItemKind = .file
+    @State var newItemName = ""
+    @State var expandedDirectories: Set<String> = []
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                metadataCard
-                installCard
-                instructionsCard
-                markdownPreviewCard
-                versionsCard
+        VStack(spacing: 0) {
+            workspaceHeader
+            Divider()
+            HSplitView {
+                packageSidebar
+                    .frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
+
+                editorPane
+                    .frame(minWidth: 420, maxWidth: .infinity)
+
+                inspectorPane
+                    .frame(minWidth: 280, idealWidth: 320, maxWidth: 360)
             }
-            .padding(24)
         }
         .background(Color(NSColor.windowBackgroundColor))
-        .navigationTitle(skill.displayName)
         .task(id: skill.id) {
-            do {
-                let latest = try draftService.ensureLatestVersion(for: skill, in: modelContext)
-                syncEditorState(from: latest)
-            } catch {
-                showToastMsg("Failed to load draft: \(error.localizedDescription)")
-            }
+            loadPackageWorkspace(resetSelection: true)
         }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                Menu {
+                    Button("New Text File") {
+                        newItemKind = .file
+                        newItemName = ""
+                        showingNewItemSheet = true
+                    }
+
+                    Button("New Folder") {
+                        newItemKind = .folder
+                        newItemName = ""
+                        showingNewItemSheet = true
+                    }
+                } label: {
+                    Label("New Item", systemImage: "plus")
+                }
+
+                Button(action: saveSelectedFile) {
+                    Label("Save File", systemImage: "square.and.arrow.down")
+                }
+                .keyboardShortcut("s", modifiers: .command)
+                .disabled(!hasUnsavedChanges || !selectedItemIsEditableText)
+
                 Button(action: createVersionSnapshot) {
                     Label("Save Version", systemImage: "square.stack.3d.up.fill")
                 }.help("Save the current draft as a new version snapshot")
@@ -49,7 +79,15 @@ struct SkillDraftDetailView: View {
                 Button(action: copySkillMarkdown) {
                     Label("Copy SKILL.md", systemImage: "doc.on.doc")
                 }.help("Copy the exported SKILL.md to the clipboard")
+
+                Button(action: revealSelectedItemInFinder) {
+                    Label("Reveal in Finder", systemImage: "finder")
+                }
+                .help("Reveal the selected package item in Finder")
             }
+        }
+        .sheet(isPresented: $showingNewItemSheet) {
+            newItemSheet
         }
         .toast(isPresenting: $showToast) {
             AlertToast(type: toastType, title: toastTitle)

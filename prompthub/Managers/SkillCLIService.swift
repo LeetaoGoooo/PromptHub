@@ -38,6 +38,7 @@ final class SkillCLIService {
         var installedAgents: [AgentWorkflow] = []
         var installedScopes: [SkillInstallScope] = []
         var isManagedByPromptHub: Bool = true
+        var installedPaths: [String] = []
     }
 
     // Internal so extension files can access them.
@@ -92,7 +93,8 @@ final class SkillCLIService {
     static func convert(_ item: PromptHubSkillKit.SkillInfo) -> SkillInfo {
         SkillInfo(name: item.name, description: item.description, isInstalled: item.isInstalled,
                   isGlobal: item.isGlobal, url: item.url, installedAgents: item.installedAgents,
-                  installedScopes: item.installedScopes, isManagedByPromptHub: item.isManagedByPromptHub)
+                  installedScopes: item.installedScopes, isManagedByPromptHub: item.isManagedByPromptHub,
+                  installedPaths: item.installedPaths)
     }
 
     // MARK: - Error handling

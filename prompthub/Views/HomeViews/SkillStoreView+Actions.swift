@@ -127,10 +127,12 @@ extension SkillStoreView {
 
     func chooseProjectRoot() {
         let panel = NSOpenPanel()
-        panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.allowsMultipleSelection = false
+        panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.allowsMultipleSelection = true
         panel.prompt = "Select"
-        panel.message = "Choose the project folder whose CLI skill roots should be used for project-scope installs."
-        guard panel.runModal() == .OK, let selectedURL = panel.url else { return }
-        workspaceService.setSelectedProjectRootURL(selectedURL)
+        panel.message = "Choose one or more project folders whose CLI skill roots should be used for project-scope installs."
+        guard panel.runModal() == .OK else { return }
+        let selectedURLs = panel.urls
+        guard !selectedURLs.isEmpty else { return }
+        workspaceService.addProjectRootURLs(selectedURLs, selecting: selectedURLs.last)
     }
 }
