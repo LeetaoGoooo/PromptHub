@@ -7,16 +7,16 @@ on:
     paths:
       - PromptHubCLI/**
       - PromptHubSkillKit/**
+      - Formula/**
       - .github/workflows/prompthub-cli-*.yml
       - README.md
-      - tools/homebrew/**
   pull_request:
     paths:
       - PromptHubCLI/**
       - PromptHubSkillKit/**
+      - Formula/**
       - .github/workflows/prompthub-cli-*.yml
       - README.md
-      - tools/homebrew/**
 
 jobs:
   test:
@@ -31,3 +31,24 @@ jobs:
 
       - name: Verify ph entrypoint
         run: swift run --package-path PromptHubCLI ph --help
+
+      - name: Verify Homebrew tap install
+        run: |
+          TAP_NAME="local/prompthub-ci"
+          trap 'brew uninstall --force ph >/dev/null 2>&1 || true; brew untap "$TAP_NAME" >/dev/null 2>&1 || true' EXIT
+
+          brew untap "$TAP_NAME" >/dev/null 2>&1 || true
+          brew tap-new "$TAP_NAME"
+          TAP_REPO="$(brew --repository "$TAP_NAME")"
+
+          cp Formula/ph.rb "$TAP_REPO/Formula/ph.rb"
+          tar \
+            --exclude='.git' \
+            --exclude='./build' \
+            --exclude='./PromptHubCLI/.build' \
+            -czf "$RUNNER_TEMP/prompthub-source.tar.gz" .
+          export HOMEBREW_PROMPTHUB_SOURCE_URL="file://$RUNNER_TEMP/prompthub-source.tar.gz"
+          export HOMEBREW_PROMPTHUB_SOURCE_SHA256="$(shasum -a 256 "$RUNNER_TEMP/prompthub-source.tar.gz" | awk '{print $1}')"
+
+          brew install "$TAP_NAME/ph"
+          brew test "$TAP_NAME/ph"

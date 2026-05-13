@@ -56,8 +56,9 @@ The standalone CLI now lives in `PromptHubCLI/` and exposes a real `ph` executab
 
 - Build locally: `swift build --package-path PromptHubCLI -c release --product ph`
 - Test locally: `swift test --package-path PromptHubCLI`
+- Install with Homebrew from the repo tap: `brew tap LeetaoGoooo/PromptHub https://github.com/LeetaoGoooo/PromptHub.git && brew install --HEAD LeetaoGoooo/PromptHub/ph`
 - Command examples: `ph prompt list`, `ph prompt show`, `ph skill exports`, `ph skill install`, `ph skill list`
-- Release automation: pushing a `ph-vX.Y.Z` tag triggers the GitHub Actions workflow that publishes a release binary plus a Homebrew formula asset
+- Release automation: pushing a `ph-vX.Y.Z` tag triggers the GitHub Actions workflow that publishes a release binary, while Homebrew installs flow through `Formula/ph.rb` in the repository tap
 
 See `PromptHubCLI/README.md` for install and release details.
 

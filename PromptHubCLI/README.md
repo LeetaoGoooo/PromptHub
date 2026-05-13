@@ -26,17 +26,19 @@ swift build --package-path PromptHubCLI -c release --product ph
 install -m 755 "$(swift build --package-path PromptHubCLI -c release --product ph --show-bin-path)/ph" ~/.local/bin/ph
 ```
 
+The guaranteed Homebrew path is the repository tap formula:
+
+```bash
+brew tap LeetaoGoooo/PromptHub https://github.com/LeetaoGoooo/PromptHub.git
+brew install --HEAD LeetaoGoooo/PromptHub/ph
+```
+
 After the first tagged CLI release is pushed with the format `ph-vX.Y.Z`, GitHub Actions will publish:
 
 - `ph-macos-arm64.tar.gz`
 - `ph-macos-arm64.sha256`
-- `ph.rb` Homebrew formula asset
 
-At that point the release-asset Homebrew install command becomes:
-
-```bash
-brew install https://github.com/LeetaoGoooo/PromptHub/releases/download/ph-vX.Y.Z/ph.rb
-```
+The release artifacts are for direct binary download. Homebrew remains tap-based via `Formula/ph.rb` in the repository.
 
 ## Commands
 
@@ -61,4 +63,4 @@ ph skill list --scope all
 
 - CI workflow: `.github/workflows/prompthub-cli-ci.yml`
 - Release workflow: `.github/workflows/prompthub-cli-release.yml`
-- Homebrew formula template: `tools/homebrew/ph.rb.template`
+- Homebrew tap formula: `Formula/ph.rb`
