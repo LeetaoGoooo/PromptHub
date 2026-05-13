@@ -12,8 +12,16 @@ let package = Package(
             targets: ["PromptHubSkillKit"]
         )
     ],
+    dependencies: [
+        .package(url: "https://github.com/jpsim/Yams.git", from: "5.4.0")
+    ],
     targets: [
-        .target(name: "PromptHubSkillKit"),
+        .target(
+            name: "PromptHubSkillKit",
+            dependencies: [
+                .product(name: "Yams", package: "Yams")
+            ]
+        ),
         .testTarget(
             name: "PromptHubSkillKitTests",
             dependencies: ["PromptHubSkillKit"]
