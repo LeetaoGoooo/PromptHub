@@ -3,19 +3,50 @@ import Testing
 @testable import PromptHubSkillKit
 
 final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
-    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+    private static let handlerHeader = "X-PromptHub-Test-Handler-ID"
+    private static let lock = NSLock()
+    private static var requestHandlers: [String: @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)] = [:]
+
+    static func makeSession(
+        handler: @escaping @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)
+    ) -> (session: URLSession, handlerID: String) {
+        let handlerID = UUID().uuidString
+        lock.lock()
+        requestHandlers[handlerID] = handler
+        lock.unlock()
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [Self.self]
+        configuration.httpAdditionalHeaders = [handlerHeader: handlerID]
+        return (URLSession(configuration: configuration), handlerID)
+    }
+
+    static func removeHandler(for handlerID: String) {
+        lock.lock()
+        requestHandlers.removeValue(forKey: handlerID)
+        lock.unlock()
+    }
+
+    private static func handler(for handlerID: String) -> (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))? {
+        lock.lock()
+        defer { lock.unlock() }
+        return requestHandlers[handlerID]
+    }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        guard let handler = Self.requestHandler else {
+        guard let handlerID = request.value(forHTTPHeaderField: Self.handlerHeader),
+              let handler = Self.handler(for: handlerID) else {
             client?.urlProtocolDidFinishLoading(self)
             return
         }
 
         do {
-            let (response, data) = try handler(request)
+            var forwardedRequest = request
+            forwardedRequest.setValue(nil, forHTTPHeaderField: Self.handlerHeader)
+            let (response, data) = try handler(forwardedRequest)
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
             client?.urlProtocolDidFinishLoading(self)
@@ -32,23 +63,7 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
 }
 
 @Test func installUsesGitHubDefaultBranchWhenMainMasterMiss() async throws {
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [SkillKitMockURLProtocol.self]
-    let session = URLSession(configuration: configuration)
-
-    let fileManager = FileManager.default
-    let base = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-    try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
-    defer {
-        SkillKitMockURLProtocol.requestHandler = nil
-        try? fileManager.removeItem(at: base)
-    }
-
-    let installRoot = base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true)
-    let codexGlobal = base.appendingPathComponent(".codex/skills", isDirectory: true)
-    let codexProject = base.appendingPathComponent("project/.agents/skills", isDirectory: true)
-
-    SkillKitMockURLProtocol.requestHandler = { request in
+    let (session, handlerID) = SkillKitMockURLProtocol.makeSession { request in
         let url = try #require(request.url)
         let path = url.path
 
@@ -82,6 +97,18 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
         return (response, Data(#"{"message":"Not found"}"#.utf8))
     }
 
+    let fileManager = FileManager.default
+    let base = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
+    defer {
+        SkillKitMockURLProtocol.removeHandler(for: handlerID)
+        try? fileManager.removeItem(at: base)
+    }
+
+    let installRoot = base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true)
+    let codexGlobal = base.appendingPathComponent(".codex/skills", isDirectory: true)
+    let codexProject = base.appendingPathComponent("project/.agents/skills", isDirectory: true)
+
     let service = SkillCatalogService(
         session: session,
         fileManager: fileManager,
@@ -112,23 +139,7 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
 }
 
 @Test func installFallsBackToAliasStrippedSkillName() async throws {
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [SkillKitMockURLProtocol.self]
-    let session = URLSession(configuration: configuration)
-
-    let fileManager = FileManager.default
-    let base = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-    try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
-    defer {
-        SkillKitMockURLProtocol.requestHandler = nil
-        try? fileManager.removeItem(at: base)
-    }
-
-    let installRoot = base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true)
-    let codexGlobal = base.appendingPathComponent(".codex/skills", isDirectory: true)
-    let codexProject = base.appendingPathComponent("project/.agents/skills", isDirectory: true)
-
-    SkillKitMockURLProtocol.requestHandler = { request in
+    let (session, handlerID) = SkillKitMockURLProtocol.makeSession { request in
         let url = try #require(request.url)
         let path = url.path
 
@@ -167,6 +178,18 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
         let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
         return (response, Data(#"{"message":"Not found"}"#.utf8))
     }
+
+    let fileManager = FileManager.default
+    let base = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
+    defer {
+        SkillKitMockURLProtocol.removeHandler(for: handlerID)
+        try? fileManager.removeItem(at: base)
+    }
+
+    let installRoot = base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true)
+    let codexGlobal = base.appendingPathComponent(".codex/skills", isDirectory: true)
+    let codexProject = base.appendingPathComponent("project/.agents/skills", isDirectory: true)
 
     let service = SkillCatalogService(
         session: session,
@@ -223,7 +246,8 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
         fileManager: fileManager,
         apiBaseURL: nil,
         installRootURL: base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true),
-        localSkillRoots: [localRoot]
+        localSkillRoots: [localRoot],
+        skillLockFileURLs: []
     )
 
     let skills = try await service.listInstalledSkills()
@@ -265,6 +289,43 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
 
     let skills = try await service.listInstalledSkills()
     #expect(skills.contains(where: { $0.name == "demo-skill" && $0.isInstalled && $0.isGlobal }))
+}
+
+@Test func listInstalledSkillsMergesLocalDisplayNameWithSanitizedPackage() async throws {
+    let fileManager = FileManager.default
+    let base = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
+    defer { try? fileManager.removeItem(at: base) }
+
+    let installRoot = base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true)
+    let codexGlobal = base.appendingPathComponent(".codex/skills", isDirectory: true)
+    let codexProject = base.appendingPathComponent("workspace/.agents/skills", isDirectory: true)
+
+    let service = SkillCatalogService(
+        session: .shared,
+        fileManager: fileManager,
+        apiBaseURL: nil,
+        installRootURL: installRoot,
+        projectRootURL: base.appendingPathComponent("workspace", isDirectory: true),
+        agentSkillRoots: [
+            .codex: .init(global: codexGlobal, project: codexProject)
+        ],
+        localSkillRoots: [codexGlobal],
+        sharedLocalRoots: [],
+        skillLockFileURLs: []
+    )
+
+    try await service.installLocal(
+        name: "ui-reviewer",
+        markdown: "---\nname: UI Reviewer\ndescription: Reviews UI copy\n---\n\nCheck hierarchy first.",
+        isGlobal: true,
+        targetAgents: [.codex]
+    )
+
+    let installed = try await service.listInstalledSkills().filter { $0.isGlobal }
+    #expect(installed.count == 1)
+    #expect(installed[0].name == "ui-reviewer")
+    #expect(installed[0].installedAgents == [.codex])
 }
 
 @Test func removeSkillCanTargetSpecificAgent() async throws {
@@ -339,7 +400,8 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
         apiBaseURL: nil,
         installRootURL: base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true),
         agentSkillRoots: agentRoots,
-        localSkillRoots: [codexRoot, cursorRoot]
+        localSkillRoots: [codexRoot, cursorRoot],
+        skillLockFileURLs: []
     )
 
     let skills = try await service.listInstalledSkills()
@@ -434,7 +496,8 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
         apiBaseURL: nil,
         installRootURL: base.appendingPathComponent("AppSupport/PromptHub/Skills", isDirectory: true),
         agentSkillRoots: agentRoots,
-        localSkillRoots: [sharedRoot]
+        localSkillRoots: [sharedRoot],
+        skillLockFileURLs: []
     )
 
     let skills = try await service.listInstalledSkills()
@@ -593,7 +656,8 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
                 project: base.appendingPathComponent("project/.codex/skills", isDirectory: true)
             )
         ],
-        localSkillRoots: [codexRoot]
+        localSkillRoots: [codexRoot],
+        skillLockFileURLs: []
     )
 
     let skills = try await service.listInstalledSkills()
@@ -621,10 +685,7 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
     let recordData = try JSONSerialization.data(withJSONObject: installedRecord, options: [])
     try recordData.write(to: installRoot.appendingPathComponent("installed-skills.json"), options: .atomic)
 
-    let config = URLSessionConfiguration.ephemeral
-    config.protocolClasses = [SkillKitMockURLProtocol.self]
-    let session = URLSession(configuration: config)
-    SkillKitMockURLProtocol.requestHandler = { request in
+    let (session, handlerID) = SkillKitMockURLProtocol.makeSession { request in
         let url = try #require(request.url)
         #expect(url.path == "/api/skills")
         let payload = """
@@ -647,6 +708,7 @@ final class SkillKitMockURLProtocol: URLProtocol, @unchecked Sendable {
         )!
         return (response, payload)
     }
+    defer { SkillKitMockURLProtocol.removeHandler(for: handlerID) }
 
     let service = SkillCatalogService(
         session: session,

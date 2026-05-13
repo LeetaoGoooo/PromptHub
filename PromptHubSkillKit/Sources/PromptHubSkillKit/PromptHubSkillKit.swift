@@ -3105,7 +3105,12 @@ public actor SkillCatalogService {
         if let qualified = normalizedQualifiedPackage(package) {
             return qualified
         }
-        return shortSkillName(fromPackage: package).lowercased()
+        let shortName = shortSkillName(fromPackage: package)
+        let sanitized = sanitizeSkillIdentifier(shortName)
+        if !sanitized.isEmpty {
+            return sanitized.lowercased()
+        }
+        return shortName.lowercased()
     }
 
     private func normalizedQualifiedPackage(_ package: String) -> String? {
