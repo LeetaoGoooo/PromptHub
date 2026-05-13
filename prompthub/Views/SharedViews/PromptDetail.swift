@@ -11,6 +11,7 @@ struct PromptDetail: View {
     @Environment(ServicesManager.self) var servicesManager
     @Query var sharedCreations: [SharedCreation]
     let onPromoteToSkill: (Skill) -> Void
+    let onDeletePrompt: (Prompt) -> Void
 
     let draftService = SkillDraftService.shared
 
@@ -29,6 +30,7 @@ struct PromptDetail: View {
     @State var showInspector: Bool = true
     @State var isCreateShareLink = false
     @State var isTogglingPublic = false
+    @State var showingDeletePromptConfirmation = false
     @EnvironmentObject var settings: AppSettings
 
     // MARK: - Computed
@@ -55,6 +57,30 @@ struct PromptDetail: View {
     func copySharedLinkToClipboard(_ url: URL) -> Bool {
         NSPasteboard.general.clearContents()
         return NSPasteboard.general.setString(url.absoluteString, forType: .string)
+    }
+
+    var isEphemeralDraft: Bool {
+        let trimmedName = prompt.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDescription = (prompt.desc ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedContent = prompt.getLatestPromptContent().trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasExternalSources = !(prompt.externalSources?.isEmpty ?? true)
+
+        return !hasExternalSources
+            && prompt.link == nil
+            && history.count <= 1
+            && trimmedDescription.isEmpty
+            && trimmedContent.isEmpty
+            && (trimmedName.isEmpty || trimmedName == "Untitled Prompt")
+    }
+
+    var deletePromptTitle: String {
+        isEphemeralDraft ? "Discard Draft" : "Delete Prompt"
+    }
+
+    var deletePromptMessage: String {
+        isEphemeralDraft
+            ? "Discard this empty prompt draft and return to your prompt list?"
+            : "Delete \"\(prompt.name)\"? This action cannot be undone."
     }
 
     // MARK: - Body
@@ -108,6 +134,14 @@ struct PromptDetail: View {
             if let latest = history.first, !isPreviewingOldVersion { editablePrompt = latest.promptText }
         }
         .sheet(item: $selectedHistoryVersion) { version in versionDetailSheet(version) }
+        .alert(deletePromptTitle, isPresented: $showingDeletePromptConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button(isEphemeralDraft ? "Discard" : "Delete", role: .destructive) {
+                onDeletePrompt(prompt)
+            }
+        } message: {
+            Text(deletePromptMessage)
+        }
         .toast(isPresenting: $showToast) { AlertToast(type: toastType, title: toastTitle) }
         .onChange(of: prompt.name)  { try? modelContext.save() }
         .onChange(of: prompt.desc)  { try? modelContext.save() }
@@ -131,7 +165,7 @@ struct PromptDetail: View {
 }
 
 #Preview {
-    PromptDetail(prompt: PreviewData.samplePrompt, onPromoteToSkill: { _ in })
+    PromptDetail(prompt: PreviewData.samplePrompt, onPromoteToSkill: { _ in }, onDeletePrompt: { _ in })
         .modelContainer(PreviewData.previewContainer)
         .environmentObject(AppSettings())
         .environment(ServicesManager())

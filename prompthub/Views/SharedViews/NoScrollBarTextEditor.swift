@@ -14,6 +14,16 @@ struct NoScrollBarTextEditor: NSViewRepresentable {
     var isEditable: Bool = true
     var autoScroll: Bool = true
 
+    final class IntrinsicFreeScrollView: NSScrollView {
+        override var intrinsicContentSize: NSSize {
+            NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
+        }
+
+        override var fittingSize: NSSize {
+            .zero
+        }
+    }
+
     func makeNSView(context: Context) -> NSScrollView {
         let textView = NSTextView()
         textView.font = font
@@ -27,12 +37,14 @@ struct NoScrollBarTextEditor: NSViewRepresentable {
         textView.autoresizingMask = [.width]
         textView.textContainer?.widthTracksTextView = true
 
-        let scrollView = NSScrollView()
+        let scrollView = IntrinsicFreeScrollView()
         scrollView.documentView = textView
         scrollView.hasVerticalScroller = true // Enable vertical scroller for better UX
         scrollView.hasHorizontalScroller = false
         scrollView.borderType = .noBorder
         scrollView.backgroundColor = NSColor.controlBackgroundColor
+        scrollView.setContentHuggingPriority(.defaultLow, for: .vertical)
+        scrollView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
 
         return scrollView
     }

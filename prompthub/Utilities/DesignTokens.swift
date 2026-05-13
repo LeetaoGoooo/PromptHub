@@ -243,12 +243,28 @@ extension PH {
         static let listPaneWidth: CGFloat = 316
         static let windowMaxWidth: CGFloat = 1560
         static let windowHeight: CGFloat   = 950
+        static let mainWindowMinHeightCap: CGFloat = 360
+        static let mainWindowPromptsMinWidth: CGFloat = 740
+        static let mainWindowPromptDetailMinWidth: CGFloat = 820
+        static let mainWindowSkillsMinWidth: CGFloat = 740
+        static let mainWindowSkillDetailMinWidth: CGFloat = 820
+        static let mainWindowCLIMinWidth: CGFloat = 980
+        static let mainWindowOnboardingMinWidth: CGFloat = 860
         static let titlebarHeight: CGFloat = 50
         static let windowCorner: CGFloat   = 22
         static let iconSize: CGFloat       = 14   // standard inline icon
         static let iconSizeSm: CGFloat     = 13   // section head icon
         static let iconStroke: CGFloat     = 1.5  // SF-style stroke width
         static let statusDotSize: CGFloat  = 6    // inline status indicator dot
+    }
+}
+
+// MARK: Motion Tokens
+extension PH {
+    enum Motion {
+        static let hover: Animation = .easeOut(duration: 0.18)
+        static let hoverLift: CGFloat = -1
+        static let hoverScale: CGFloat = 1.01
     }
 }
 

@@ -63,6 +63,52 @@ struct ContentView: View {
         }
     }
 
+    private var minimumMainWindowContentSize: CGSize {
+        switch promptSelection {
+        case .cliDashboard:
+            return CGSize(width: PH.Layout.mainWindowCLIMinWidth, height: 520)
+        case .onboarding:
+            return CGSize(width: PH.Layout.mainWindowOnboardingMinWidth, height: 480)
+        case .prompt:
+            return CGSize(width: PH.Layout.mainWindowPromptDetailMinWidth, height: PH.Layout.mainWindowMinHeightCap)
+        case .skill:
+            return CGSize(width: PH.Layout.mainWindowSkillDetailMinWidth, height: PH.Layout.mainWindowMinHeightCap)
+        case .mySkills, .skillStore, .installedSkills:
+            return CGSize(width: PH.Layout.mainWindowSkillsMinWidth, height: PH.Layout.mainWindowMinHeightCap)
+        default:
+            return CGSize(width: PH.Layout.mainWindowPromptsMinWidth, height: PH.Layout.mainWindowMinHeightCap)
+        }
+    }
+
+    private var windowSizingDebugName: String {
+        switch promptSelection {
+        case .allPrompts:
+            return "allPrompts"
+        case .mine:
+            return "myPrompts"
+        case .shared:
+            return "sharedPrompts"
+        case .explore:
+            return "explorePrompts"
+        case .prompt:
+            return "promptDetail"
+        case .mySkills:
+            return "mySkills"
+        case .skillStore:
+            return "skillStore"
+        case .installedSkills:
+            return "installedSkills"
+        case .skill:
+            return "skillDetail"
+        case .cliDashboard:
+            return "cliDashboard"
+        case .settings:
+            return "settings"
+        case .onboarding:
+            return "onboarding"
+        }
+    }
+
     var body: some View {
         NavigationSplitView {
             PromptSideBar(
@@ -95,7 +141,11 @@ struct ContentView: View {
                                    onCLI: { promptSelection = .cliDashboard },
                                    onSettings: { promptSelection = .settings })
                 case .prompt(let selectedPrompt):
-                    PromptDetail(prompt: selectedPrompt, onPromoteToSkill: { skill in promptSelection = .skill(skill) })
+                    PromptDetail(
+                        prompt: selectedPrompt,
+                        onPromoteToSkill: { skill in promptSelection = .skill(skill) },
+                        onDeletePrompt: { prompt in deletePrompt(prompt) }
+                    )
                 case .mySkills, .skillStore, .installedSkills, .skill:
                     SkillsRootView(
                         installedWorkspaceStore: installedWorkspaceStore,
@@ -141,6 +191,7 @@ struct ContentView: View {
             .sheet(whatsNew: self.$whatsNew, onDismiss: { appSettings.lastShownWhatsNewVersion = self.currentAppVersion })
             .sheet(isPresented: $showingPromptRender) { PromptRenderSheet { showingPromptRender = false } }
         }
+        .enforceWindowMinimumContentSize(minimumMainWindowContentSize, debugName: windowSizingDebugName)
     }
 
     @ViewBuilder
@@ -163,6 +214,8 @@ struct ContentView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .principal) {
             switch promptSelection {
+            case .mySkills, .skillStore, .installedSkills, .skill:
+                SkillsWorkspacePicker(promptSelection: $promptSelection)
             case .allPrompts, .mine, .shared, .explore, .prompt:
                 PromptsWorkspacePicker(promptSelection: $promptSelection)
             default:
@@ -171,10 +224,10 @@ struct ContentView: View {
         }
         ToolbarItem(placement: .primaryAction) {
             switch promptSelection {
-            case .mySkills:
+            case .mySkills, .skillStore, .installedSkills, .skill:
                 Button(action: createNewSkillDraft) { Label("New Skill Draft", systemImage: "plus") }
                     .keyboardShortcut("n", modifiers: .command).help("Create a new skill draft (Cmd+N)")
-            case .skillStore, .installedSkills, .skill, .settings, .cliDashboard, .onboarding:
+            case .settings, .cliDashboard, .onboarding:
                 EmptyView()
             default:
                 Button(action: createNewPrompt) { Label("New Prompt", systemImage: "plus") }

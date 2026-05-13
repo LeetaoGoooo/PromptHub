@@ -129,6 +129,7 @@ struct PromptBrowserScreen<Actions: View, EmptyState: View>: View {
                 selectedItemID: $selectedItemID,
                 emptyState: emptyState
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(NSColor.windowBackgroundColor))
@@ -178,13 +179,23 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(24)
             } else {
-                HSplitView {
-                    listPane
-                    detailPane
+                GeometryReader { geometry in
+                    HSplitView {
+                        listPane
+                        detailPane
+                    }
+                    .frame(
+                        minWidth: 0,
+                        maxWidth: .infinity,
+                        minHeight: 0,
+                        maxHeight: .infinity,
+                        alignment: .topLeading
+                    )
+                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear(perform: syncSelection)
         .onChange(of: allItems.map(\.id)) { _, _ in
             syncSelection()
@@ -266,6 +277,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
                 .padding(.bottom, PH.Spacing.detailB)
                 }
             }
+            .frame(minHeight: 0, idealHeight: 0, maxHeight: .infinity, alignment: .top)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .frame(minWidth: 240, idealWidth: 300, maxWidth: 380, maxHeight: .infinity)
@@ -279,6 +291,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
                     .padding(PH.Spacing.detailH)
             }
         }
+        .frame(minHeight: 0, idealHeight: 0, maxHeight: .infinity, alignment: .topLeading)
         .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
         .background(PH.Color.detailBg)
     }
@@ -302,6 +315,20 @@ private struct PromptBrowserRow: View {
     let item: PromptBrowserItem
     let isSelected: Bool
     let onSelect: () -> Void
+
+    @State private var isHovering = false
+
+    private var backgroundFill: Color {
+        if isSelected {
+            return PH.Color.accentTint
+        }
+
+        if isHovering {
+            return PH.Color.accentTint.opacity(0.18)
+        }
+
+        return .clear
+    }
 
     var body: some View {
         Button(action: onSelect) {
@@ -337,11 +364,22 @@ private struct PromptBrowserRow: View {
             .padding(.vertical, PH.Spacing.rowH)
             .padding(.horizontal, PH.Spacing.rowV)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? PH.Color.accentTint : .clear)
+            .background(backgroundFill)
             .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
             .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
         }
         .buttonStyle(.plain)
+        .overlay {
+            RoundedRectangle(cornerRadius: PH.Spacing.rowCorner)
+                .stroke(PH.Color.stroke.opacity(isHovering && !isSelected ? 1 : 0), lineWidth: 1)
+        }
+        .offset(y: isHovering && !isSelected ? PH.Motion.hoverLift : 0)
+        .scaleEffect(isHovering && !isSelected ? PH.Motion.hoverScale : 1)
+        .shadow(color: Color.black.opacity(isHovering && !isSelected ? 0.05 : 0), radius: isHovering ? 8 : 0, x: 0, y: isHovering ? 4 : 0)
+        .animation(PH.Motion.hover, value: isHovering)
+        .onHover { hovering in
+            isHovering = hovering
+        }
         .accessibilityLabel(item.title)
         .accessibilityValue(item.summary)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
@@ -442,14 +480,17 @@ private struct PromptBrowserDetail: View {
             // Body section
             VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
                 PHSectionHead(systemImage: "text.alignleft", label: "Content")
-                Text(item.promptText.isEmpty ? "No prompt content." : item.promptText)
-                    .font(PH.Font.monoBody)
-                    .foregroundStyle(PH.Color.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-                    .lineSpacing(4)
-                    .padding(PH.Spacing.detailH)
-                    .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: 8))
+                ScrollView {
+                    Text(item.promptText.isEmpty ? "No prompt content." : item.promptText)
+                        .font(PH.Font.monoBody)
+                        .foregroundStyle(PH.Color.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                        .lineSpacing(4)
+                        .padding(PH.Spacing.detailH)
+                }
+                .frame(minHeight: 0, idealHeight: 260, maxHeight: 420, alignment: .topLeading)
+                .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: 8))
             }
 
             // Variables section

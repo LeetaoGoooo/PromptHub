@@ -41,6 +41,15 @@ extension PromptDetail {
             Button { isShowingDiff.toggle() } label: { Label("Diff", systemImage: "clock.arrow.circlepath") }
                 .buttonStyle(.bordered).controlSize(.small).help("Toggle Diff View")
 
+            Button(role: .destructive) {
+                showingDeletePromptConfirmation = true
+            } label: {
+                Label(isEphemeralDraft ? "Discard" : "Delete", systemImage: "trash")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help(isEphemeralDraft ? "Discard this empty prompt draft" : "Delete this prompt")
+
             Divider().frame(height: 16).padding(.horizontal, 4)
 
             Button { Task { await shareCreation() } } label: {

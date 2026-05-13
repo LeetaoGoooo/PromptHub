@@ -228,6 +228,47 @@ struct PromptSideBar: View {
 
     @ViewBuilder
     private func sidebarSelectionButton(title: String, icon: String, meta: String?, isActive: Bool, action: @escaping () -> Void) -> some View {
+        SidebarSelectionButton(title: title, icon: icon, meta: meta, isActive: isActive, action: action)
+    }
+
+    private func deletePrompt(_ prompt: Prompt) {
+        modelContext.delete(prompt)
+
+        do {
+            try modelContext.save()
+            if case .prompt(let selectedPrompt) = promptSelection, selectedPrompt == prompt {
+                promptSelection = .allPrompts
+            }
+        } catch {
+            print("Failed to delete prompt: \(error.localizedDescription)")
+        }
+    }
+}
+
+private struct SidebarSelectionButton: View {
+    @Environment(\.controlActiveState) private var controlActiveState
+
+    let title: String
+    let icon: String
+    let meta: String?
+    let isActive: Bool
+    let action: () -> Void
+
+    @State private var isHovering = false
+
+    private var backgroundFill: Color {
+        if isActive {
+            return controlActiveState == .key ? PH.Color.accentTint : PH.Color.accentTint.opacity(0.45)
+        }
+
+        if isHovering {
+            return PH.Color.accentTint.opacity(0.22)
+        }
+
+        return .clear
+    }
+
+    var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
@@ -245,22 +286,20 @@ struct PromptSideBar: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .background(isActive ? (controlActiveState == .key ? PH.Color.accentTint : PH.Color.accentTint.opacity(0.45)) : Color.clear, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
+            .background(backgroundFill, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous)
+                    .stroke(PH.Color.stroke.opacity(isHovering && !isActive ? 1 : 0), lineWidth: 1)
+            }
+            .offset(y: isHovering && !isActive ? PH.Motion.hoverLift : 0)
+            .scaleEffect(isHovering && !isActive ? PH.Motion.hoverScale : 1)
+            .shadow(color: Color.black.opacity(isHovering && !isActive ? 0.06 : 0), radius: isHovering ? 8 : 0, x: 0, y: isHovering ? 4 : 0)
             .contentShape(Rectangle())
+            .animation(PH.Motion.hover, value: isHovering)
         }
         .buttonStyle(.plain)
-    }
-
-    private func deletePrompt(_ prompt: Prompt) {
-        modelContext.delete(prompt)
-
-        do {
-            try modelContext.save()
-            if case .prompt(let selectedPrompt) = promptSelection, selectedPrompt == prompt {
-                promptSelection = .allPrompts
-            }
-        } catch {
-            print("Failed to delete prompt: \(error.localizedDescription)")
+        .onHover { hovering in
+            isHovering = hovering
         }
     }
 }

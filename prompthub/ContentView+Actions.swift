@@ -40,6 +40,18 @@ extension ContentView {
         }
     }
 
+    func deletePrompt(_ prompt: Prompt, returningTo selection: PromptSelection = .allPrompts) {
+        modelContext.delete(prompt)
+
+        do {
+            try modelContext.save()
+            promptSelection = selection
+            showToastMessage("Prompt deleted", .complete(.green))
+        } catch {
+            showToastMessage("Failed to delete prompt", .error(.red))
+        }
+    }
+
     func createNewSkillDraft() {
         do {
             let draft = try skillDraftService.createDraft(in: modelContext)
