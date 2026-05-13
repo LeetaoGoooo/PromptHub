@@ -5,9 +5,9 @@ import Testing
 // MARK: - SkillEvaluation boundary types (P1.3)
 //
 // Pins the public contract of the SkillEvaluation namespace. The richer
-// EvalSuite / EvalTask / EvalRunResult types arrive in P2-P4; these tests
-// only guard the seam between the audit layer and the upcoming evaluation
-// layer so later phases can build on top without reshaping it.
+// suite / task / run result types arrive in P2-P4; these tests only guard
+// the seam between the audit layer and the upcoming evaluation layer so
+// later phases can build on top without reshaping it.
 
 @Test func skillEvaluationStatusCasesAreDistinct() {
     let statuses: [SkillEvaluation.Status] = [

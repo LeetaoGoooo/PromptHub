@@ -16,8 +16,8 @@ import Foundation
 //
 // P1.3 only introduces the type-level boundary so app code and later phases
 // (P2 suite parsing, P3 grader/runner, P4 UI/cache) can compile and surface
-// states against a stable contract. The richer EvalSuite / EvalTask /
-// EvalRunResult types ship in subsequent phases.
+// states against a stable contract. The richer Suite / Task / run result
+// types ship in subsequent phases; see SkillEvaluation+Suite.swift (P2.1).
 
 /// Namespace for evaluation-layer types. Kept as a caseless enum so it cannot
 /// be instantiated and stays a stable extension point.
@@ -26,7 +26,8 @@ public enum SkillEvaluation: Sendable {}
 extension SkillEvaluation {
 
     /// Coarse-grained evaluation status surfaced to the UI and persistence
-    /// layer. Per-task results live in the (future) `EvalRunResult` model.
+    /// layer. Per-task results live in the (future) per-task run record
+    /// model.
     ///
     /// Terminal states (`.passed`, `.failed`) are intended for durable
     /// persistence. Transient states (`.inProgress`, `.error`) are also
