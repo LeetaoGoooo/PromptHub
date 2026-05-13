@@ -143,8 +143,8 @@ final class SkillWorkspaceService {
         await cliService.checkSourceIntegrity(skillName: skill.package.rawValue, isGlobal: skill.isGlobal, projectRootURL: selectedProjectRootURL)
     }
 
-    func auditEffectiveness(for skill: InstalledSkillSnapshot) async -> SkillEffectivenessReport {
-        await cliService.checkEffectiveness(skillName: skill.package.rawValue, isGlobal: skill.isGlobal, projectRootURL: selectedProjectRootURL)
+    func auditStructuralQuality(for skill: InstalledSkillSnapshot) async -> SkillStructuralQualityReport {
+        await cliService.checkStructuralQuality(skillName: skill.package.rawValue, isGlobal: skill.isGlobal, projectRootURL: selectedProjectRootURL)
     }
 
     func previewUpdate(for skill: InstalledSkillSnapshot) async -> SkillUpdatePreview {
@@ -185,7 +185,7 @@ final class InstalledSkillsWorkspaceStore: ObservableObject {
     struct SkillAuditState {
         let agentVisibility: [SkillAgentVisibility]
         let sourceIntegrity: SkillSourceIntegrity
-        let effectiveness: SkillEffectivenessReport
+        let structuralQuality: SkillStructuralQualityReport
     }
 
     @Published private(set) var snapshot = InstalledSkillsWorkspaceSnapshot.empty
@@ -273,12 +273,12 @@ final class InstalledSkillsWorkspaceStore: ObservableObject {
         let task = Task { [workspaceService] in
             async let visTask = workspaceService.auditAgentVisibility(for: skill)
             async let intTask = workspaceService.auditSourceIntegrity(for: skill)
-            async let effTask = workspaceService.auditEffectiveness(for: skill)
+            async let qualityTask = workspaceService.auditStructuralQuality(for: skill)
 
             return SkillAuditState(
                 agentVisibility: await visTask,
                 sourceIntegrity: await intTask,
-                effectiveness: await effTask
+                structuralQuality: await qualityTask
             )
         }
 

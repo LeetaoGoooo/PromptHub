@@ -8,7 +8,7 @@ extension SkillAuditReportView {
     func startAudit() {
         auditTask?.cancel()
         isRunning = true; isDone = false; progress = 0
-        visibilityMap = [:]; integrityMap = [:]; effectivenessMap = [:]
+        visibilityMap = [:]; integrityMap = [:]; structuralQualityMap = [:]
 
         auditTask = Task {
             let total = Double(max(skills.count, 1))
@@ -18,14 +18,14 @@ extension SkillAuditReportView {
 
                 async let visTask = workspaceService.auditAgentVisibility(for: skill)
                 async let intTask = workspaceService.auditSourceIntegrity(for: skill)
-                async let effTask = workspaceService.auditEffectiveness(for: skill)
-                let (vis, int, eff) = await (visTask, intTask, effTask)
+                async let qualityTask = workspaceService.auditStructuralQuality(for: skill)
+                let (vis, int, quality) = await (visTask, intTask, qualityTask)
 
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     visibilityMap[skill.id] = vis
                     integrityMap[skill.id] = int
-                    effectivenessMap[skill.id] = eff
+                    structuralQualityMap[skill.id] = quality
                     progress = Double(index + 1) / total
                 }
             }
@@ -40,7 +40,7 @@ extension SkillAuditReportView {
                     skillCount: skills.count,
                     visibilityMap: visibilityMap,
                     integrityMap: integrityMap,
-                    effectivenessMap: effectivenessMap
+                    structuralQualityMap: structuralQualityMap
                 ))
             }
         }

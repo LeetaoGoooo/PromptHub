@@ -8,7 +8,7 @@ struct SkillAuditReportView: View {
 
     @State var visibilityMap: [String: [SkillAgentVisibility]] = [:]
     @State var integrityMap: [String: SkillSourceIntegrity] = [:]
-    @State var effectivenessMap: [String: SkillEffectivenessReport] = [:]
+    @State var structuralQualityMap: [String: SkillStructuralQualityReport] = [:]
     @State var progress: Double = 0
     @State var isRunning = false
     @State var isDone = false
@@ -25,7 +25,7 @@ struct SkillAuditReportView: View {
             AuditRow(id: skill.id, skill: skill,
                      visibility: visibilityMap[skill.id] ?? [],
                      integrity: integrityMap[skill.id],
-                     effectiveness: effectivenessMap[skill.id])
+                     structuralQuality: structuralQualityMap[skill.id])
         }
     }
 
@@ -34,7 +34,7 @@ struct SkillAuditReportView: View {
     var totalSkills: Int { skills.count }
     var missingAgentCount: Int { visibilityMap.values.flatMap { $0 }.filter { $0.status == .missing }.count }
     var integrityIssueCount: Int { integrityMap.values.filter { $0.status == .modified }.count }
-    var poorEffectivenessCount: Int { effectivenessMap.values.filter { $0.tier == .poor || $0.tier == .fair }.count }
+    var poorStructuralQualityCount: Int { structuralQualityMap.values.filter { $0.tier == .poor || $0.tier == .fair }.count }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -60,7 +60,7 @@ struct SkillAuditReportView: View {
             if isDone {
                 Button {
                     isDone = false
-                    visibilityMap = [:]; integrityMap = [:]; effectivenessMap = [:]
+                    visibilityMap = [:]; integrityMap = [:]; structuralQualityMap = [:]
                     startAudit()
                 } label: { Label("Re-run", systemImage: "arrow.clockwise") }
                     .buttonStyle(.bordered)
@@ -74,7 +74,7 @@ struct SkillAuditReportView: View {
         if let cache = SkillAuditCacheStore.load(), cache.skillCount == skills.count {
             visibilityMap = cache.visibilityMap
             integrityMap = cache.integrityMap
-            effectivenessMap = cache.effectivenessMap
+            structuralQualityMap = cache.structuralQualityMap
             lastAuditedAt = cache.auditedAt
             isDone = true
         } else {

@@ -9,7 +9,7 @@ extension SkillAuditReportView {
         let skill: InstalledSkillSnapshot
         let visibility: [SkillAgentVisibility]
         let integrity: SkillSourceIntegrity?
-        let effectiveness: SkillEffectivenessReport?
+        let structuralQuality: SkillStructuralQualityReport?
 
         var displayName: String { skill.displayName }
         var scope: String { skill.isGlobal ? "Global" : "Project" }
@@ -25,7 +25,7 @@ extension SkillAuditReportView {
             case .notInstalled: return 4
             }
         }
-        var effectivenessScore: Double { effectiveness?.score ?? -1 }
+        var structuralQualityScore: Double { structuralQuality?.score ?? -1 }
     }
 }
 
@@ -40,8 +40,8 @@ extension SkillAuditReportView {
                         color: missingAgentCount > 0 ? .orange : Color(NSColor.tertiaryLabelColor))
             summaryPill("\(integrityIssueCount)", label: "Modified", icon: "exclamationmark.shield.fill",
                         color: integrityIssueCount > 0 ? .orange : Color(NSColor.tertiaryLabelColor))
-            summaryPill("\(poorEffectivenessCount)", label: "Low Quality", icon: "xmark.circle.fill",
-                        color: poorEffectivenessCount > 0 ? .red : Color(NSColor.tertiaryLabelColor))
+            summaryPill("\(poorStructuralQualityCount)", label: "Low Quality", icon: "xmark.circle.fill",
+                        color: poorStructuralQualityCount > 0 ? .red : Color(NSColor.tertiaryLabelColor))
             Spacer()
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -85,7 +85,7 @@ extension SkillAuditReportView {
 
             TableColumn("Agents", value: \.visibleCount) { row in agentCell(row) }.width(80)
             TableColumn("Integrity", value: \.integrityRank) { row in integrityCell(row.integrity) }.width(110)
-            TableColumn("Quality", value: \.effectivenessScore) { row in effectivenessCell(row.effectiveness) }.width(100)
+            TableColumn("Quality", value: \.structuralQualityScore) { row in structuralQualityCell(row.structuralQuality) }.width(100)
         }
         .tableStyle(.inset(alternatesRowBackgrounds: false))
     }
@@ -127,19 +127,19 @@ extension SkillAuditReportView {
     }
 
     @ViewBuilder
-    func effectivenessCell(_ effectiveness: SkillEffectivenessReport?) -> some View {
-        if let effectiveness {
-            let color = tierColor(effectiveness.tier)
+    func structuralQualityCell(_ structuralQuality: SkillStructuralQualityReport?) -> some View {
+        if let structuralQuality {
+            let color = tierColor(structuralQuality.tier)
             HStack(spacing: 4) {
-                Image(systemName: effectiveness.tier.systemImage).foregroundStyle(color).font(.caption)
-                Text(effectiveness.tier.label).font(.caption).foregroundStyle(color)
+                Image(systemName: structuralQuality.tier.systemImage).foregroundStyle(color).font(.caption)
+                Text(structuralQuality.tier.label).font(.caption).foregroundStyle(color)
             }
         } else {
             ProgressView().controlSize(.mini)
         }
     }
 
-    func tierColor(_ tier: EffectivenessTier) -> Color {
+    func tierColor(_ tier: StructuralQualityTier) -> Color {
         switch tier {
         case .excellent: return .green
         case .good:      return .blue

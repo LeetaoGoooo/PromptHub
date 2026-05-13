@@ -17,9 +17,9 @@ extension SkillCLIService {
         }
     }
 
-    func checkEffectiveness(skillName: String, isGlobal: Bool, projectRootURL: URL? = nil) async -> SkillEffectivenessReport {
+    func checkStructuralQuality(skillName: String, isGlobal: Bool, projectRootURL: URL? = nil) async -> SkillStructuralQualityReport {
         await cliAccessManager.withAccess {
-            await self.makeCatalog(projectRootURL: projectRootURL).checkEffectiveness(skillName: skillName, isGlobal: isGlobal)
+            await self.makeCatalog(projectRootURL: projectRootURL).checkStructuralQuality(skillName: skillName, isGlobal: isGlobal)
         }
     }
 

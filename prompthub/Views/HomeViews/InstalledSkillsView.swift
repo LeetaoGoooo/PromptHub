@@ -29,8 +29,8 @@ struct InstalledSkillsView: View {
     @State var isLoadingVisibility = false
     @State var sourceIntegrity: SkillSourceIntegrity?
     @State var isLoadingIntegrity = false
-    @State var effectiveness: SkillEffectivenessReport?
-    @State var isLoadingEffectiveness = false
+    @State var structuralQuality: SkillStructuralQualityReport?
+    @State var isLoadingStructuralQuality = false
     @ObservedObject var cliAccessManager = CLIDirectoryAccessManager.shared
     @State var showingCLIAccessManager = false
     @State var showingAuditReport = false
@@ -162,25 +162,25 @@ struct InstalledSkillsView: View {
             guard let skill = selectedSkill else {
                 agentVisibility = []
                 sourceIntegrity = nil
-                effectiveness = nil
+                structuralQuality = nil
                 isLoadingVisibility = false
                 isLoadingIntegrity = false
-                isLoadingEffectiveness = false
+                isLoadingStructuralQuality = false
                 return
             }
 
             isLoadingVisibility = true
             isLoadingIntegrity = true
-            isLoadingEffectiveness = true
+            isLoadingStructuralQuality = true
 
             let auditState = await installedWorkspaceStore.loadAuditState(for: skill)
             guard !Task.isCancelled else { return }
             agentVisibility = auditState.agentVisibility
             sourceIntegrity = auditState.sourceIntegrity
-            effectiveness = auditState.effectiveness
+            structuralQuality = auditState.structuralQuality
             isLoadingVisibility = false
             isLoadingIntegrity = false
-            isLoadingEffectiveness = false
+            isLoadingStructuralQuality = false
         }
         .alert("Remove Skill", isPresented: Binding(
             get: { pendingRemoval != nil },

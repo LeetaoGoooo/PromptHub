@@ -9,8 +9,8 @@ struct InstalledSkillDetailPane: View {
     let isLoadingVisibility: Bool
     let sourceIntegrity: SkillSourceIntegrity?
     let isLoadingIntegrity: Bool
-    let effectiveness: SkillEffectivenessReport?
-    let isLoadingEffectiveness: Bool
+    let structuralQuality: SkillStructuralQualityReport?
+    let isLoadingStructuralQuality: Bool
     let isAdding: Bool
     let isRemoving: Bool
     let onEditDraft: () -> Void
@@ -57,15 +57,15 @@ struct InstalledSkillDetailPane: View {
     }
 
     private var qualitySummary: String {
-        guard let effectiveness else {
-            return isLoadingEffectiveness ? "Analyzing…" : "Not available"
+        guard let structuralQuality else {
+            return isLoadingStructuralQuality ? "Analyzing…" : "Not available"
         }
 
-        guard effectiveness.fileFound else {
+        guard structuralQuality.fileFound else {
             return "SKILL.md missing"
         }
 
-        return "\(Int(effectiveness.score * 100)) · \(effectiveness.tier.label)"
+        return "\(Int(structuralQuality.score * 100)) · \(structuralQuality.tier.label)"
     }
 
     private var coverageSummary: String {
@@ -155,11 +155,11 @@ struct InstalledSkillDetailPane: View {
     }
 
     private var passedChecksCount: Int {
-        effectiveness?.checks.filter(\.passed).count ?? 0
+        structuralQuality?.checks.filter(\.passed).count ?? 0
     }
 
     private var totalChecksCount: Int {
-        effectiveness?.checks.count ?? 0
+        structuralQuality?.checks.count ?? 0
     }
 
     private var topStatusText: String {
@@ -176,11 +176,11 @@ struct InstalledSkillDetailPane: View {
     }
 
     private var qualityBadgeText: String {
-        guard let effectiveness, effectiveness.fileFound else {
-            return isLoadingEffectiveness ? "Analyzing quality…" : "Quality unavailable"
+        guard let structuralQuality, structuralQuality.fileFound else {
+            return isLoadingStructuralQuality ? "Analyzing quality…" : "Quality unavailable"
         }
 
-        return "\(Int(effectiveness.score * 100)) \(effectiveness.tier.label) · \(passedChecksCount)/\(totalChecksCount) checks"
+        return "\(Int(structuralQuality.score * 100)) \(structuralQuality.tier.label) · \(passedChecksCount)/\(totalChecksCount) checks"
     }
 
     private var footerStatusText: String {
@@ -238,8 +238,8 @@ struct InstalledSkillDetailPane: View {
         }
     }
 
-    private var qualityChecks: [SkillEffectivenessCheck] {
-        effectiveness?.checks ?? []
+    private var qualityChecks: [SkillStructuralQualityCheck] {
+        structuralQuality?.checks ?? []
     }
 
     private var installedPackagePaths: [String] {
@@ -367,11 +367,11 @@ struct InstalledSkillDetailPane: View {
     }
 
     private var qualityPillColor: Color {
-        guard let effectiveness, effectiveness.fileFound else {
+        guard let structuralQuality, structuralQuality.fileFound else {
             return .secondary
         }
 
-        switch effectiveness.tier {
+        switch structuralQuality.tier {
         case .excellent:
             return .green
         case .good:
@@ -649,7 +649,7 @@ struct InstalledSkillDetailPane: View {
             Text("Audit")
                 .font(.headline)
 
-            if isLoadingEffectiveness && effectiveness == nil {
+            if isLoadingStructuralQuality && structuralQuality == nil {
                 Text("Analyzing SKILL.md…")
                     .font(.caption)
                     .foregroundStyle(.secondary)

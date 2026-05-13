@@ -123,10 +123,10 @@ struct InstalledSkillIntegrityView: View {
     }
 }
 
-// MARK: - Effectiveness / Quality
+// MARK: - Structural Quality
 
-struct InstalledSkillEffectivenessView: View {
-    let effectiveness: SkillEffectivenessReport?
+struct InstalledSkillStructuralQualityView: View {
+    let structuralQuality: SkillStructuralQualityReport?
     let isLoading: Bool
 
     var body: some View {
@@ -138,9 +138,9 @@ struct InstalledSkillEffectivenessView: View {
                 if isLoading { ProgressView().controlSize(.mini) }
             }
 
-            if isLoading && effectiveness == nil {
+            if isLoading && structuralQuality == nil {
                 Text("Analyzing SKILL.md…").font(.caption).foregroundStyle(.secondary)
-            } else if let report = effectiveness {
+            } else if let report = structuralQuality {
                 if !report.fileFound {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
@@ -177,7 +177,7 @@ struct InstalledSkillEffectivenessView: View {
 
                         VStack(spacing: 0) {
                             ForEach(report.checks, id: \.title) { check in
-                                effectivenessCheckRow(check)
+                                structuralQualityCheckRow(check)
                                 if check.title != report.checks.last?.title { Divider() }
                             }
                         }
@@ -190,7 +190,7 @@ struct InstalledSkillEffectivenessView: View {
         }
     }
 
-    private func tierColor(_ tier: EffectivenessTier) -> Color {
+    private func tierColor(_ tier: StructuralQualityTier) -> Color {
         switch tier {
         case .excellent: return .green
         case .good:      return .blue
@@ -200,7 +200,7 @@ struct InstalledSkillEffectivenessView: View {
     }
 
     @ViewBuilder
-    private func effectivenessCheckRow(_ check: SkillEffectivenessCheck) -> some View {
+    private func structuralQualityCheckRow(_ check: SkillStructuralQualityCheck) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
                 Image(systemName: check.passed ? "checkmark.circle.fill" : "xmark.circle.fill")

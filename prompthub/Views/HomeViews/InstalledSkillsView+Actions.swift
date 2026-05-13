@@ -9,10 +9,10 @@ extension InstalledSkillsView {
     func fetchInstalledSkills() {
         agentVisibility = []
         sourceIntegrity = nil
-        effectiveness = nil
+        structuralQuality = nil
         isLoadingVisibility = true
         isLoadingIntegrity = true
-        isLoadingEffectiveness = true
+        isLoadingStructuralQuality = true
         installedWorkspaceStore.refresh(
             authoredDraftCount: skillDrafts.count,
             hasCLIAccess: cliAccessManager.anyAccessGranted,
