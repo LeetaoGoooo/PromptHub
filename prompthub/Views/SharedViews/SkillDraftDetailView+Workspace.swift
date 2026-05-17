@@ -475,14 +475,26 @@ extension SkillDraftDetailView {
             return
         }
 
+        // SKILL.md is always treated as editable text – fall back to in-memory
+        // instructions if the on-disk file is not yet readable (e.g. first create).
+        let isSkillMD = selectedPackageItem.relativePath == "SKILL.md"
+
         do {
-            let isEditable = try draftService.isEditableTextFile(relativePath: selectedPackageItem.relativePath, for: skill)
+            let isEditable = isSkillMD ? true : (try draftService.isEditableTextFile(relativePath: selectedPackageItem.relativePath, for: skill))
             selectedItemIsEditableText = isEditable
             if isEditable {
-                let contents = try draftService.readTextFile(relativePath: selectedPackageItem.relativePath, for: skill)
+                let contents: String
+                if isSkillMD, let inMemory = try? draftService.readTextFile(relativePath: "SKILL.md", for: skill) {
+                    contents = inMemory
+                } else if !isSkillMD {
+                    contents = try draftService.readTextFile(relativePath: selectedPackageItem.relativePath, for: skill)
+                } else {
+                    // Fallback: use the in-memory instructionsText so the editor still shows content
+                    contents = instructionsText.isEmpty ? draftService.exportMarkdown(for: skill) : instructionsText
+                }
                 editorText = contents
                 persistedEditorText = contents
-                if selectedPackageItem.relativePath == "SKILL.md" {
+                if isSkillMD {
                     instructionsText = contents
                 }
             } else {
@@ -490,10 +502,18 @@ extension SkillDraftDetailView {
                 persistedEditorText = ""
             }
         } catch {
-            selectedItemIsEditableText = false
-            editorText = ""
-            persistedEditorText = ""
-            showToastMsg("Failed to load file: \(error.localizedDescription)")
+            if isSkillMD {
+                // Never show a "non-editable" fallback for SKILL.md even on error
+                selectedItemIsEditableText = true
+                let fallback = instructionsText.isEmpty ? draftService.exportMarkdown(for: skill) : instructionsText
+                editorText = fallback
+                persistedEditorText = fallback
+            } else {
+                selectedItemIsEditableText = false
+                editorText = ""
+                persistedEditorText = ""
+                showToastMsg("Failed to load file: \(error.localizedDescription)")
+            }
         }
     }
 
