@@ -721,6 +721,11 @@ struct InstalledSkillDetailPane: View {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: localSkillFilePath)])
     }
 
+    private func copyName() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(skill.displayName, forType: .string)
+    }
+
     @ViewBuilder
     private var footerActionButtons: some View {
         if isRemoving {
@@ -732,6 +737,11 @@ struct InstalledSkillDetailPane: View {
         } else {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 10) {
+                    Button(action: copyName) {
+                        Label("Copy Name", systemImage: "doc.on.clipboard")
+                    }
+                    .buttonStyle(.bordered)
+
                     Button("Remove", role: .destructive, action: onRemoveAll)
                         .buttonStyle(.bordered)
 
@@ -768,6 +778,11 @@ struct InstalledSkillDetailPane: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
+                    Button(action: copyName) {
+                        Label("Copy Name", systemImage: "doc.on.clipboard")
+                    }
+                    .buttonStyle(.bordered)
+
                     Button("Remove", role: .destructive, action: onRemoveAll)
                         .buttonStyle(.bordered)
 

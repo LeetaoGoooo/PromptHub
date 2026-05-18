@@ -140,6 +140,10 @@ extension MySkillsView {
                     exportedMarkdown: draftService.exportMarkdown(for: selectedSkill),
                     onOpenDraft: { onSelectSkill(selectedSkill) },
                     onCopyMarkdown: { copySkillMarkdown(for: selectedSkill) },
+                    onCopyName: {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(selectedSkill.displayName, forType: .string)
+                    },
                     onDeleteDraft: { skillPendingDeletion = selectedSkill }
                 )
                 .padding(24)

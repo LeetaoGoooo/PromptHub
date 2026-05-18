@@ -5,6 +5,7 @@ struct SkillDraftSummaryPane: View {
     let exportedMarkdown: String
     let onOpenDraft: () -> Void
     let onCopyMarkdown: () -> Void
+    let onCopyName: () -> Void
     let onDeleteDraft: () -> Void
 
     @State private var showingInstallSheet = false
@@ -86,6 +87,12 @@ struct SkillDraftSummaryPane: View {
 
                         Button(action: onCopyMarkdown) {
                             Label("Copy SKILL.md", systemImage: "doc.on.doc")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(action: onCopyName) {
+                            Label("Copy Name", systemImage: "doc.on.clipboard")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)

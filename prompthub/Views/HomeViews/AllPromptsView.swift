@@ -6,6 +6,7 @@
 //
 
 import AlertToast
+import AppKit
 import SwiftData
 import SwiftUI
 
@@ -95,6 +96,17 @@ struct AllPromptsView: View {
                             secondaryActionSystemImage: "doc.on.doc",
                             onSecondaryAction: { copyPromptToClipboard(prompt.getLatestPromptContent()) },
                             quickActions: [
+                                PromptBrowserQuickAction(
+                                    id: "copy-name-\(prompt.id.uuidString)",
+                                    title: "Copy Name",
+                                    systemImage: "doc.on.clipboard",
+                                    emphasis: .standard,
+                                    isDisabled: false,
+                                    onSelect: {
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(prompt.name, forType: .string)
+                                    }
+                                ),
                                 PromptBrowserQuickAction(
                                     id: "render-\(prompt.id.uuidString)",
                                     title: "Render",
