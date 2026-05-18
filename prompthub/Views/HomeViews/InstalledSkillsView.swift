@@ -119,7 +119,7 @@ struct InstalledSkillsView: View {
     }
 
     private var auditLoadKey: String {
-        "\(selectedSkillID ?? "none")-\(installedWorkspaceStore.revision)"
+        "\(selectedSkill?.id ?? "none")-\(installedWorkspaceStore.revision)"
     }
 
     private var headerMetrics: [SkillLibraryMetric] {
@@ -172,6 +172,8 @@ struct InstalledSkillsView: View {
         }
         .onChange(of: installedWorkspaceStore.snapshot) { _, _ in syncSelection() }
         .onChange(of: searchText) { _, _ in syncSelection() }
+        .onChange(of: listFilter) { _, _ in syncSelection() }
+        .onChange(of: skillsSortOrder) { _, _ in syncSelection() }
         .task(id: auditLoadKey) {
             guard let skill = selectedSkill else {
                 agentVisibility = []
