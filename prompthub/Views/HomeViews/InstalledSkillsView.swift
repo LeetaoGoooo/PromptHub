@@ -39,6 +39,7 @@ struct InstalledSkillsView: View {
     @State var updatingSkill: InstalledSkillSnapshot?
     @State var listFilter: ListFilter = .all
     @State var installedSkillsLens: InstalledSkillsLens = .activeProject
+    @State var skillsSortOrder: SkillsSortOrder = .nameAsc
 
     // MARK: - List filter
     enum ListFilter: String, CaseIterable {
@@ -46,6 +47,11 @@ struct InstalledSkillsView: View {
         case visible  = "Visible"
         case needsFix = "Needs Fix"
         case local    = "Local"
+    }
+
+    enum SkillsSortOrder: String, CaseIterable {
+        case nameAsc  = "Name A–Z"
+        case nameDesc = "Name Z–A"
     }
 
     var installedSkills: [InstalledSkillSnapshot] { installedWorkspaceStore.installedSkills }
@@ -86,11 +92,19 @@ struct InstalledSkillsView: View {
             }
         }
         switch listFilter {
-        case .all:      return afterSearch
-        case .visible:  return afterSearch.filter { !$0.agents.isEmpty }
-        case .needsFix: return afterSearch.filter { $0.agents.isEmpty }
-        case .local:    return afterSearch.filter { !$0.isGlobal }
+        case .all:      return sorted(afterSearch)
+        case .visible:  return sorted(afterSearch.filter { !$0.agents.isEmpty })
+        case .needsFix: return sorted(afterSearch.filter { $0.agents.isEmpty })
+        case .local:    return sorted(afterSearch.filter { !$0.isGlobal })
         }
+    }
+
+    private func sorted(_ skills: [InstalledSkillSnapshot]) -> [InstalledSkillSnapshot] {
+        switch skillsSortOrder {
+        case .nameAsc:  return skills.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+        case .nameDesc: return skills.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedDescending }
+        }
+    }
     }
 
     var projectSkills: [InstalledSkillSnapshot] { filteredSkills.filter { !$0.isGlobal } }

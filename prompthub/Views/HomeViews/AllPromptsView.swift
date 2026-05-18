@@ -27,25 +27,44 @@ struct AllPromptsView: View {
     @State private var renderingPrompt: Prompt?
     @State private var testingPrompt: Prompt?
     @State private var optimizingPrompt: Prompt?
+    @State private var sortOrder: PromptSortOrder = .nameAsc
+
+    enum PromptSortOrder: String, CaseIterable {
+        case nameAsc  = "Name A–Z"
+        case nameDesc = "Name Z–A"
+    }
     
+    private func sortedPrompts<T: Identifiable>(_ prompts: [T], name: KeyPath<T, String>) -> [T] {
+        switch sortOrder {
+        case .nameAsc:  return prompts.sorted { $0[keyPath: name].localizedCaseInsensitiveCompare($1[keyPath: name]) == .orderedAscending }
+        case .nameDesc: return prompts.sorted { $0[keyPath: name].localizedCaseInsensitiveCompare($1[keyPath: name]) == .orderedDescending }
+        }
+    }
+
     private var filteredGalleryPrompts: [GalleryPrompt] {
+        let base: [GalleryPrompt]
         if searchText.isEmpty {
-            return galleryPrompts
+            base = galleryPrompts
+        } else {
+            base = galleryPrompts.filter { prompt in
+                prompt.name.localizedCaseInsensitiveContains(searchText) ||
+                (prompt.description?.localizedCaseInsensitiveContains(searchText) ?? false)
+            }
         }
-        return galleryPrompts.filter { prompt in
-            prompt.name.localizedCaseInsensitiveContains(searchText) ||
-            (prompt.description?.localizedCaseInsensitiveContains(searchText) ?? false)
-        }
+        return sortedPrompts(base, name: \.name)
     }
     
     private var filteredUserPrompts: [Prompt] {
+        let base: [Prompt]
         if searchText.isEmpty {
-            return userPrompts
+            base = userPrompts
+        } else {
+            base = userPrompts.filter { prompt in
+                prompt.name.localizedCaseInsensitiveContains(searchText) ||
+                (prompt.desc?.localizedCaseInsensitiveContains(searchText) ?? false)
+            }
         }
-        return userPrompts.filter { prompt in
-            prompt.name.localizedCaseInsensitiveContains(searchText) ||
-            (prompt.desc?.localizedCaseInsensitiveContains(searchText) ?? false)
-        }
+        return sortedPrompts(base, name: \.name)
     }
 
     private var visiblePromptCount: Int {
@@ -200,6 +219,20 @@ struct AllPromptsView: View {
                 sections: browserSections,
                 selectedItemID: $selectedItemID,
                 actions: {
+                    Menu {
+                        ForEach(PromptSortOrder.allCases, id: \.rawValue) { order in
+                            Button {
+                                sortOrder = order
+                            } label: {
+                                Label(order.rawValue, systemImage: sortOrder == order ? "checkmark" : "")
+                            }
+                        }
+                    } label: {
+                        Label(sortOrder.rawValue, systemImage: "arrow.up.arrow.down")
+                    }
+                    .menuStyle(.borderedButton)
+                    .fixedSize()
+
                     Button(action: onCreatePrompt) {
                         Label("New Prompt", systemImage: "wand.and.stars")
                     }

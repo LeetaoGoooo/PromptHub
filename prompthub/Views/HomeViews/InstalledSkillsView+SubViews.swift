@@ -185,6 +185,27 @@ extension InstalledSkillsView {
                         listFilter = filter
                     }
                 }
+
+                Divider().frame(height: 14)
+
+                Menu {
+                    ForEach(SkillsSortOrder.allCases, id: \.rawValue) { order in
+                        Button {
+                            skillsSortOrder = order
+                        } label: {
+                            Label(order.rawValue, systemImage: skillsSortOrder == order ? "checkmark" : "")
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.arrow.down")
+                        Text(skillsSortOrder.rawValue)
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
             }
             .padding(.horizontal, PH.Spacing.toolbarH)
             .padding(.vertical, PH.Spacing.toolbarV)
