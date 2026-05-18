@@ -96,6 +96,7 @@ extension InstalledSkillsView {
                     Text(lens.rawValue).tag(lens)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.segmented)
             .frame(width: 260)
             .onChange(of: installedSkillsLens) { _, _ in
