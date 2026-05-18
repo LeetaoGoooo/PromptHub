@@ -35,13 +35,13 @@ struct SkillDraftDetailView: View {
             Divider()
             HSplitView {
                 packageSidebar
-                    .frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
+                    .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
 
                 editorPane
-                    .frame(minWidth: 420, maxWidth: .infinity)
+                    .frame(minWidth: 300, maxWidth: .infinity)
 
                 inspectorPane
-                    .frame(minWidth: 280, idealWidth: 320, maxWidth: 360)
+                    .frame(minWidth: 240, idealWidth: 280, maxWidth: 340)
             }
         }
         .background(Color(NSColor.windowBackgroundColor))
