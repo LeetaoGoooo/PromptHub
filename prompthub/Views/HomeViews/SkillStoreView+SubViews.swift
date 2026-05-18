@@ -34,6 +34,9 @@ extension SkillStoreView {
                     label: { Label("Global Scope", systemImage: "globe") }
                 }
                 Section("Private Sources") {
+                    Button { showingGitHubInstall = true }
+                    label: { Label("Install from GitHub URL…", systemImage: "arrow.down.circle") }
+
                     Button { showingPrivateSourceInstall = true }
                     label: { Label("Install from Private Source…", systemImage: "lock.shield") }
                 }

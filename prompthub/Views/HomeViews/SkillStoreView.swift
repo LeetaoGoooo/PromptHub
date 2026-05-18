@@ -26,6 +26,7 @@ struct SkillStoreView: View {
     @ObservedObject var cliAccessManager = CLIDirectoryAccessManager.shared
     @State var showingCLIAccessManager = false
     @State var showingPrivateSourceInstall = false
+    @State var showingGitHubInstall = false
     @State var installingSkillIDs: Set<String> = []
     @State var recentlyInstalledIDs: Set<String> = []
     @State var showToast = false
@@ -69,6 +70,9 @@ struct SkillStoreView: View {
         }
         .sheet(isPresented: $showingPrivateSourceInstall, onDismiss: { fetchSkills(query: searchText) }) {
             PrivateSourceInstallSheet()
+        }
+        .sheet(isPresented: $showingGitHubInstall, onDismiss: { fetchSkills(query: searchText) }) {
+            GitHubRepoInstallSheet()
         }
         .onAppear { fetchSkills() }
         .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in fetchSkills(query: searchText) }
