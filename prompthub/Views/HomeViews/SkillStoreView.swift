@@ -34,10 +34,12 @@ struct SkillStoreView: View {
     @State var toastType: AlertToast.AlertType = .regular
     @State var pendingInstall: PendingCatalogInstall?
     @State var searchTask: Task<Void, Never>?
+    @State var remoteQuery = ""
 
     var availableSkills: [CatalogSkill]          { workspaceSnapshot.catalogSkills }
     var installedSkills: [InstalledSkillSnapshot]  { workspaceSnapshot.installedSkills }
     var installationRegistry: [String: CatalogSkillInstallationState] { workspaceSnapshot.installationRegistry }
+    var activeQuery: String { remoteQuery.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var selectedSkill: CatalogSkill? {
         if let selectedSkillID, let matched = availableSkills.first(where: { $0.id == selectedSkillID }) {
@@ -64,19 +66,27 @@ struct SkillStoreView: View {
         } content: {
             mainContent
         }
-        .onChange(of: searchText) { _, newValue in debouncedSearch(query: newValue) }
-        .sheet(isPresented: $showingCLIAccessManager, onDismiss: { fetchSkills(query: searchText) }) {
+        .onChange(of: searchText) { _, newValue in
+            if remoteQuery != newValue {
+                remoteQuery = newValue
+            }
+            debouncedSearch(query: newValue)
+        }
+        .sheet(isPresented: $showingCLIAccessManager, onDismiss: { fetchSkills(query: activeQuery) }) {
             CLIAccessManagerView()
         }
-        .sheet(isPresented: $showingPrivateSourceInstall, onDismiss: { fetchSkills(query: searchText) }) {
+        .sheet(isPresented: $showingPrivateSourceInstall, onDismiss: { fetchSkills(query: activeQuery) }) {
             PrivateSourceInstallSheet()
         }
-        .sheet(isPresented: $showingGitHubInstall, onDismiss: { fetchSkills(query: searchText) }) {
+        .sheet(isPresented: $showingGitHubInstall, onDismiss: { fetchSkills(query: activeQuery) }) {
             GitHubRepoInstallSheet()
         }
-        .onAppear { fetchSkills() }
-        .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in fetchSkills(query: searchText) }
-        .onReceive(NotificationCenter.default.publisher(for: .skillProjectSelectionDidChange)) { _ in fetchSkills(query: searchText) }
+        .onAppear {
+            remoteQuery = searchText
+            fetchSkills(query: remoteQuery)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in fetchSkills(query: activeQuery) }
+        .onReceive(NotificationCenter.default.publisher(for: .skillProjectSelectionDidChange)) { _ in fetchSkills(query: activeQuery) }
         .alert("Skill Store", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }

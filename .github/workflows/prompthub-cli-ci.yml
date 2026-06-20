@@ -31,3 +31,6 @@ jobs:
 
       - name: Verify ph entrypoint
         run: swift run --package-path PromptHubCLI ph --help
+
+      - name: Run acceptance smoke matrix
+        run: PromptHubCLI/Tests/Smoke/run-all.sh

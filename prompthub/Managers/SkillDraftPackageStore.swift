@@ -19,6 +19,7 @@ final class SkillDraftPackageStore {
         case invalidRelativePath
         case itemAlreadyExists
         case notATextFile
+        case cannotDeletePrimarySkillFile
 
         var errorDescription: String? {
             switch self {
@@ -30,6 +31,8 @@ final class SkillDraftPackageStore {
                 return "A file or folder with that name already exists."
             case .notATextFile:
                 return "Only text files can be edited inline."
+            case .cannotDeletePrimarySkillFile:
+                return "SKILL.md is required and cannot be deleted."
             }
         }
     }
@@ -151,6 +154,22 @@ final class SkillDraftPackageStore {
         return createdPath
     }
 
+    func deleteItem(relativePath: String, for skill: Skill, canonicalSkillMarkdown: String) throws {
+        let cleanRelativePath = relativePath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanRelativePath.isEmpty else {
+            throw PackageError.invalidRelativePath
+        }
+        if cleanRelativePath.caseInsensitiveCompare("SKILL.md") == .orderedSame {
+            throw PackageError.cannotDeletePrimarySkillFile
+        }
+
+        let targetURL = try resolvedURL(relativePath: cleanRelativePath, for: skill, canonicalSkillMarkdown: canonicalSkillMarkdown)
+        guard fileManager.fileExists(atPath: targetURL.path) else {
+            throw PackageError.invalidRelativePath
+        }
+        try fileManager.removeItem(at: targetURL)
+    }
+
     func reveal(relativePath: String?, for skill: Skill, canonicalSkillMarkdown: String) throws {
         let targetURL: URL
         if let relativePath, !relativePath.isEmpty {
@@ -239,6 +258,14 @@ final class SkillDraftPackageStore {
         let resourceValues = try fileURL.resourceValues(forKeys: [.isDirectoryKey, .contentTypeKey])
         if resourceValues.isDirectory == true {
             return false
+        }
+
+        let textExtensions: Set<String> = [
+            "md", "markdown", "txt", "json", "xml", "yml", "yaml", "toml",
+            "sh", "bash", "zsh", "command", "js", "ts", "py", "rb", "swift"
+        ]
+        if textExtensions.contains(fileURL.pathExtension.lowercased()) {
+            return true
         }
 
         if let contentType = resourceValues.contentType {

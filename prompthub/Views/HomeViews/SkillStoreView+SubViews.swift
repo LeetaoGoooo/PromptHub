@@ -19,7 +19,7 @@ extension SkillStoreView {
                 chooseProjectRoot()
             }
 
-            Button { fetchSkills(query: searchText) } label: { Image(systemName: "arrow.clockwise") }
+            Button { fetchSkills(query: activeQuery) } label: { Image(systemName: "arrow.clockwise") }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
                 .accessibilityLabel("Refresh catalog")
@@ -70,13 +70,13 @@ extension SkillStoreView {
                 systemImage: "exclamationmark.triangle.fill",
                 description: error
             ) {
-                Button("Retry") { fetchSkills(query: searchText) }.buttonStyle(.borderedProminent)
+                Button("Retry") { fetchSkills(query: activeQuery) }.buttonStyle(.borderedProminent)
             }
-        } else if !isLoading && availableSkills.isEmpty && !searchText.isEmpty {
+        } else if !isLoading && availableSkills.isEmpty && !activeQuery.isEmpty {
             SkillLibraryEmptyState(
                 title: "No Skills Found",
                 systemImage: "magnifyingglass",
-                description: "No skills match \"\(searchText)\". Try a different search term."
+                description: "No skills match \"\(activeQuery)\". Try a different search term."
             )
         } else if !cliAccessManager.anyAccessGranted {
             SkillLibraryEmptyState(
@@ -107,6 +107,29 @@ extension SkillStoreView {
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 .background(Color(NSColor.controlBackgroundColor))
             }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Search Remote Skills")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                TextField("Search the remote catalog…", text: $remoteQuery)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        fetchSkills(query: remoteQuery)
+                    }
+                    .onChange(of: remoteQuery) { _, newValue in
+                        debouncedSearch(query: newValue)
+                    }
+
+                Text("Results are fetched from the current skills catalog, not just filtered locally.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color(NSColor.windowBackgroundColor).opacity(0.9))
+
             HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Results")

@@ -46,18 +46,20 @@ final class SkillCLIService {
     let fileManager: FileManager
     let apiBaseURL: URL?
     let installRootURL: URL?
-    var cliAccessManager: CLIDirectoryAccessManager { .shared }
+    let cliAccessManager: CLIDirectoryAccessManager
 
     init(
         session: URLSession = .shared,
         fileManager: FileManager = .default,
         apiBaseURL: URL? = nil,
-        installRootURL: URL? = nil
+        installRootURL: URL? = nil,
+        cliAccessManager: CLIDirectoryAccessManager = .shared
     ) {
-        self.session        = session
-        self.fileManager    = fileManager
-        self.apiBaseURL     = apiBaseURL
-        self.installRootURL = installRootURL
+        self.session          = session
+        self.fileManager      = fileManager
+        self.apiBaseURL       = apiBaseURL
+        self.installRootURL   = installRootURL
+        self.cliAccessManager = cliAccessManager
     }
 
     func makeCatalog(projectRootURL: URL? = nil) -> SkillCatalogService {

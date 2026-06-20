@@ -32,6 +32,11 @@ final class MockURLProtocol: URLProtocol, @unchecked Sendable {
     override func stopLoading() {}
 }
 
+// `.serialized` is required: every test installs its own
+// `MockURLProtocol.requestHandler` into a process-wide `static` slot, so
+// running the cases in parallel lets one test's handler answer another
+// test's request (e.g. a 404-HTML handler bleeding into a JSON test).
+@Suite(.serialized)
 struct SkillCLIServiceTests {
 
     private func makeService(
@@ -46,14 +51,33 @@ struct SkillCLIServiceTests {
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 
+        // Pin every agent skill directory under `root` so discovery/install
+        // never touches the host's real ~/.agents, ~/.codex, etc. Without this
+        // listInstalledSkills() would return the developer's actual installed
+        // skills via security-scoped bookmarks resolved by the shared manager.
+        let accessDefaults = UserDefaults(suiteName: "CLIAccess.\(UUID().uuidString)")!
+        let accessManager = CLIDirectoryAccessManager(
+            defaults: accessDefaults,
+            directoryBaseOverride: root.appendingPathComponent("home", isDirectory: true)
+        )
+
         let service = SkillCLIService(
             session: session,
             fileManager: .default,
             apiBaseURL: URL(string: "https://mock.skills.local")!,
-            installRootURL: root
+            installRootURL: root,
+            cliAccessManager: accessManager
         )
 
-        let workspace = SkillWorkspaceService(cliService: service)
+        // Inject an isolated UserDefaults-backed selection store so project
+        // scope does not depend on whatever project root happens to be
+        // persisted in `UserDefaults.standard` on the host machine.
+        let defaults = UserDefaults(suiteName: "SkillCLIServiceTests.\(UUID().uuidString)")!
+        let selectionStore = SkillProjectSelectionStore(defaults: defaults)
+        let workspace = SkillWorkspaceService(
+            cliService: service,
+            projectSelectionStore: selectionStore
+        )
 
         return (service, workspace, root)
     }
@@ -127,18 +151,23 @@ struct SkillCLIServiceTests {
         }
         defer { try? FileManager.default.removeItem(at: root) }
 
+        // Install to a single agent so the round-trip is deterministic. A
+        // multi-agent install fans copies across agents that share the same
+        // on-disk skills directory, which is exercised separately below.
         let package = "vercel-labs/agent-skills@vercel-react-best-practices"
-        try await service.addSkill(package: package, isGlobal: true)
+        try await service.addSkill(package: package, isGlobal: true, targetAgents: [.codex])
 
+        // The managed record is authoritative for scope; discovered external
+        // copies resolve to the same qualified name via the skill-lock source
+        // map but are flagged unmanaged, so select on isManagedByPromptHub.
         let installedAfterAdd = try await service.listInstalledSkills()
-        #expect(installedAfterAdd.count == 1)
-        #expect(installedAfterAdd[0].name == package)
-        #expect(installedAfterAdd[0].isGlobal == true)
-        #expect(installedAfterAdd[0].description.contains("Vercel React optimization guidance"))
+        let managed = try #require(installedAfterAdd.first { $0.name == package && $0.isManagedByPromptHub })
+        #expect(managed.isGlobal == true)
+        #expect(managed.description.contains("Vercel React optimization guidance"))
 
-        try await service.removeSkill(name: package, isGlobal: true)
+        try await service.removeSkill(name: package, isGlobal: true, targetAgents: [.codex])
         let installedAfterRemove = try await service.listInstalledSkills()
-        #expect(installedAfterRemove.isEmpty)
+        #expect(!installedAfterRemove.contains { $0.name == package && $0.isManagedByPromptHub })
     }
 
     @Test func testInstalledSnapshotsReflectScopeAndAgents() async throws {
@@ -173,20 +202,34 @@ struct SkillCLIServiceTests {
         }
         defer { try? FileManager.default.removeItem(at: root) }
 
+        // Project scope needs a confined project root on both the install and
+        // the workspace listing so we never write into the repo working dir.
+        let projectRoot = root.appendingPathComponent("project", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        // setSelectedProjectRootURL posts a notification; run it on the main
+        // actor so any @Published observers don't publish off the main thread.
+        await MainActor.run { workspace.setSelectedProjectRootURL(projectRoot) }
+        try #require(workspace.selectedProjectRootURL != nil)
+
+        // Use agents with dedicated project paths (.cursor → .cursor/skills,
+        // .claudeCode → .claude/skills). Agents like .codex/.geminiCLI/.opencode
+        // share .agents/skills, which would attribute one file to several agents
+        // and make the exact-agents assertion ambiguous.
         let package = "vercel-labs/agent-skills@vercel-react-best-practices"
         try await service.addSkill(
             package: package,
             isGlobal: false,
-            targetAgents: [.codex, .geminiCLI]
+            targetAgents: [.cursor, .claudeCode],
+            projectRootURL: projectRoot
         )
 
+        // Select the managed snapshot (the registry is authoritative for the
+        // requested scope and agents); discovered copies are flagged unmanaged.
         let snapshots = try await workspace.listInstalledSkills()
-
-        #expect(snapshots.count == 1)
-        #expect(snapshots[0].packageName == package)
-        #expect(snapshots[0].scope == .project)
-        #expect(snapshots[0].agents == [.codex, .geminiCLI])
-        #expect(snapshots[0].summary.contains("Vercel React optimization guidance"))
+        let managed = try #require(snapshots.first { $0.packageName == package && $0.isManagedByPromptHub })
+        #expect(managed.scope == .project)
+        #expect(managed.agents == [.claudeCode, .cursor])
+        #expect(managed.summary.contains("Vercel React optimization guidance"))
     }
 
     @Test func testInstallationRegistryAggregatesSnapshotsByPackage() async throws {
@@ -292,14 +335,11 @@ struct SkillCLIServiceTests {
     @Test func testInstallLocalSkillFromStoreLoadsDirectorySkill() async throws {
         let (_, workspace, root) = try makeService { request in
             let url = try #require(request.url)
-            #expect(url.path == "/api/skills")
-
-            let payload = """
-            {
-              "skills": []
-            }
-            """.data(using: .utf8)!
-
+            // The post-install store reload queries the catalog, which probes
+            // both /api/skills and the crawler snapshot fallback. Return an
+            // empty (but valid) skill list for any request so the reload yields
+            // no catalog entries without erroring.
+            let payload = Data("{\"skills\": []}".utf8)
             let response = HTTPURLResponse(
                 url: url,
                 statusCode: 200,
@@ -329,17 +369,29 @@ struct SkillCLIServiceTests {
             encoding: .utf8
         )
 
+        // Project scope requires a selected project root. Point it at a real
+        // directory the sandbox can bookmark so the install path is exercised
+        // end to end instead of failing with .projectRootRequired.
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectRoot) }
+        await MainActor.run { workspace.setSelectedProjectRootURL(projectRoot) }
+        try #require(workspace.selectedProjectRootURL != nil)
+
+        // Use .cursor (project root .cursor/skills) so the install targets a
+        // dedicated directory; agents like .codex/.geminiCLI/.opencode all share
+        // .agents/skills, which would make per-agent attribution ambiguous.
         let state = try await workspace.installLocalSkill(
             at: skillDirectory,
             scope: .project,
-            targetAgents: [.codex]
+            targetAgents: [.cursor]
         )
 
         #expect(state.catalogSkills.isEmpty)
-        #expect(state.installedSkills.count == 1)
-        #expect(state.installedSkills[0].packageName == "local-review-skill")
-        #expect(state.installedSkills[0].isGlobal == false)
-        #expect(state.installedSkills[0].agents == [.codex])
+        let installed = try #require(state.installedSkills.first { $0.packageName == "local-review-skill" })
+        #expect(installed.isGlobal == false)
+        #expect(installed.agents == [.cursor])
     }
 
     @Test func testInvalidPackageFormatThrows() async throws {

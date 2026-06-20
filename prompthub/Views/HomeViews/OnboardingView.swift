@@ -62,7 +62,7 @@ struct OnboardingView: View {
                         OnboardingStepTile(
                             number: 3,
                             title: "Set Up CLI Integration",
-                            description: "This is what makes PromptHub different. The app can already manage agent directories, but the public PromptHub CLI installer is still pending release. For now, connect your agent folders in PromptHub first, then use the CLI workflow once the packaged installer ships.",
+                            description: "This is what makes PromptHub different. Connect your agent folders here, then install the `ph` CLI with `brew install dosomeforfun/prompthub/ph` to read the same exports, install skills, and run `ph doctor` from your terminal or CI.",
                             isDone: cliConnected,
                             ctaText: cliConnected ? "CLI connected" : "Set up now",
                             isHighlighted: true,

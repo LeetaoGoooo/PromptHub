@@ -34,11 +34,19 @@ final class CLIDirectoryAccessManager: ObservableObject, @unchecked Sendable {
     static let shared = CLIDirectoryAccessManager()
     
     private let defaults: UserDefaults
-    
+
+    /// When set, every CLI directory resolves to `<base>/<directory>` and the
+    /// catalog's home base is pinned to `base`, bypassing security-scoped
+    /// bookmarks entirely. This exists so tests can confine all skill
+    /// discovery/install I/O to a throwaway directory instead of leaking into
+    /// the real `~/.agents`, `~/.codex`, etc. It is `nil` in production.
+    private let directoryBaseOverride: URL?
+
     @Published var grantedDirectories: Set<CLIDirectory> = []
     
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, directoryBaseOverride: URL? = nil) {
         self.defaults = defaults
+        self.directoryBaseOverride = directoryBaseOverride
         self.grantedDirectories = Set(CLIDirectory.allCases.filter { self.hasAccess(to: $0) })
     }
     
@@ -55,6 +63,9 @@ final class CLIDirectoryAccessManager: ObservableObject, @unchecked Sendable {
     }
     
     func resolvedURL(for directory: CLIDirectory) -> URL? {
+        if let directoryBaseOverride {
+            return directoryBaseOverride.appendingPathComponent(directory.rawValue, isDirectory: true)
+        }
         guard let data = defaults.data(forKey: bookmarkKey(for: directory)) else { return nil }
         var isStale = false
         let url = try? URL(
@@ -146,7 +157,7 @@ final class CLIDirectoryAccessManager: ObservableObject, @unchecked Sendable {
         githubToken: String? = nil
     ) -> SkillCatalogService {
         
-        let sandboxHome = fileManager.homeDirectoryForCurrentUser
+        let sandboxHome = directoryBaseOverride ?? fileManager.homeDirectoryForCurrentUser
         
         func urlFor(_ dir: CLIDirectory) -> URL {
             resolvedURL(for: dir) ?? sandboxHome.appendingPathComponent(dir.rawValue, isDirectory: true)

@@ -44,6 +44,36 @@ public struct PromptHubExportedAsset: Codable, Equatable, Identifiable, Sendable
     public let packageDirectoryPath: String?
     public let markdown: String
     public let body: String
+
+    public init(
+        id: String,
+        kind: PromptHubExportedAssetKind,
+        name: String,
+        slug: String?,
+        installationName: String?,
+        summary: String?,
+        exportedAt: String?,
+        category: String?,
+        tags: [String],
+        path: String,
+        packageDirectoryPath: String?,
+        markdown: String,
+        body: String
+    ) {
+        self.id = id
+        self.kind = kind
+        self.name = name
+        self.slug = slug
+        self.installationName = installationName
+        self.summary = summary
+        self.exportedAt = exportedAt
+        self.category = category
+        self.tags = tags
+        self.path = path
+        self.packageDirectoryPath = packageDirectoryPath
+        self.markdown = markdown
+        self.body = body
+    }
 }
 
 public struct PromptHubInstalledSkillSummary: Codable, Equatable, Identifiable, Sendable {
@@ -55,6 +85,25 @@ public struct PromptHubInstalledSkillSummary: Codable, Equatable, Identifiable, 
     public let agents: [String]
     public let isManagedByPromptHub: Bool
     public let url: String?
+    public let installedPaths: [String]
+
+    public init(
+        package: String,
+        description: String,
+        scope: PromptHubInstallScope,
+        agents: [String],
+        isManagedByPromptHub: Bool,
+        url: String?,
+        installedPaths: [String] = []
+    ) {
+        self.package = package
+        self.description = description
+        self.scope = scope
+        self.agents = agents
+        self.isManagedByPromptHub = isManagedByPromptHub
+        self.url = url
+        self.installedPaths = installedPaths
+    }
 }
 
 public enum PromptHubCLIError: LocalizedError, Equatable {
@@ -62,6 +111,21 @@ public enum PromptHubCLIError: LocalizedError, Equatable {
     case assetNotFound(kind: PromptHubExportedAssetKind, identifier: String)
     case ambiguousAsset(kind: PromptHubExportedAssetKind, identifier: String, matches: [String])
     case invalidRemoteSkillReference(String)
+    case missingPromptVariables(identifier: String, missing: [String])
+    case invalidVariableAssignment(String)
+    case installedSkillNotFound(package: String)
+    case unmanagedSkill(package: String)
+    case noKnownInstallSource(package: String)
+    // Prompt write paths (CLI-14).
+    case invalidPromptName(String)
+    case invalidPromptID(String)
+    case promptIDCollision(id: String, existingName: String)
+    case promptSlugCollision(slug: String, existingID: String)
+    case promptBodyFileNotFound(String)
+    case promptWriteFailed(path: String, underlying: String)
+    case promptDeleteRefused(identifier: String)
+    // Remote catalog (CLI-16).
+    case remoteCatalogUnavailable(description: String)
 
     public var errorDescription: String? {
         switch self {
@@ -73,14 +137,69 @@ public enum PromptHubCLIError: LocalizedError, Equatable {
             return "Multiple exported \(kind.displayName)s matched '\(identifier)': \(matches.joined(separator: ", "))"
         case .invalidRemoteSkillReference(let reference):
             return "Invalid skill reference '\(reference)'; expected owner/repo@skill-name"
+        case .missingPromptVariables(let identifier, let missing):
+            let list = missing.joined(separator: ", ")
+            return "Prompt '\(identifier)' requires variables not provided: \(list). Supply them with --var name=value (or --var-stdin name)."
+        case .invalidVariableAssignment(let value):
+            return "Invalid --var assignment '\(value)'; expected key=value"
+        case .installedSkillNotFound(let package):
+            return "No installed skill named '\(package)' was discovered in any agent directory"
+        case .unmanagedSkill(let package):
+            return "Refusing to uninstall '\(package)': installed files are not managed by PromptHub. Re-run with --force to delete them anyway."
+        case .noKnownInstallSource(let package):
+            return "Cannot reinstall '\(package)': no exported PromptHub skill matches and the package name is not a remote owner/repo@skill reference."
+        case .invalidPromptName(let value):
+            return "Invalid prompt name '\(value)'; --name must contain at least one non-whitespace character"
+        case .invalidPromptID(let value):
+            return "Invalid prompt id '\(value)'; --id must be a UUID (e.g. 11111111-2222-3333-4444-555555555555)"
+        case .promptIDCollision(let id, let existingName):
+            return "Cannot create prompt: id '\(id)' is already in use by '\(existingName)'. Use ph prompt update instead, or omit --id to auto-generate one."
+        case .promptSlugCollision(let slug, let existingID):
+            return "Cannot write prompt: slug '\(slug)' is already used by prompt '\(existingID)'. Choose a different --name."
+        case .promptBodyFileNotFound(let path):
+            return "Prompt body file not found at '\(path)'. Pass --body @path/to/file.md or --body-stdin instead."
+        case .promptWriteFailed(let path, let underlying):
+            return "Failed to write prompt to '\(path)': \(underlying)"
+        case .promptDeleteRefused(let identifier):
+            return "Refusing to delete '\(identifier)' from an interactive shell without confirmation. Re-run with --yes."
+        case .remoteCatalogUnavailable(let detail):
+            return "Remote skill catalog unavailable: \(detail). Local 'ph skill exports' and already-installed 'ph skill list' still work; check network connectivity or set PROMPTHUB_GITHUB_TOKEN if rate-limited."
         }
     }
 }
 
+public struct PromptHubRenderResult: Codable, Equatable, Sendable {
+    public let id: String
+    public let name: String
+    public let slug: String?
+    public let path: String
+    public let rendered: String
+    public let variables: [String: String]
+    public let declaredVariables: [String]
+
+    public init(
+        id: String,
+        name: String,
+        slug: String?,
+        path: String,
+        rendered: String,
+        variables: [String: String],
+        declaredVariables: [String]
+    ) {
+        self.id = id
+        self.name = name
+        self.slug = slug
+        self.path = path
+        self.rendered = rendered
+        self.variables = variables
+        self.declaredVariables = declaredVariables
+    }
+}
+
 public final class PromptHubCLIService {
-    private let environment: PromptHubCLIEnvironment
+    let environment: PromptHubCLIEnvironment
     private let fileManager: FileManager
-    private let session: URLSession
+    let session: URLSession
 
     public init(
         environment: PromptHubCLIEnvironment = .live(),
@@ -98,6 +217,55 @@ public final class PromptHubCLIService {
 
     public func showPrompt(identifier: String) throws -> PromptHubExportedAsset {
         try resolveAsset(identifier: identifier, within: listPrompts(), kind: .prompt)
+    }
+
+    /// Search exported prompts by name, slug, installation name, tags, or body text.
+    /// Matching is case-insensitive substring on each field. An empty query returns all prompts.
+    public func searchPrompts(query: String) throws -> [PromptHubExportedAsset] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prompts = try listPrompts()
+        guard !trimmed.isEmpty else { return prompts }
+        let needle = trimmed.lowercased()
+        return prompts.filter { asset in
+            if asset.name.lowercased().contains(needle) { return true }
+            if let slug = asset.slug, slug.lowercased().contains(needle) { return true }
+            if let install = asset.installationName, install.lowercased().contains(needle) { return true }
+            if asset.id.lowercased().contains(needle) { return true }
+            if asset.tags.contains(where: { $0.lowercased().contains(needle) }) { return true }
+            if let summary = asset.summary, summary.lowercased().contains(needle) { return true }
+            if asset.body.lowercased().contains(needle) { return true }
+            return false
+        }
+    }
+
+    /// Render a prompt by substituting `{{variable}}` placeholders with the provided values.
+    /// - Parameters:
+    ///   - identifier: Prompt id, slug, installation name, or display name (same precedence as `showPrompt`).
+    ///   - variables: Map of placeholder name → replacement text. Whitespace inside `{{ name }}` is tolerated.
+    /// - Throws: `missingPromptVariables` if any placeholders remain unresolved after substitution.
+    public func renderPrompt(
+        identifier: String,
+        variables: [String: String] = [:]
+    ) throws -> PromptHubRenderResult {
+        let prompt = try showPrompt(identifier: identifier)
+        let declared = Self.placeholders(in: prompt.body)
+        let missing = declared.filter { variables[$0] == nil }
+        if !missing.isEmpty {
+            throw PromptHubCLIError.missingPromptVariables(identifier: identifier, missing: missing)
+        }
+        let rendered = Self.substitute(body: prompt.body, variables: variables)
+        let used = declared.reduce(into: [String: String]()) { acc, key in
+            acc[key] = variables[key] ?? ""
+        }
+        return PromptHubRenderResult(
+            id: prompt.id,
+            name: prompt.name,
+            slug: prompt.slug,
+            path: prompt.path,
+            rendered: rendered,
+            variables: used,
+            declaredVariables: declared
+        )
     }
 
     public func listExportedSkills() throws -> [PromptHubExportedAsset] {
@@ -123,7 +291,8 @@ public final class PromptHubCLIService {
                     scope: skill.isGlobal ? .global : .project,
                     agents: skill.installedAgents.map(\.rawValue).sorted(),
                     isManagedByPromptHub: skill.isManagedByPromptHub,
-                    url: skill.url
+                    url: skill.url,
+                    installedPaths: skill.installedPaths.sorted()
                 )
             }
             .filter { summary in
@@ -142,6 +311,27 @@ public final class PromptHubCLIService {
                 }
                 return lhs.package.localizedCaseInsensitiveCompare(rhs.package) == .orderedAscending
             }
+    }
+
+    /// Look up every installed copy of a skill package across global and project scope.
+    /// - Parameter scope: Optional filter; when nil, every scope is returned.
+    /// - Throws: `installedSkillNotFound` when no install matches the package name in any agent directory.
+    public func inspectInstalledSkill(
+        package: String,
+        scope: PromptHubInstallScope? = nil,
+        projectRootURL: URL? = nil
+    ) async throws -> [PromptHubInstalledSkillSummary] {
+        let filter: InstalledSkillScopeFilter = scope.map {
+            $0 == .global ? .global : .project
+        } ?? .all
+        let trimmed = package.trimmingCharacters(in: .whitespacesAndNewlines)
+        let needle = trimmed.lowercased()
+        let installed = try await listInstalledSkills(scopeFilter: filter, projectRootURL: projectRootURL)
+        let matches = installed.filter { $0.package.lowercased() == needle }
+        if matches.isEmpty {
+            throw PromptHubCLIError.installedSkillNotFound(package: trimmed)
+        }
+        return matches
     }
 
     @discardableResult
@@ -363,6 +553,54 @@ public final class PromptHubCLIService {
         }
 
         return (source: source, skillName: skillName)
+    }
+
+    /// Extract `{{name}}` placeholders in declaration order, deduplicated. Whitespace
+    /// inside the braces is tolerated so `{{ foo }}` and `{{foo}}` resolve to the same key.
+    public static func placeholders(in body: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: "\\{\\{([^}]+)\\}\\}") else {
+            return []
+        }
+        let range = NSRange(body.startIndex..., in: body)
+        var seen = Set<String>()
+        var result: [String] = []
+        for match in regex.matches(in: body, range: range) {
+            guard let r = Range(match.range(at: 1), in: body) else { continue }
+            let name = String(body[r]).trimmingCharacters(in: .whitespaces)
+            guard !name.isEmpty, seen.insert(name).inserted else { continue }
+            result.append(name)
+        }
+        return result
+    }
+
+    /// Replace `{{name}}` and `{{ name }}` occurrences with the matching variable value.
+    /// Unknown placeholders are left untouched so callers can detect them.
+    public static func substitute(body: String, variables: [String: String]) -> String {
+        guard let regex = try? NSRegularExpression(pattern: "\\{\\{([^}]+)\\}\\}") else {
+            return body
+        }
+        let mutable = NSMutableString(string: body)
+        let matches = regex.matches(in: body, range: NSRange(body.startIndex..., in: body))
+        for match in matches.reversed() {
+            guard let nameRange = Range(match.range(at: 1), in: body) else { continue }
+            let name = String(body[nameRange]).trimmingCharacters(in: .whitespaces)
+            guard let value = variables[name] else { continue }
+            mutable.replaceCharacters(in: match.range, with: value)
+        }
+        return mutable as String
+    }
+
+    /// Parse a `key=value` string from a `--var` flag. The value may be empty.
+    public static func parseVariableAssignment(_ raw: String) throws -> (String, String) {
+        guard let eq = raw.firstIndex(of: "=") else {
+            throw PromptHubCLIError.invalidVariableAssignment(raw)
+        }
+        let key = String(raw[..<eq]).trimmingCharacters(in: .whitespaces)
+        let value = String(raw[raw.index(after: eq)...])
+        guard !key.isEmpty else {
+            throw PromptHubCLIError.invalidVariableAssignment(raw)
+        }
+        return (key, value)
     }
 
     private static func sanitizeIdentifier(_ value: String) -> String {

@@ -28,6 +28,7 @@ struct SkillDraftDetailView: View {
     @State var newItemKind: SkillDraftPackageStore.NewItemKind = .file
     @State var newItemName = ""
     @State var expandedDirectories: Set<String> = []
+    @State var pendingDeletionItem: SkillDraftPackageItem?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,24 +49,11 @@ struct SkillDraftDetailView: View {
         .task(id: skill.id) {
             loadPackageWorkspace(resetSelection: true)
         }
+        .onDeleteCommand {
+            requestDeleteSelectedItem()
+        }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Menu {
-                    Button("New Text File") {
-                        newItemKind = .file
-                        newItemName = ""
-                        showingNewItemSheet = true
-                    }
-
-                    Button("New Folder") {
-                        newItemKind = .folder
-                        newItemName = ""
-                        showingNewItemSheet = true
-                    }
-                } label: {
-                    Label("New Item", systemImage: "plus")
-                }
-
                 Button(action: saveSelectedFile) {
                     Label("Save File", systemImage: "square.and.arrow.down")
                 }
@@ -88,6 +76,23 @@ struct SkillDraftDetailView: View {
         }
         .sheet(isPresented: $showingNewItemSheet) {
             newItemSheet
+        }
+        .alert("Delete Item", isPresented: Binding(
+            get: { pendingDeletionItem != nil },
+            set: { if !$0 { pendingDeletionItem = nil } }
+        )) {
+            Button("Cancel", role: .cancel) {
+                pendingDeletionItem = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let item = pendingDeletionItem {
+                    deletePackageItem(item)
+                }
+            }
+        } message: {
+            if let item = pendingDeletionItem {
+                Text("Delete \(item.displayName)? This removes it from the draft package.")
+            }
         }
         .toast(isPresenting: $showToast) {
             AlertToast(type: toastType, title: toastTitle)

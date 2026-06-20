@@ -41,7 +41,7 @@ extension SkillStoreView {
         Task {
             do {
                 let snapshot = try await workspaceService.installCatalogSkill(
-                    skill, query: searchText, scope: scope, targetAgents: targetAgents,
+                    skill, query: activeQuery, scope: scope, targetAgents: targetAgents,
                     authoredDraftCount: skillDrafts.count, existingSnapshot: workspaceSnapshot
                 )
                 workspaceSnapshot = snapshot
@@ -68,7 +68,7 @@ extension SkillStoreView {
         Task {
             do {
                 let snapshot = try await workspaceService.removeCatalogSkill(
-                    skill, query: searchText, scope: scope, installedSkills: installedSkills,
+                    skill, query: activeQuery, scope: scope, installedSkills: installedSkills,
                     authoredDraftCount: skillDrafts.count, existingSnapshot: workspaceSnapshot
                 )
                 workspaceSnapshot = snapshot
@@ -103,7 +103,7 @@ extension SkillStoreView {
             defer { isInstallingLocalSkill = false }
             do {
                 let snapshot = try await workspaceService.installLocalSkill(
-                    at: selectedURL, query: searchText,
+                    at: selectedURL, query: activeQuery,
                     scope: isGlobal ? .global : .project,
                     targetAgents: AgentWorkflow.defaultTargets,
                     authoredDraftCount: skillDrafts.count,

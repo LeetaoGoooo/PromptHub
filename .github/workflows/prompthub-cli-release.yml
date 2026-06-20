@@ -33,34 +33,14 @@ jobs:
       - name: Run PromptHub CLI tests
         run: swift test --package-path PromptHubCLI
 
-      - name: Verify Homebrew tap install
-        run: |
-          TAP_NAME="local/prompthub-release"
-          trap 'brew uninstall --force ph >/dev/null 2>&1 || true; brew untap "$TAP_NAME" >/dev/null 2>&1 || true' EXIT
-
-          brew untap "$TAP_NAME" >/dev/null 2>&1 || true
-          brew tap-new "$TAP_NAME"
-          TAP_REPO="$(brew --repository "$TAP_NAME")"
-
-          cp Formula/ph.rb "$TAP_REPO/Formula/ph.rb"
-          tar \
-            --exclude='.git' \
-            --exclude='./build' \
-            --exclude='./PromptHubCLI/.build' \
-            -czf "$RUNNER_TEMP/prompthub-source.tar.gz" .
-          export HOMEBREW_PROMPTHUB_SOURCE_URL="file://$RUNNER_TEMP/prompthub-source.tar.gz"
-          export HOMEBREW_PROMPTHUB_SOURCE_SHA256="$(shasum -a 256 "$RUNNER_TEMP/prompthub-source.tar.gz" | awk '{print $1}')"
-
-          brew install "$TAP_NAME/ph"
-          brew test "$TAP_NAME/ph"
+      - name: Run acceptance smoke matrix
+        run: PromptHubCLI/Tests/Smoke/run-all.sh
 
       - name: Build release binary
         run: swift build --package-path PromptHubCLI -c release --product ph
 
       - name: Package release assets
         id: package
-        env:
-          TAG_NAME: ${{ steps.version.outputs.tag }}
         run: |
           BIN_PATH="$(swift build --package-path PromptHubCLI -c release --product ph --show-bin-path)"
           mkdir -p dist/archive
@@ -71,6 +51,35 @@ jobs:
           printf '%s\n' "$ARCHIVE_SHA256" > dist/ph-macos-arm64.sha256
 
           echo "archive_sha256=$ARCHIVE_SHA256" >> "$GITHUB_OUTPUT"
+          echo "archive_path=$(pwd)/dist/ph-macos-arm64.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke install via Homebrew formula
+        env:
+          ARCHIVE_PATH: ${{ steps.package.outputs.archive_path }}
+          ARCHIVE_SHA256: ${{ steps.package.outputs.archive_sha256 }}
+          ARCHIVE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          TAP_NAME="local/prompthub-release"
+          trap 'brew uninstall --force ph >/dev/null 2>&1 || true; brew untap "$TAP_NAME" >/dev/null 2>&1 || true' EXIT
+
+          brew untap "$TAP_NAME" >/dev/null 2>&1 || true
+          brew tap-new "$TAP_NAME"
+          TAP_REPO="$(brew --repository "$TAP_NAME")"
+
+          cp Formula/ph.rb "$TAP_REPO/Formula/ph.rb"
+
+          export HOMEBREW_PROMPTHUB_BOTTLE_URL="file://$ARCHIVE_PATH"
+          export HOMEBREW_PROMPTHUB_BOTTLE_SHA256="$ARCHIVE_SHA256"
+          export HOMEBREW_PROMPTHUB_BOTTLE_VERSION="$ARCHIVE_VERSION"
+
+          brew install "$TAP_NAME/ph"
+          installed_path="$(brew --prefix "$TAP_NAME/ph")/bin/ph"
+          if [[ ! -x "$installed_path" ]]; then
+            echo "Homebrew install did not produce ph at $installed_path" >&2
+            exit 1
+          fi
+          "$installed_path" --help | head -1
+          brew test "$TAP_NAME/ph"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2

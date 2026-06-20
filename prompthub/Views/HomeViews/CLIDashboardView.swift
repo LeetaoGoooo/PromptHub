@@ -656,7 +656,7 @@ private struct CLIDashboardInspector: View {
     }
 
     private var cliInstallHint: String {
-        cliExecutablePath ?? "PromptHub CLI is not publicly released yet"
+        cliExecutablePath ?? "Install: brew install dosomeforfun/prompthub/ph (or --HEAD on Intel)"
     }
 
     var body: some View {
@@ -841,11 +841,11 @@ struct CLIHowItWorksCard: View {
 
     private var commandBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("PromptHub CLI release status")
+            Text("PromptHub CLI")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            Text("The app-side directory integration is implemented, but the public PromptHub CLI installer has not shipped yet. Until the CLI package, tests, and release pipeline are published, Homebrew install and `ph` command examples should not be treated as available to users.")
+            Text("Install `ph` via Homebrew: `brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git && brew install dosomeforfun/prompthub/ph` (Apple Silicon). Intel users can run `brew install --HEAD dosomeforfun/prompthub/ph` to build from source. The `ph` binary reads the same `~/.prompthub/` exports this dashboard writes, so prompt and skill state stays in sync. Use the app to author and edit; use `ph` to script, automate, and install agent skills from CI. Run `ph doctor` if anything looks wrong on the CLI side.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

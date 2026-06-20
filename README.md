@@ -54,13 +54,19 @@ PromptHub introduces a unified interface to manage context and skills for variou
 
 The standalone CLI now lives in `PromptHubCLI/` and exposes a real `ph` executable for exported prompts and agent skill operations.
 
+**App vs `ph`**: use the app to author, edit, live-test, and grant agent
+folder access; use `ph` to script, automate, pipe JSON, and install
+skills from the shell or CI. Both surfaces read and write the same
+`~/.prompthub/` exports and agent skill directories.
+
 - Build locally: `swift build --package-path PromptHubCLI -c release --product ph`
 - Test locally: `swift test --package-path PromptHubCLI`
-- Install with Homebrew from the repo tap: `brew tap LeetaoGoooo/PromptHub https://github.com/LeetaoGoooo/PromptHub.git && brew install --HEAD LeetaoGoooo/PromptHub/ph`
+- Install with Homebrew (stable, Apple Silicon): `brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git && brew install dosomeforfun/prompthub/ph`
+- Install with Homebrew (`--HEAD`, builds from source, also works on Intel): `brew install --HEAD dosomeforfun/prompthub/ph`
 - Command examples: `ph prompt list`, `ph prompt show`, `ph skill exports`, `ph skill install`, `ph skill list`
-- Release automation: pushing a `ph-vX.Y.Z` tag triggers the GitHub Actions workflow that publishes a release binary, while Homebrew installs flow through `Formula/ph.rb` in the repository tap
+- Release automation: pushing a `ph-vX.Y.Z` tag runs the GitHub Actions workflow that publishes `ph-macos-arm64.tar.gz` + `.sha256` and smoke-installs `Formula/ph.rb` against the local archive before publishing
 
-See `PromptHubCLI/README.md` for install and release details.
+See `PromptHubCLI/README.md` for usage and [`docs/cli-release.md`](docs/cli-release.md) for the full release & install reference.
 
 ## 🧪 Prompt Testing Features
 

@@ -146,6 +146,19 @@ final class SkillDraftService {
         )
     }
 
+    func deletePackageItem(
+        relativePath: String,
+        for draft: Skill,
+        in context: ModelContext
+    ) throws {
+        try packageStore.deleteItem(
+            relativePath: relativePath,
+            for: draft,
+            canonicalSkillMarkdown: exportMarkdown(for: draft)
+        )
+        try context.save()
+    }
+
     func revealPackageItem(relativePath: String?, for draft: Skill) throws {
         try packageStore.reveal(relativePath: relativePath, for: draft, canonicalSkillMarkdown: exportMarkdown(for: draft))
     }

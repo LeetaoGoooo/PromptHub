@@ -105,7 +105,6 @@ struct InstalledSkillsView: View {
         case .nameDesc: return skills.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedDescending }
         }
     }
-    }
 
     var projectSkills: [InstalledSkillSnapshot] { filteredSkills.filter { !$0.isGlobal } }
     var globalSkills:  [InstalledSkillSnapshot] { filteredSkills.filter { $0.isGlobal } }

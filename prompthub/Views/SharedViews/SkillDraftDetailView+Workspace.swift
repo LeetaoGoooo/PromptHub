@@ -33,18 +33,45 @@ extension SkillDraftDetailView {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Package")
+                    Text("Files")
                         .font(.headline)
-                    Text(packageRootPath ?? "Preparing package…")
-                        .font(.caption.monospaced())
+                    Text(packageSidebarSubtitle)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
+                .help(packageRootPath ?? "Preparing package…")
                 Spacer(minLength: 8)
+                Menu {
+                    Button("New Text File") {
+                        presentNewItemSheet(kind: .file)
+                    }
+
+                    Button("New Folder") {
+                        presentNewItemSheet(kind: .folder)
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .controlSize(.small)
+                .fixedSize()
+                .help("Create a package file or folder")
+
+                Button(action: requestDeleteSelectedItem) {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .disabled(!canDeleteSelectedItem)
+                .help(canDeleteSelectedItem ? "Delete selected item" : "SKILL.md cannot be deleted")
+
                 Button(action: { loadPackageWorkspace(resetSelection: false) }) {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.borderless)
+                .controlSize(.small)
                 .help("Reload package files")
             }
             .padding(.horizontal, 14)
@@ -67,9 +94,7 @@ extension SkillDraftDetailView {
                     description: "Create SKILL.md support files like scripts and assets from the package sidebar."
                 ) {
                     Button("New Text File") {
-                        newItemKind = .file
-                        newItemName = ""
-                        showingNewItemSheet = true
+                        presentNewItemSheet(kind: .file)
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -83,6 +108,15 @@ extension SkillDraftDetailView {
                                 expandedDirectories: $expandedDirectories,
                                 onSelect: { selectedItem in
                                     selectPackageItem(selectedItem)
+                                },
+                                onDelete: { selectedItem in
+                                    requestDeletePackageItem(selectedItem)
+                                },
+                                onCreateFile: { parentItem in
+                                    presentNewItemSheet(kind: .file, under: parentItem)
+                                },
+                                onCreateFolder: { parentItem in
+                                    presentNewItemSheet(kind: .folder, under: parentItem)
                                 }
                             )
                         }
@@ -104,14 +138,14 @@ extension SkillDraftDetailView {
                 if let selectedPackageItem {
                     if selectedPackageItem.isDirectory {
                         selectedFolderOverview(selectedPackageItem)
-                    } else if selectedItemIsEditableText {
+                    } else if isSkillMarkdownItem(selectedPackageItem) || selectedItemIsEditableText {
                         TextEditor(text: $editorText)
                             .font(.system(.body, design: .monospaced))
                             .padding(14)
                             .scrollContentBackground(.hidden)
                             .background(Color(NSColor.textBackgroundColor))
                             .onChange(of: editorText) { _, newValue in
-                                if selectedRelativePath == "SKILL.md" {
+                                if isSkillMarkdownItem(selectedPackageItem) {
                                     instructionsText = newValue
                                 }
                                 if newValue != persistedEditorText {
@@ -148,7 +182,10 @@ extension SkillDraftDetailView {
 
             Spacer(minLength: 12)
 
-            if let selectedPackageItem, !selectedPackageItem.isDirectory, !selectedItemIsEditableText {
+            if let selectedPackageItem,
+               !selectedPackageItem.isDirectory,
+               !isSkillMarkdownItem(selectedPackageItem),
+               !selectedItemIsEditableText {
                 Text("Open externally")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
@@ -185,24 +222,30 @@ extension SkillDraftDetailView {
             ])
 
             HStack(spacing: 10) {
-                Button("New Text File") {
-                    newItemKind = .file
-                    newItemName = ""
-                    showingNewItemSheet = true
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button("New Folder") {
-                    newItemKind = .folder
-                    newItemName = ""
-                    showingNewItemSheet = true
+                Button("New File") {
+                    presentNewItemSheet(kind: .file)
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button("New Folder") {
+                    presentNewItemSheet(kind: .folder)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button("Delete Folder") {
+                    requestDeletePackageItem(item)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(!canDeletePackageItem(item))
 
                 Button("Reveal in Finder") {
                     revealSelectedItemInFinder()
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.small)
             }
 
             Spacer(minLength: 0)
@@ -229,12 +272,21 @@ extension SkillDraftDetailView {
                 Button("Open Externally") {
                     openSelectedItemExternally()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button("Delete File") {
+                    requestDeletePackageItem(item)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(!canDeletePackageItem(item))
 
                 Button("Reveal in Finder") {
                     revealSelectedItemInFinder()
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.small)
             }
 
             Spacer(minLength: 0)
@@ -434,6 +486,23 @@ extension SkillDraftDetailView {
         flatten(items: packageItems)
     }
 
+    var packageSidebarSubtitle: String {
+        if isLoadingPackage && packageItems.isEmpty {
+            return "Preparing local draft package…"
+        }
+
+        let itemCount = flatPackageItems.count
+        if itemCount == 0 {
+            return "Stored locally. Start by adding files to this draft."
+        }
+        return itemCount == 1 ? "1 item in this local draft package" : "\(itemCount) items in this local draft package"
+    }
+
+    var canDeleteSelectedItem: Bool {
+        guard let selectedPackageItem else { return false }
+        return canDeletePackageItem(selectedPackageItem)
+    }
+
     func loadPackageWorkspace(resetSelection: Bool) {
         do {
             isLoadingPackage = true
@@ -460,6 +529,36 @@ extension SkillDraftDetailView {
         loadSelectedItemContents()
     }
 
+    func requestDeleteSelectedItem() {
+        guard let selectedPackageItem else { return }
+        requestDeletePackageItem(selectedPackageItem)
+    }
+
+    func requestDeletePackageItem(_ item: SkillDraftPackageItem) {
+        guard canDeletePackageItem(item) else { return }
+        pendingDeletionItem = item
+    }
+
+    func presentNewItemSheet(kind: SkillDraftPackageStore.NewItemKind, under item: SkillDraftPackageItem? = nil) {
+        if let item {
+            selectedRelativePath = item.relativePath
+            expandHierarchy(for: item.relativePath)
+            loadSelectedItemContents()
+        }
+        newItemKind = kind
+        newItemName = ""
+        showingNewItemSheet = true
+    }
+
+    func isSkillMarkdownItem(_ item: SkillDraftPackageItem) -> Bool {
+        item.displayName.caseInsensitiveCompare("SKILL.md") == .orderedSame ||
+        item.relativePath.caseInsensitiveCompare("SKILL.md") == .orderedSame
+    }
+
+    func canDeletePackageItem(_ item: SkillDraftPackageItem) -> Bool {
+        !isSkillMarkdownItem(item)
+    }
+
     func loadSelectedItemContents() {
         guard let selectedPackageItem else {
             editorText = ""
@@ -477,7 +576,7 @@ extension SkillDraftDetailView {
 
         // SKILL.md is always treated as editable text – fall back to in-memory
         // instructions if the on-disk file is not yet readable (e.g. first create).
-        let isSkillMD = selectedPackageItem.relativePath == "SKILL.md"
+        let isSkillMD = isSkillMarkdownItem(selectedPackageItem)
 
         do {
             let isEditable = isSkillMD ? true : (try draftService.isEditableTextFile(relativePath: selectedPackageItem.relativePath, for: skill))
@@ -530,7 +629,7 @@ extension SkillDraftDetailView {
                 in: modelContext
             )
             persistedEditorText = editorText
-            if selectedPackageItem.relativePath == "SKILL.md" {
+            if isSkillMarkdownItem(selectedPackageItem) {
                 instructionsText = skill.latestVersion?.instructions ?? editorText
             }
             loadPackageWorkspace(resetSelection: false)
@@ -559,6 +658,34 @@ extension SkillDraftDetailView {
         }
     }
 
+    func deletePackageItem(_ item: SkillDraftPackageItem) {
+        do {
+            let deletedRelativePath = item.relativePath
+            let nextSelection = item.isDirectory
+                ? deletedRelativePath.split(separator: "/").dropLast().joined(separator: "/")
+                : deletedRelativePath.split(separator: "/").dropLast().joined(separator: "/")
+
+            try draftService.deletePackageItem(relativePath: deletedRelativePath, for: skill, in: modelContext)
+            pendingDeletionItem = nil
+            expandedDirectories.remove(deletedRelativePath)
+            loadPackageWorkspace(resetSelection: false)
+
+            if let surviving = findItem(relativePath: selectedRelativePath, in: packageItems) {
+                selectedRelativePath = surviving.relativePath
+            } else if !nextSelection.isEmpty, findItem(relativePath: nextSelection, in: packageItems) != nil {
+                selectedRelativePath = nextSelection
+            } else {
+                selectedRelativePath = preferredSelectionPath(from: packageItems) ?? "SKILL.md"
+            }
+
+            loadSelectedItemContents()
+            showToastMsg("Deleted \(item.displayName)", alertType: .complete(.green))
+        } catch {
+            pendingDeletionItem = nil
+            showToastMsg("Failed to delete item: \(error.localizedDescription)")
+        }
+    }
+
     func revealSelectedItemInFinder() {
         do {
             try draftService.revealPackageItem(relativePath: selectedRelativePath, for: skill)
@@ -577,7 +704,7 @@ extension SkillDraftDetailView {
     }
 
     func preferredSelectionPath(from items: [SkillDraftPackageItem]) -> String? {
-        if flatten(items: items).contains(where: { $0.relativePath == "SKILL.md" }) {
+        if flatten(items: items).contains(where: isSkillMarkdownItem) {
             return "SKILL.md"
         }
         return flatten(items: items).first(where: { !$0.isDirectory })?.relativePath
@@ -617,6 +744,9 @@ private struct DraftPackageSidebarRow: View {
     @Binding var selectedRelativePath: String
     @Binding var expandedDirectories: Set<String>
     let onSelect: (SkillDraftPackageItem) -> Void
+    let onDelete: (SkillDraftPackageItem) -> Void
+    let onCreateFile: (SkillDraftPackageItem) -> Void
+    let onCreateFolder: (SkillDraftPackageItem) -> Void
 
     private var isSelected: Bool {
         selectedRelativePath == item.relativePath
@@ -632,7 +762,10 @@ private struct DraftPackageSidebarRow: View {
                                 item: child,
                                 selectedRelativePath: $selectedRelativePath,
                                 expandedDirectories: $expandedDirectories,
-                                onSelect: onSelect
+                                onSelect: onSelect,
+                                onDelete: onDelete,
+                                onCreateFile: onCreateFile,
+                                onCreateFolder: onCreateFolder
                             )
                             .padding(.leading, 14)
                         }
@@ -651,6 +784,28 @@ private struct DraftPackageSidebarRow: View {
                     rowLabel
                 }
                 .buttonStyle(.plain)
+            }
+        }
+        .contextMenu {
+            if item.isDirectory {
+                Button("New File") {
+                    onSelect(item)
+                    onCreateFile(item)
+                }
+                Button("New Folder") {
+                    onSelect(item)
+                    onCreateFolder(item)
+                }
+                Divider()
+            }
+            Button("Reveal in Finder") {
+                NSWorkspace.shared.activateFileViewerSelecting([item.url])
+            }
+            if item.relativePath.caseInsensitiveCompare("SKILL.md") != .orderedSame {
+                Divider()
+                Button("Delete", role: .destructive) {
+                    onDelete(item)
+                }
             }
         }
     }

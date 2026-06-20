@@ -194,6 +194,9 @@
         }
       }
     },
+    "Add one or more project folders to make project-scope skill installs switchable." : {
+
+    },
     "Add Private Source" : {
 
     },
@@ -203,6 +206,9 @@
     "Add private sources in Settings → Private Sources." : {
 
     },
+    "Add Project…" : {
+
+    },
     "Agent" : {
 
     },
@@ -210,6 +216,9 @@
 
     },
     "Agents" : {
+
+    },
+    "Aggregate view is read-only for project-scoped installs. Switch back to Active Project to remove skills or change CLI targets." : {
 
     },
     "AI" : {
@@ -517,9 +526,6 @@
         }
       }
     },
-    "Choose Project…" : {
-
-    },
     "Choose where and for which agents this skill will be installed." : {
 
     },
@@ -532,6 +538,9 @@
     "Clear" : {
 
     },
+    "Clear Active" : {
+
+    },
     "Clear All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -541,9 +550,6 @@
           }
         }
       }
-    },
-    "Clear Project" : {
-
     },
     "CLI" : {
 
@@ -747,6 +753,9 @@
         }
       }
     },
+    "Copy Name" : {
+
+    },
     "Copy Prompt" : {
       "localizations" : {
         "zh-Hans" : {
@@ -864,6 +873,9 @@
         }
       }
     },
+    "Create" : {
+
+    },
     "Create a new current version from this history entry" : {
 
     },
@@ -871,6 +883,9 @@
 
     },
     "Create a new skill draft (Cmd+N)" : {
+
+    },
+    "Create a package file or folder" : {
 
     },
     "Create Share Link Failed" : {
@@ -939,10 +954,22 @@
         }
       }
     },
+    "Delete %@? This removes it from the draft package." : {
+
+    },
     "Delete %@? This will also remove its saved versions." : {
 
     },
     "Delete Draft" : {
+
+    },
+    "Delete File" : {
+
+    },
+    "Delete Folder" : {
+
+    },
+    "Delete Item" : {
 
     },
     "Delete Prompt" : {
@@ -956,6 +983,9 @@
         }
       }
     },
+    "Delete selected item" : {
+
+    },
     "Delete Shared Creation" : {
       "comment" : "Tooltip for delete button",
       "localizations" : {
@@ -968,6 +998,9 @@
       }
     },
     "Delete Skill Draft" : {
+
+    },
+    "Delete this prompt" : {
 
     },
     "Description" : {
@@ -988,6 +1021,9 @@
 
     },
     "Discard" : {
+
+    },
+    "Discard this empty prompt draft" : {
 
     },
     "Disconnected" : {
@@ -1028,10 +1064,13 @@
         }
       }
     },
+    "Duplicate" : {
+
+    },
     "Duplicate Into Latest" : {
 
     },
-    "Duplicate to Draft" : {
+    "e.g. https://github.com/owner/repo/skill-name or owner/repo/skill-name" : {
 
     },
     "e.g. Internal engineering skills" : {
@@ -1265,6 +1304,9 @@
         }
       }
     },
+    "example.sh" : {
+
+    },
     "Existing Share Link Copied" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1335,7 +1377,13 @@
     "Fetching remote SKILL.md…" : {
 
     },
+    "Files" : {
+
+    },
     "Fill in variables and copy the rendered output" : {
+
+    },
+    "Forget this saved project" : {
 
     },
     "Format: owner/repo — no https:// prefix required." : {
@@ -1552,6 +1600,12 @@
     "Install from a private source…" : {
 
     },
+    "Install from GitHub" : {
+
+    },
+    "Install from GitHub URL…" : {
+
+    },
     "Install from Private Source" : {
 
     },
@@ -1559,6 +1613,9 @@
 
     },
     "Install Local Skill" : {
+
+    },
+    "Install Package" : {
 
     },
     "Install Path Preview" : {
@@ -1660,6 +1717,9 @@
     "Keyboard Shortcuts" : {
 
     },
+    "Kind" : {
+
+    },
     "Label" : {
 
     },
@@ -1703,6 +1763,9 @@
 
     },
     "Loading installed skills..." : {
+
+    },
+    "Loading package…" : {
 
     },
     "Loading Prompts..." : {
@@ -1869,7 +1932,16 @@
         }
       }
     },
+    "New %@" : {
+
+    },
     "New Draft" : {
+
+    },
+    "New File" : {
+
+    },
+    "New Folder" : {
 
     },
     "New Prompt" : {
@@ -1884,6 +1956,9 @@
       }
     },
     "New Skill Draft" : {
+
+    },
+    "New Text File" : {
 
     },
     "No agents match the current filter." : {
@@ -2015,6 +2090,9 @@
     "No results for \"%@\"" : {
 
     },
+    "No saved projects yet" : {
+
+    },
     "No saved versions yet." : {
 
     },
@@ -2111,6 +2189,12 @@
     "Open Draft" : {
 
     },
+    "Open externally" : {
+
+    },
+    "Open Externally" : {
+
+    },
     "Open Settings" : {
 
     },
@@ -2151,6 +2235,12 @@
       }
     },
     "Output Schema" : {
+
+    },
+    "Package-first authoring workspace for SKILL.md, scripts, assets, and support files." : {
+
+    },
+    "Paste a GitHub URL or enter owner/repo/skill-name." : {
 
     },
     "Personal Prompt" : {
@@ -2236,6 +2326,15 @@
 
     },
     "Project skill" : {
+
+    },
+    "Project View" : {
+
+    },
+    "Project-scoped installs use the active project below. Save multiple roots, switch quickly, or forget old workspaces." : {
+
+    },
+    "Projects" : {
 
     },
     "Promote this prompt into a skill draft" : {
@@ -2356,7 +2455,7 @@
       }
     },
     "PromptHub CLI release status" : {
-
+      "extractionState" : "stale"
     },
     "PromptHub needs permission to read and write each agent's config directory. Press **Cmd+Shift+.** in the Finder panel to show hidden folders." : {
 
@@ -2494,6 +2593,9 @@
     "Refreshing…" : {
 
     },
+    "Reload package files" : {
+
+    },
     "Remove" : {
 
     },
@@ -2521,6 +2623,9 @@
     "Repository (owner/repo)" : {
 
     },
+    "Repository / Skill Path" : {
+
+    },
     "Reset Images" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2537,6 +2642,9 @@
     "Results" : {
 
     },
+    "Results are fetched from the current skills catalog, not just filtered locally." : {
+
+    },
     "Retry" : {
 
     },
@@ -2550,6 +2658,18 @@
           }
         }
       }
+    },
+    "Reveal in Finder" : {
+
+    },
+    "Reveal Installed Files" : {
+
+    },
+    "Reveal the selected package item in Finder" : {
+
+    },
+    "Revert" : {
+
     },
     "Review AI Changes" : {
 
@@ -2616,6 +2736,9 @@
         }
       }
     },
+    "Save File" : {
+
+    },
     "Save the current draft as a new version snapshot" : {
 
     },
@@ -2625,10 +2748,16 @@
     "Save Version" : {
 
     },
+    "Save Version Snapshot" : {
+
+    },
     "Scope" : {
 
     },
     "Scope Coverage" : {
+
+    },
+    "scripts" : {
 
     },
     "Search prompt..." : {
@@ -2654,6 +2783,12 @@
       }
     },
     "Search prompts…" : {
+
+    },
+    "Search Remote Skills" : {
+
+    },
+    "Search the remote catalog…" : {
 
     },
     "Select a configured private source and choose which skills to install." : {
@@ -2855,6 +2990,9 @@
     "Skill Store" : {
 
     },
+    "SKILL.md cannot be deleted" : {
+
+    },
     "SKILL.md not found — cannot analyze quality." : {
 
     },
@@ -2901,6 +3039,9 @@
       }
     },
     "Summary" : {
+
+    },
+    "Supports: full GitHub URL, owner/repo/skill-name, or owner/repo (installs all skills in that repo)." : {
 
     },
     "Tags (comma separated)" : {
@@ -3000,7 +3141,7 @@
       }
     },
     "The app-side directory integration is implemented, but the public PromptHub CLI installer has not shipped yet. Until the CLI package, tests, and release pipeline are published, Homebrew install and `ph` command examples should not be treated as available to users." : {
-
+      "extractionState" : "stale"
     },
     "The local SKILL.md matches the remote version." : {
 
@@ -3014,6 +3155,12 @@
           }
         }
       }
+    },
+    "This file is better handled by the default macOS app for its type. Use Quick Look, Finder, or your preferred editor for binary or specialized formats." : {
+
+    },
+    "This folder is part of the skill package. Add files here for scripts, assets, tests, or docs, then open them inline or in Finder." : {
+
     },
     "This version is already current" : {
 
@@ -3098,6 +3245,9 @@
       }
     },
     "Unknown path" : {
+
+    },
+    "Unsaved Changes" : {
 
     },
     "Unshared prompt" : {
