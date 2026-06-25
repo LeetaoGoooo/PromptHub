@@ -52,28 +52,6 @@ struct SkillDraftDetailView: View {
         .onDeleteCommand {
             requestDeleteSelectedItem()
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button(action: saveSelectedFile) {
-                    Label("Save File", systemImage: "square.and.arrow.down")
-                }
-                .keyboardShortcut("s", modifiers: .command)
-                .disabled(!hasUnsavedChanges || !selectedItemIsEditableText)
-
-                Button(action: createVersionSnapshot) {
-                    Label("Save Version", systemImage: "square.stack.3d.up.fill")
-                }.help("Save the current draft as a new version snapshot")
-
-                Button(action: copySkillMarkdown) {
-                    Label("Copy SKILL.md", systemImage: "doc.on.doc")
-                }.help("Copy the exported SKILL.md to the clipboard")
-
-                Button(action: revealSelectedItemInFinder) {
-                    Label("Reveal in Finder", systemImage: "finder")
-                }
-                .help("Reveal the selected package item in Finder")
-            }
-        }
         .sheet(isPresented: $showingNewItemSheet) {
             newItemSheet
         }

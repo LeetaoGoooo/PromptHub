@@ -5,17 +5,30 @@ import SwiftUI
 extension SkillDraftDetailView {
 
     var workspaceHeader: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(skill.displayName)
-                    .font(.title2.weight(.semibold))
-                Text("Package-first authoring workspace for SKILL.md, scripts, assets, and support files.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+        SkillLibraryHeaderCard(
+            title: skill.displayName,
+            subtitle: "Package-first authoring workspace for SKILL.md, scripts, assets, and support files.",
+            metrics: workspaceMetrics
+        ) {
+            workspaceAccessoryActions
+        }
+    }
 
-            Spacer(minLength: 12)
+    var workspaceMetrics: [SkillLibraryMetric] {
+        [
+            SkillLibraryMetric(value: "\(flatPackageItems.count)", title: "Files", systemImage: "folder"),
+            SkillLibraryMetric(value: "\(skill.sortedVersions.count)", title: "Versions", systemImage: "square.stack"),
+            SkillLibraryMetric(
+                value: skill.lastInstalledAt == nil ? "Not Installed" : "Installed",
+                title: "Status",
+                systemImage: skill.lastInstalledAt == nil ? "shippingbox" : "arrow.down.circle"
+            )
+        ]
+    }
 
+    @ViewBuilder
+    var workspaceAccessoryActions: some View {
+        HStack(spacing: 6) {
             if hasUnsavedChanges {
                 Text("Unsaved Changes")
                     .font(.caption.weight(.semibold))
@@ -24,9 +37,36 @@ extension SkillDraftDetailView {
                     .padding(.vertical, 6)
                     .background(Color.orange.opacity(0.12), in: Capsule())
             }
+
+            Button(action: saveSelectedFile) {
+                Label("Save File", systemImage: "square.and.arrow.down")
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .keyboardShortcut("s", modifiers: .command)
+            .disabled(!hasUnsavedChanges || !selectedItemIsEditableText)
+
+            Button(action: createVersionSnapshot) {
+                Label("Save Version", systemImage: "square.stack.3d.up.fill")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Save the current draft as a new version snapshot")
+
+            Button(action: copySkillMarkdown) {
+                Label("Copy SKILL.md", systemImage: "doc.on.doc")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Copy the exported SKILL.md to the clipboard")
+
+            Button(action: revealSelectedItemInFinder) {
+                Label("Reveal in Finder", systemImage: "finder")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Reveal the selected package item in Finder")
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
     }
 
     var packageSidebar: some View {
