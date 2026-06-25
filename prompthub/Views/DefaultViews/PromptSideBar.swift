@@ -11,6 +11,8 @@ import SwiftUI
 struct PromptSideBar: View {
     @Environment(\.controlActiveState) private var controlActiveState
     @Query(sort: \Prompt.name) var prompts: [Prompt]
+    @Query private var sharedCreations: [SharedCreation]
+    @Query(sort: \Skill.updatedAt, order: .reverse) private var skillDrafts: [Skill]
     @ObservedObject private var cliAccess = CLIDirectoryAccessManager.shared
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
 
@@ -23,17 +25,10 @@ struct PromptSideBar: View {
     private var installedSkills: [InstalledSkillSnapshot] { installedWorkspaceStore.installedSkills }
 
     private var promptsCount: Int { prompts.count + galleryCount }
+    private var myPromptsCount: Int { prompts.count }
+    private var sharedPromptsCount: Int { sharedCreations.count }
     private var allInstalledCount: Int { installedSkills.count }
-
-    private var isPromptDetailSelected: Bool {
-        if case .prompt = navigationState.detailSelection { return true }
-        return false
-    }
-
-    private var isSkillDraftDetailSelected: Bool {
-        if case .skill = navigationState.detailSelection { return true }
-        return false
-    }
+    private var mySkillsCount: Int { skillDrafts.count }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,6 +41,8 @@ struct PromptSideBar: View {
                     skillsNavigationSection
                     Divider().opacity(0.5).padding(.vertical, 10)
                     agentsNavigationSection
+                    Divider().opacity(0.5).padding(.vertical, 10)
+                    specialNavigationSection
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 4)
@@ -74,14 +71,41 @@ struct PromptSideBar: View {
 
             VStack(spacing: 6) {
                 sidebarSelectionButton(
-                    title: "Prompts",
+                    title: "All",
                     icon: "square.grid.2x2",
                     meta: metaCount(promptsCount),
-                    isActive: navigationState.domain == .prompts || isPromptDetailSelected
+                    isActive: navigationState.domain == .prompts && navigationState.promptLens == .all
                 ) {
                     navigationState.showPrompts(.all)
                 }
                 .keyboardShortcut("1", modifiers: .command)
+
+                sidebarSelectionButton(
+                    title: "Mine",
+                    icon: "person.crop.circle",
+                    meta: metaCount(myPromptsCount),
+                    isActive: navigationState.domain == .prompts && navigationState.promptLens == .mine
+                ) {
+                    navigationState.showPrompts(.mine)
+                }
+
+                sidebarSelectionButton(
+                    title: "Shared",
+                    icon: "square.and.arrow.up",
+                    meta: metaCount(sharedPromptsCount),
+                    isActive: navigationState.domain == .prompts && navigationState.promptLens == .shared
+                ) {
+                    navigationState.showPrompts(.shared)
+                }
+
+                sidebarSelectionButton(
+                    title: "Explore",
+                    icon: "globe",
+                    meta: nil,
+                    isActive: navigationState.domain == .prompts && navigationState.promptLens == .explore
+                ) {
+                    navigationState.showPrompts(.explore)
+                }
             }
         }
     }
@@ -92,14 +116,32 @@ struct PromptSideBar: View {
 
             VStack(spacing: 6) {
                 sidebarSelectionButton(
-                    title: "Skills",
+                    title: "Installed",
                     icon: "square.stack.3d.up.fill",
                     meta: metaCount(allInstalledCount),
-                    isActive: navigationState.domain == .skills || isSkillDraftDetailSelected
+                    isActive: navigationState.domain == .skills && navigationState.skillLens == .installed
                 ) {
                     navigationState.showSkills(.installed)
                 }
                 .keyboardShortcut("2", modifiers: .command)
+
+                sidebarSelectionButton(
+                    title: "My Skills",
+                    icon: "wand.and.stars",
+                    meta: metaCount(mySkillsCount),
+                    isActive: navigationState.domain == .skills && navigationState.skillLens == .drafts
+                ) {
+                    navigationState.showSkills(.drafts)
+                }
+
+                sidebarSelectionButton(
+                    title: "Store",
+                    icon: "sparkles.rectangle.stack",
+                    meta: nil,
+                    isActive: navigationState.domain == .skills && navigationState.skillLens == .store
+                ) {
+                    navigationState.showSkills(.store)
+                }
             }
         }
     }
@@ -113,11 +155,37 @@ struct PromptSideBar: View {
                     title: "Workspaces",
                     icon: "terminal",
                     meta: metaCount(grantedAgentCount),
+                    isActive: navigationState.domain == .agents
+                ) {
+                    navigationState.showAgents(.workspaces)
+                }
+                .keyboardShortcut("3", modifiers: .command)
+            }
+        }
+    }
+
+    private var specialNavigationSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sidebarSectionHeader("Special")
+
+            VStack(spacing: 6) {
+                sidebarSelectionButton(
+                    title: "Settings",
+                    icon: "gearshape",
+                    meta: nil,
+                    isActive: navigationState.domain == .special && navigationState.specialPage == .settings
+                ) {
+                    navigationState.showSpecial(.settings)
+                }
+
+                sidebarSelectionButton(
+                    title: "CLI Dashboard",
+                    icon: "terminal",
+                    meta: nil,
                     isActive: navigationState.domain == .special && navigationState.specialPage == .cliDashboard
                 ) {
                     navigationState.showSpecial(.cliDashboard)
                 }
-                .keyboardShortcut("3", modifiers: .command)
             }
         }
     }
@@ -158,16 +226,6 @@ struct PromptSideBar: View {
             .help("Open the onboarding guide")
 
             HStack {
-                Button {
-                    navigationState.showSpecial(.settings)
-                } label: {
-                    Image(systemName: "gearshape")
-                        .imageScale(.medium)
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                .help("Settings")
-
                 Spacer()
 
                 Button {
