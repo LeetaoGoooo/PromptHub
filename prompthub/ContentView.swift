@@ -1,4 +1,5 @@
 import AlertToast
+import PromptHubSkillKit
 import SwiftData
 import SwiftUI
 import WhatsNewKit
@@ -20,6 +21,7 @@ struct ContentView: View {
     @State var toastType: AlertToast.AlertType = .regular
     @State private var skillsScopeFilter: SkillsSidebarScopeFilter = .allInstalled
     @State private var skillsSourceFilter: SkillsSidebarSourceFilter = .all
+    @State private var skillsAgentFilter: AgentWorkflow?
     @State private var showingPromptRender = false
     @State var whatsNew: WhatsNew? = nil
     @EnvironmentObject var appSettings: AppSettings
@@ -151,6 +153,7 @@ struct ContentView: View {
             PromptSideBar(
                 installedWorkspaceStore: installedWorkspaceStore,
                 navigationState: $navigationState,
+                skillsAgentFilter: $skillsAgentFilter,
                 onCreateNewPrompt: createNewPrompt,
                 onCreateNewSkill: createNewSkillDraft
             )
@@ -243,7 +246,8 @@ struct ContentView: View {
                     navigationState: $navigationState,
                     searchText: searchText,
                     skillsScopeFilter: $skillsScopeFilter,
-                    skillsSourceFilter: $skillsSourceFilter
+                    skillsSourceFilter: $skillsSourceFilter,
+                    skillsAgentFilter: $skillsAgentFilter
                 )
             }
         case .agents:

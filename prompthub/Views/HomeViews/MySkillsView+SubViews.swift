@@ -1,9 +1,38 @@
 import AppKit
+import PromptHubSkillKit
 import SwiftUI
 
 // MARK: - Sub Views + Actions
 
 extension MySkillsView {
+
+    private func normalizedSkillKey(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    func linkedInstallations(for skill: Skill) -> [InstalledSkillSnapshot] {
+        let installationName = normalizedSkillKey(skill.installationName)
+        let slug = normalizedSkillKey(skill.slug)
+        let identifier = normalizedSkillKey(skill.identifier)
+
+        return installedWorkspaceStore.installedSkills.filter { snapshot in
+            let packageName = normalizedSkillKey(snapshot.packageName)
+            let shortName = normalizedSkillKey(snapshot.package.skillName)
+
+            return [installationName, slug, identifier]
+                .filter { !$0.isEmpty }
+                .contains { key in
+                    key == packageName || key == shortName
+                }
+        }
+    }
+
+    var availableSkillAgents: [AgentWorkflow] {
+        let installedAgents = installedWorkspaceStore.installedSkills.flatMap(\.agents)
+        return AgentWorkflow.defaultTargets.filter { agent in
+            installedAgents.contains(agent)
+        }
+    }
 
     var headerMetrics: [SkillLibraryMetric] {
         let visibleDraftCount = searchText.isEmpty ? skillDrafts.count : filteredSkills.count
@@ -16,13 +45,18 @@ extension MySkillsView {
     }
 
     var filteredSkills: [Skill] {
-        guard !searchText.isEmpty else { return skillDrafts }
-        return skillDrafts.filter { skill in
-            skill.displayName.localizedCaseInsensitiveContains(searchText) ||
-            (skill.desc?.localizedCaseInsensitiveContains(searchText) ?? false) ||
-            skill.category.localizedCaseInsensitiveContains(searchText) ||
-            skill.identifier.localizedCaseInsensitiveContains(searchText) ||
-            skill.tags.joined(separator: " ").localizedCaseInsensitiveContains(searchText)
+        skillDrafts.filter { skill in
+            let matchesSearch = searchText.isEmpty || skill.displayName.localizedCaseInsensitiveContains(searchText) ||
+                (skill.desc?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+                skill.category.localizedCaseInsensitiveContains(searchText) ||
+                skill.identifier.localizedCaseInsensitiveContains(searchText) ||
+                skill.tags.joined(separator: " ").localizedCaseInsensitiveContains(searchText)
+
+            let matchesAgent = agentFilter.map { agent in
+                linkedInstallations(for: skill).contains { $0.agents.contains(agent) }
+            } ?? true
+
+            return matchesSearch && matchesAgent
         }
     }
 
@@ -109,26 +143,41 @@ extension MySkillsView {
     }
 
     var skillListPane: some View {
-        List {
-            Section("Drafts (\(filteredSkills.count))") {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Drafts (\(filteredSkills.count))")
+                    .font(PH.Font.sectionHead)
+                    .foregroundStyle(PH.Color.secondary)
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+
+            List {
                 ForEach(filteredSkills) { skill in
                     Button { selectedSkillID = skill.id } label: {
-                        SkillDraftListRow(skill: skill, isSelected: selectedSkillID == skill.id)
+                        SkillDraftListRow(
+                            skill: skill,
+                            installations: linkedInstallations(for: skill),
+                            isSelected: selectedSkillID == skill.id
+                        )
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
                         Button("Open Draft") { onSelectSkill(skill) }
                         Button("Delete Draft", role: .destructive) { skillPendingDeletion = skill }
                     }
-                    .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                    .listRowInsets(EdgeInsets(top: 2, leading: 12, bottom: 2, trailing: 12))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
-        .listStyle(.inset(alternatesRowBackgrounds: false))
-        .scrollContentBackground(.hidden)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(PH.Color.detailBg)
     }
 
     @ViewBuilder
@@ -137,6 +186,7 @@ extension MySkillsView {
             ScrollView {
                 SkillDraftSummaryPane(
                     skill: selectedSkill,
+                    installations: linkedInstallations(for: selectedSkill),
                     exportedMarkdown: draftService.exportMarkdown(for: selectedSkill),
                     onOpenDraft: { onSelectSkill(selectedSkill) },
                     onCopyMarkdown: { copySkillMarkdown(for: selectedSkill) },
@@ -146,7 +196,7 @@ extension MySkillsView {
                     },
                     onDeleteDraft: { skillPendingDeletion = selectedSkill }
                 )
-                .padding(24)
+                .padding(PH.Spacing.detailH)
             }
         } else {
             SkillLibraryEmptyState(title: "No Draft Selected", systemImage: "wand.and.rays", description: "Choose a skill draft to inspect its metadata, version history, and exported SKILL.md.")

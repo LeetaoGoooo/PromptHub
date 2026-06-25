@@ -1,7 +1,9 @@
+import PromptHubSkillKit
 import SwiftUI
 
 struct SkillDraftSummaryPane: View {
     let skill: Skill
+    let installations: [InstalledSkillSnapshot]
     let exportedMarkdown: String
     let onOpenDraft: () -> Void
     let onCopyMarkdown: () -> Void
@@ -9,13 +11,6 @@ struct SkillDraftSummaryPane: View {
     let onDeleteDraft: () -> Void
 
     @State private var showingInstallSheet = false
-
-    private let iconSymbols = ["wand.and.stars", "text.badge.star", "command.square", "slider.horizontal.below.square.and.square.filled", "sparkles.rectangle.stack"]
-    private let iconColors: [Color] = [.pink, .blue, .orange, .mint, .indigo]
-
-    private var iconSeed: Int { skill.displayName.unicodeScalars.reduce(0) { $0 + Int($1.value) } }
-    private var iconSymbol: String { iconSymbols[iconSeed % iconSymbols.count] }
-    private var iconColor: Color { iconColors[iconSeed % iconColors.count] }
 
     private var latestInstructionsPreview: String {
         let text = skill.latestVersion?.instructions.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -28,36 +23,65 @@ struct SkillDraftSummaryPane: View {
         skill.lastInstalledAt.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "Never"
     }
 
+    private var installedAgentsText: String {
+        let agents = installations.flatMap(\.agents)
+        guard !agents.isEmpty else { return "Not installed to any agent" }
+        return AgentWorkflow.defaultTargets
+            .filter { agents.contains($0) }
+            .map(\.displayName)
+            .joined(separator: ", ")
+    }
+
+    private var installedScopeText: String {
+        guard !installations.isEmpty else { return "Draft only" }
+        let scopes = Array(Set(installations.map(\.scope.displayName))).sorted()
+        return scopes.joined(separator: ", ")
+    }
+
     var body: some View {
         SkillLibraryInspectorCard {
-            VStack(alignment: .leading, spacing: 20) {
-                // Header
-                HStack(alignment: .top, spacing: 18) {
-                    Image(systemName: iconSymbol)
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundStyle(iconColor)
-                        .frame(width: 56, height: 56)
-                        .background(iconColor.opacity(0.14))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(skill.displayName).font(.title2.weight(.semibold))
-                        Text(skill.desc?.isEmpty == false ? skill.desc! : "No description yet.")
-                            .font(.body).foregroundStyle(.secondary)
-                        HStack(spacing: 6) {
-                            DraftBadge(title: skill.category, icon: "tag", foreground: .accentColor, background: Color.accentColor.opacity(0.14))
-                            if skill.lastInstalledAt != nil {
-                                DraftBadge(title: "Installed", icon: "arrow.down.circle.fill", foreground: .green, background: Color.green.opacity(0.14))
-                            }
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .center, spacing: 10) {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(PH.Color.primary)
+                            .frame(width: 34, height: 34)
+                            .background(PH.Color.chipBg, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(skill.displayName)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(PH.Color.primary)
+                            Text(skill.desc?.isEmpty == false ? skill.desc! : "No description yet.")
+                                .font(PH.Font.body)
+                                .foregroundStyle(PH.Color.secondary)
                         }
                     }
-                    Spacer()
+
+                    HStack(spacing: 8) {
+                        Text(skill.category)
+                            .font(PH.Font.badge)
+                            .foregroundStyle(PH.Color.statusOK)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(PH.Color.statusOK.opacity(0.12), in: Capsule())
+                        if !installations.isEmpty {
+                            Text("Installed")
+                                .font(PH.Font.badge)
+                                .foregroundStyle(PH.Color.accent)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(PH.Color.accentTint, in: Capsule())
+                        }
+                    }
                 }
 
                 SkillLibraryMetadataBlock(title: "Identity", rows: [
                     ("Slug", skill.slug.isEmpty ? "Not set" : skill.slug),
                     ("Identifier", skill.identifier.isEmpty ? "Not set" : skill.identifier),
-                    ("Tags", formattedTags)
+                    ("Tags", formattedTags),
+                    ("Agents", installedAgentsText),
+                    ("Scope", installedScopeText)
                 ])
 
                 SkillLibraryMetadataBlock(title: "Lifecycle", rows: [
@@ -66,76 +90,71 @@ struct SkillDraftSummaryPane: View {
                     ("Installed", lastInstalledText)
                 ])
 
-                Divider()
-
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Quick Actions")
-                        .font(.headline)
-
+                    PHSectionHead(systemImage: "bolt", label: "Actions")
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 10) {
                         Button(action: { showingInstallSheet = true }) {
                             Label("Install…", systemImage: "arrow.down.circle.fill")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
 
                         Button(action: onOpenDraft) {
                             Label("Open Draft", systemImage: "arrow.right.circle")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
 
                         Button(action: onCopyMarkdown) {
                             Label("Copy SKILL.md", systemImage: "doc.on.doc")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
 
                         Button(action: onCopyName) {
                             Label("Copy Name", systemImage: "doc.on.clipboard")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
 
                         Button(role: .destructive, action: onDeleteDraft) {
                             Label("Delete Draft", systemImage: "trash")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Latest Instructions").font(.headline)
+                    PHSectionHead(systemImage: "text.alignleft", label: "Latest Instructions")
                     ScrollView {
                         Text(latestInstructionsPreview)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                            .font(PH.Font.body)
+                            .foregroundStyle(PH.Color.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .textSelection(.enabled)
                             .padding(14)
                     }
                     .frame(minHeight: 110, idealHeight: 140, maxHeight: 180)
-                    .background(Color(NSColor.textBackgroundColor).opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
+                    .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("SKILL.md Preview").font(.headline)
+                    PHSectionHead(systemImage: "doc.plaintext", label: "SKILL.md")
                     ScrollView([.horizontal, .vertical]) {
                         Text(exportedMarkdown)
-                            .font(.system(.caption, design: .monospaced))
+                            .font(PH.Font.monoBody)
+                            .foregroundStyle(PH.Color.primary)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .frame(minHeight: 260, idealHeight: 340, maxHeight: 420)
                     .padding(12)
-                    .background(Color(NSColor.textBackgroundColor).opacity(0.82))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .sheet(isPresented: $showingInstallSheet) {
                     SkillDraftInstallSheet(skill: skill)
                 }
-                Spacer(minLength: 0)
             }
         }
     }

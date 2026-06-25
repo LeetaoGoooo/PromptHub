@@ -13,6 +13,7 @@ struct InstalledSkillsView: View {
     let searchText: String
     @Binding var scopeFilter: SkillsSidebarScopeFilter
     @Binding var sourceFilter: SkillsSidebarSourceFilter
+    @Binding var agentFilter: AgentWorkflow?
     let onSelectSkillDraft: (Skill) -> Void
 
     struct PendingRemoval: Identifiable {
@@ -69,14 +70,19 @@ struct InstalledSkillsView: View {
         }
 
         return scopeFiltered.filter { skill in
+            let sourceMatches: Bool
             switch sourceFilter {
             case .all, .discover:
-                return true
+                sourceMatches = true
             case .external:
-                return skill.displaySource != nil
+                sourceMatches = skill.displaySource != nil
             case .localOnly:
-                return skill.displaySource == nil
+                sourceMatches = skill.displaySource == nil
             }
+
+            let agentMatches = agentFilter.map { skill.agents.contains($0) } ?? true
+
+            return sourceMatches && agentMatches
         }
     }
 

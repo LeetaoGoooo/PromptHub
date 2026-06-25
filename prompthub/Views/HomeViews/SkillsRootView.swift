@@ -1,3 +1,4 @@
+import PromptHubSkillKit
 import SwiftUI
 
 struct SkillsRootView: View {
@@ -6,6 +7,7 @@ struct SkillsRootView: View {
     let searchText: String
     @Binding var skillsScopeFilter: SkillsSidebarScopeFilter
     @Binding var skillsSourceFilter: SkillsSidebarSourceFilter
+    @Binding var skillsAgentFilter: AgentWorkflow?
 
     var body: some View {
         switch navigationState.skillLens {
@@ -20,6 +22,7 @@ struct SkillsRootView: View {
                 searchText: searchText,
                 scopeFilter: $skillsScopeFilter,
                 sourceFilter: $skillsSourceFilter,
+                agentFilter: $skillsAgentFilter,
                 onSelectSkillDraft: { skill in
                     navigationState.selectSkillDetail(skill.id)
                 }
@@ -28,7 +31,9 @@ struct SkillsRootView: View {
             .background(Color(NSColor.windowBackgroundColor))
         case .drafts:
             MySkillsView(
+                installedWorkspaceStore: installedWorkspaceStore,
                 navigationState: $navigationState,
+                agentFilter: $skillsAgentFilter,
                 searchText: searchText,
                 onSelectSkill: { skill in
                     navigationState.selectSkillDetail(skill.id)

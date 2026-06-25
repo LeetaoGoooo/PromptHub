@@ -1,11 +1,14 @@
 import AppKit
+import PromptHubSkillKit
 import SwiftData
 import SwiftUI
 
 struct MySkillsView: View {
     @Environment(\.modelContext) var modelContext
     @Query(sort: \Skill.updatedAt, order: .reverse) var skillDrafts: [Skill]
+    @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
     @Binding var navigationState: WorkspaceNavigationState
+    @Binding var agentFilter: AgentWorkflow?
 
     let draftService = SkillDraftService.shared
 
@@ -32,8 +35,7 @@ struct MySkillsView: View {
                         Button(action: createSkillDraft) {
                             Label("New Draft", systemImage: "plus")
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
                     }
 
                     Button {
@@ -43,8 +45,7 @@ struct MySkillsView: View {
                     } label: {
                         Image(systemName: "doc.on.doc")
                     }
-                    .buttonStyle(.borderless)
-                    .controlSize(.small)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                     .disabled(selectedSkill == nil)
                     .accessibilityLabel("Copy SKILL.md")
                     .help("Copy SKILL.md")

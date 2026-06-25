@@ -5,6 +5,7 @@
 //  Created by leetao on 2025/3/1.
 //
 
+import PromptHubSkillKit
 import SwiftData
 import SwiftUI
 
@@ -17,6 +18,7 @@ struct PromptSideBar: View {
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
 
     @Binding var navigationState: WorkspaceNavigationState
+    @Binding var skillsAgentFilter: AgentWorkflow?
     let onCreateNewPrompt: () -> Void
     let onCreateNewSkill: () -> Void
 
@@ -29,6 +31,11 @@ struct PromptSideBar: View {
     private var sharedPromptsCount: Int { sharedCreations.count }
     private var allInstalledCount: Int { installedSkills.count }
     private var mySkillsCount: Int { skillDrafts.count }
+    private var availableSkillAgents: [AgentWorkflow] {
+        AgentWorkflow.defaultTargets.filter { agent in
+            installedSkills.contains { $0.agents.contains(agent) }
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,6 +46,10 @@ struct PromptSideBar: View {
                     promptsNavigationSection
                     Divider().opacity(0.6).padding(.vertical, 10)
                     skillsNavigationSection
+                    if navigationState.domain == .skills && !availableSkillAgents.isEmpty {
+                        Divider().opacity(0.6).padding(.vertical, 10)
+                        skillAgentsSection
+                    }
                     Divider().opacity(0.6).padding(.vertical, 10)
                     agentsNavigationSection
                     Divider().opacity(0.6).padding(.vertical, 10)
@@ -141,6 +152,34 @@ struct PromptSideBar: View {
                     isActive: navigationState.domain == .skills && navigationState.skillLens == .store
                 ) {
                     navigationState.showSkills(.store)
+                }
+            }
+        }
+    }
+
+    private var skillAgentsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sidebarSectionHeader("Skill Agents")
+
+            VStack(spacing: 4) {
+                sidebarSelectionButton(
+                    title: "All Agents",
+                    icon: "person.2",
+                    meta: metaCount(installedSkills.count),
+                    isActive: skillsAgentFilter == nil
+                ) {
+                    skillsAgentFilter = nil
+                }
+
+                ForEach(availableSkillAgents, id: \.rawValue) { agent in
+                    sidebarSelectionButton(
+                        title: agent.displayName,
+                        icon: "chevron.left.forwardslash.chevron.right",
+                        meta: metaCount(installedSkills.filter { $0.agents.contains(agent) }.count),
+                        isActive: skillsAgentFilter == agent
+                    ) {
+                        skillsAgentFilter = agent
+                    }
                 }
             }
         }
