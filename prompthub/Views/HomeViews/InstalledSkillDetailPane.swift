@@ -143,18 +143,6 @@ struct InstalledSkillDetailPane: View {
         return rows
     }
 
-    private var coverageEntries: [(agent: AgentWorkflow, visibility: SkillAgentVisibility?)] {
-        AgentWorkflow.allCases.map { agent in
-            (agent, agentVisibility.first(where: { $0.agent == agent }))
-        }
-    }
-
-    private var coverageRows: [[(agent: AgentWorkflow, visibility: SkillAgentVisibility?)]] {
-        stride(from: 0, to: coverageEntries.count, by: 2).map { startIndex in
-            Array(coverageEntries[startIndex..<min(startIndex + 2, coverageEntries.count)])
-        }
-    }
-
     private var passedChecksCount: Int {
         structuralQuality?.checks.filter(\.passed).count ?? 0
     }
@@ -190,53 +178,6 @@ struct InstalledSkillDetailPane: View {
             return "\(scopeText) · Draft linked"
         }
         return "\(scopeText) · No linked draft"
-    }
-
-    private var sourceBadgeTitle: String {
-        switch sourceIntegrity?.status {
-        case .verified:
-            return "Verified"
-        case .modified:
-            return "Modified"
-        case .remoteUnavailable:
-            return "Remote unavailable"
-        case .noRemoteSource:
-            return "Local only"
-        case .notInstalled:
-            return "Missing file"
-        case .none:
-            return isLoadingIntegrity ? "Checking source" : "Source status"
-        }
-    }
-
-    private var sourceBadgeColor: Color {
-        switch sourceIntegrity?.status {
-        case .verified:
-            return .green
-        case .modified:
-            return .orange
-        case .remoteUnavailable, .noRemoteSource, .none:
-            return .secondary
-        case .notInstalled:
-            return .red
-        }
-    }
-
-    private var sourceBadgeIcon: String {
-        switch sourceIntegrity?.status {
-        case .verified:
-            return "checkmark.shield"
-        case .modified:
-            return "exclamationmark.shield"
-        case .remoteUnavailable:
-            return "wifi.slash"
-        case .noRemoteSource:
-            return "internaldrive"
-        case .notInstalled:
-            return "xmark.circle"
-        case .none:
-            return "questionmark.circle"
-        }
     }
 
     private var qualityChecks: [SkillStructuralQualityCheck] {
@@ -280,62 +221,6 @@ struct InstalledSkillDetailPane: View {
         .sheet(isPresented: $showingUpdateDiff) {
             SkillUpdateDiffSheet(skill: skill) { showingUpdateDiff = false }
         }
-    }
-
-    private func coverageRow(agent: AgentWorkflow, visibility: SkillAgentVisibility?) -> some View {
-        let isInstalled = skill.agents.contains(agent)
-        let visibilityStatus = visibility?.status
-        let visibilityLabel: String = {
-            switch visibilityStatus {
-            case .visible:
-                return "Visible"
-            case .missing:
-                return "Missing"
-            case .unknownPath:
-                return "Unknown path"
-            case .none:
-                return isLoadingVisibility ? "Checking…" : "Not scanned"
-            }
-        }()
-        let visibilityColor: Color = {
-            switch visibilityStatus {
-            case .visible:
-                return .green
-            case .missing:
-                return .red
-            case .unknownPath:
-                return .secondary
-            case .none:
-                return .secondary
-            }
-        }()
-
-        return HStack(alignment: .center, spacing: 12) {
-            Circle()
-                .fill(isInstalled ? Color.green : Color(NSColor.separatorColor))
-                .frame(width: 8, height: 8)
-
-            Text(agent.displayName)
-                .font(.callout.weight(.medium))
-                .foregroundStyle(isInstalled ? .primary : .secondary)
-
-            if isInstalled {
-                InstalledSkillBadge(
-                    title: skill.isGlobal ? "Global" : "Project",
-                    icon: skill.isGlobal ? "globe" : "folder",
-                    foreground: skill.isGlobal ? .blue : .mint,
-                    background: (skill.isGlobal ? Color.blue : Color.mint).opacity(0.14)
-                )
-            }
-
-            Spacer(minLength: 0)
-
-            Text(visibilityLabel)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(visibilityColor)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
     }
 
     private var headerSection: some View {
@@ -520,17 +405,6 @@ struct InstalledSkillDetailPane: View {
         return hasUpdate ? "Update available" : "No pending update detected"
     }
 
-    private var quickActionsSection: some View {
-        detailSectionCard {
-            PHSectionHead(systemImage: "sparkles", label: "Quick Actions")
-
-            VStack(alignment: .leading, spacing: 10) {
-                primaryActionButtons
-                footerActionButtons
-            }
-        }
-    }
-
     private var primaryActionButtons: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
@@ -575,206 +449,6 @@ struct InstalledSkillDetailPane: View {
         }
     }
 
-    private var overviewSection: some View {
-        detailSectionCard {
-            PHSectionHead(systemImage: "doc.text", label: "Overview")
-
-            Text(summaryText)
-                .font(PH.Font.body)
-                .foregroundStyle(PH.Color.secondary)
-                .lineSpacing(PH.Font.bodyLineSpacing)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            metadataStrip
-
-            SkillLibraryMetadataBlock(title: "Connections", rows: [
-                ("Projects", projectSummary),
-                ("Linked Draft", linkedDraftSummary),
-                ("Connected CLIs", coverageSummary),
-                ("Visibility", visibilitySummary)
-            ])
-
-            if !installedPackagePaths.isEmpty {
-                SkillLibraryMetadataBlock(
-                    title: installedPackagePaths.count > 1 ? "Installed Packages" : "Installed Package",
-                    rows: installedPackagePaths.enumerated().map { index, path in
-                        (installedPackagePaths.count > 1 ? "Path \(index + 1)" : "Path", path)
-                    }
-                )
-            } else if let localSkillFilePath {
-                SkillLibraryMetadataBlock(title: "Installed Files", rows: [
-                    ("Primary File", localSkillFilePath)
-                ])
-            }
-        }
-    }
-
-    private var metadataStrip: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .center, spacing: 8) {
-                    InstalledSkillBadge(
-                        title: skill.isGlobal ? "Global" : "Project",
-                        icon: skill.isGlobal ? "globe" : "folder",
-                        foreground: skill.isGlobal ? .blue : .mint,
-                        background: (skill.isGlobal ? Color.blue : Color.mint).opacity(0.14)
-                    )
-
-                    InstalledSkillBadge(
-                        title: skill.isManagedByPromptHub ? "PromptHub managed" : "External install",
-                        icon: skill.isManagedByPromptHub ? "checkmark.circle" : "arrow.triangle.branch",
-                        foreground: skill.isManagedByPromptHub ? .green : .orange,
-                        background: (skill.isManagedByPromptHub ? Color.green : Color.orange).opacity(0.14)
-                    )
-
-                    InstalledSkillBadge(
-                        title: sourceBadgeTitle,
-                        icon: sourceBadgeIcon,
-                        foreground: sourceBadgeColor,
-                        background: sourceBadgeColor.opacity(0.12)
-                    )
-
-                    if let localHash = sourceIntegrity?.localHash {
-                        Text("SHA-256  \(String(localHash.prefix(12)))…")
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(PH.Color.buttonBg, in: Capsule())
-                    }
-                }
-                .padding(.vertical, 1)
-            }
-
-            HStack(spacing: 6) {
-                Text("Identifier:")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(skill.package.rawValue)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(PH.Color.buttonBg, in: Capsule())
-            }
-        }
-    }
-
-    private var coverageDiagnosticsBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            PHSectionHead(systemImage: "checklist", label: "CLI Visibility")
-
-            VStack(spacing: 0) {
-                ForEach(Array(coverageRows.enumerated()), id: \.offset) { index, row in
-                    HStack(alignment: .top, spacing: 18) {
-                        coverageCell(for: row[0])
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        if row.count > 1 {
-                            coverageCell(for: row[1])
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        } else {
-                            Spacer()
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .padding(.vertical, 8)
-
-                    if index < coverageRows.count - 1 {
-                        Divider()
-                    }
-                }
-            }
-
-            HStack(spacing: 16) {
-                legendDot(color: .green, text: "Installed & visible")
-                legendDot(color: .secondary.opacity(0.6), text: "Not installed / unreachable")
-            }
-            .padding(.top, 2)
-        }
-    }
-
-    private func coverageCell(for entry: (agent: AgentWorkflow, visibility: SkillAgentVisibility?)) -> some View {
-        let isInstalled = skill.agents.contains(entry.agent)
-        let visibilityStatus = entry.visibility?.status
-        let visibilityText: String = {
-            switch visibilityStatus {
-            case .visible:
-                return "Visible"
-            case .missing:
-                return "Missing"
-            case .unknownPath:
-                return "Unknown path"
-            case .none:
-                return isLoadingVisibility ? "Checking…" : "Unknown path"
-            }
-        }()
-        let visibilityColor: Color = {
-            switch visibilityStatus {
-            case .visible:
-                return .green
-            case .missing:
-                return .red
-            case .unknownPath, .none:
-                return .secondary
-            }
-        }()
-
-        return HStack(spacing: 8) {
-            Circle()
-                .fill(isInstalled ? Color.green : Color(NSColor.separatorColor).opacity(0.7))
-                .frame(width: 7, height: 7)
-
-            Text(entry.agent.displayName)
-                .font(.callout)
-                .foregroundStyle(isInstalled ? .primary : .secondary)
-
-            if isInstalled {
-                Text(skill.isGlobal ? "global" : "project")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(skill.isGlobal ? .blue : .mint)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background((skill.isGlobal ? Color.blue : Color.mint).opacity(0.12), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            }
-
-            Spacer(minLength: 6)
-
-            HStack(spacing: 5) {
-                Image(systemName: visibilityStatus == .visible ? "checkmark" : (visibilityStatus == .missing ? "xmark" : "minus"))
-                    .font(.caption2.weight(.semibold))
-                Text(visibilityText)
-                    .font(.caption)
-            }
-            .foregroundStyle(visibilityColor)
-        }
-    }
-
-    private func legendDot(color: Color, text: String) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: 7, height: 7)
-            Text(text)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var diagnosticsSection: some View {
-        detailSectionCard {
-            PHSectionHead(systemImage: "waveform.path.ecg", label: "Diagnostics")
-
-            VStack(alignment: .leading, spacing: 18) {
-                integrityDiagnosticsBlock
-                auditDiagnosticsBlock
-                coverageDiagnosticsBlock
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
     private var auditDiagnosticsBlock: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Audit")
@@ -816,22 +490,6 @@ struct InstalledSkillDetailPane: View {
                     }
                 }
             }
-        }
-    }
-
-    private var integrityDiagnosticsBlock: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            SkillLibraryMetadataBlock(title: "Package", rows: [
-                ("Identifier", skill.package.rawValue),
-                ("Managed", skill.isManagedByPromptHub ? "PromptHub managed" : "External install"),
-                ("Source", skill.displaySource ?? "Local only")
-            ])
-
-            SkillLibraryMetadataBlock(title: "Integrity", rows: [
-                ("Status", integritySummary),
-                ("Quality", qualitySummary),
-                ("SHA-256", sourceIntegrity?.localHash.map { String($0.prefix(16)) + "…" } ?? "Unavailable")
-            ])
         }
     }
 
@@ -950,19 +608,6 @@ struct InstalledSkillDetailPane: View {
                 }
             }
         }
-    }
-
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-            .tracking(0.4)
-    }
-
-    private var sectionDivider: some View {
-        Divider()
-            .overlay(PH.Color.stroke)
     }
 
     private func detailSectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
