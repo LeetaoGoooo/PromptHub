@@ -236,12 +236,12 @@ struct AllPromptsView: View {
                     Button(action: onCreatePrompt) {
                         Label("New Prompt", systemImage: "wand.and.stars")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
 
                     Button(action: onRenderPrompt) {
                         Label("Render Prompt…", systemImage: "play.rectangle")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 },
                 emptyState: {
                     PromptViewHelpers.emptyStateView(

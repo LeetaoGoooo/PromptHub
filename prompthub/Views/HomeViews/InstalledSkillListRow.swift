@@ -45,7 +45,7 @@ struct InstalledSkillListRow: View {
         }
 
         if isHovering {
-            return PH.Color.accentTint.opacity(0.18)
+            return PH.Color.hoverFill
         }
 
         return .clear
@@ -69,22 +69,22 @@ struct InstalledSkillListRow: View {
                         if let onUpdate {
                             Button(action: onUpdate) {
                                 Text("Update")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 5)
+                                    .font(PH.Font.badge)
+                                    .foregroundStyle(PH.Color.statusWarn)
+                                    .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(PH.Color.statusWarn)
-                                    .clipShape(Capsule())
+                                    .background(PH.Color.statusWarn.opacity(0.12))
+                                    .clipShape(Capsule(style: .continuous))
                             }
                             .buttonStyle(.plain)
                         } else {
                             Text("Update")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 5)
+                                .font(PH.Font.badge)
+                                .foregroundStyle(PH.Color.statusWarn)
+                                .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(PH.Color.statusWarn)
-                                .clipShape(Capsule())
+                                .background(PH.Color.statusWarn.opacity(0.12))
+                                .clipShape(Capsule(style: .continuous))
                         }
                     }
 
@@ -116,12 +116,9 @@ struct InstalledSkillListRow: View {
         .background(backgroundFill)
         .overlay {
             RoundedRectangle(cornerRadius: PH.Spacing.rowCorner)
-                .stroke(PH.Color.stroke.opacity(isHovering && !isSelected ? 1 : 0), lineWidth: 1)
+                .stroke(isSelected ? PH.Color.accent.opacity(0.18) : PH.Color.stroke.opacity(isHovering ? 1 : 0), lineWidth: 1)
         }
         .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
-        .offset(y: isHovering && !isSelected ? PH.Motion.hoverLift : 0)
-        .scaleEffect(isHovering && !isSelected ? PH.Motion.hoverScale : 1)
-        .shadow(color: Color.black.opacity(isHovering && !isSelected ? 0.05 : 0), radius: isHovering ? 8 : 0, x: 0, y: isHovering ? 4 : 0)
         .opacity(isRemoving ? 0.55 : 1)
         .animation(PH.Motion.hover, value: isHovering)
         .onHover { hovering in

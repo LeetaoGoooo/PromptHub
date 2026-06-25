@@ -1,11 +1,5 @@
-import AppKit
 import SwiftUI
 
-// MARK: - Row Card Style Modifier
-
-/// Glass-tinted selection style that reacts to hover and selection state.
-/// Uses accent colour for selection (with glass-like low-opacity fill) and
-/// a subtle material shift on hover — consistent with macOS Liquid Glass idiom.
 struct SkillLibraryRowCardStyle: ViewModifier {
     let isSelected: Bool
     let isHovered: Bool
@@ -13,25 +7,25 @@ struct SkillLibraryRowCardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
             .overlay {
                 if isSelected || isHovered {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(borderColor, lineWidth: isSelected ? 0.9 : 0.6)
+                    RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous)
+                        .strokeBorder(borderColor, lineWidth: 1)
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
     }
 
     private var backgroundColor: Color {
-        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.08) }
-        if isHovered  { return Color.primary.opacity(0.03) }
+        if isSelected { return PH.Color.accentTint }
+        if isHovered  { return PH.Color.hoverFill }
         return .clear
     }
 
     private var borderColor: Color {
-        if isSelected { return Color(nsColor: NSColor.controlAccentColor).opacity(0.20) }
-        if isHovered  { return Color.primary.opacity(0.08) }
+        if isSelected { return PH.Color.accent.opacity(0.22) }
+        if isHovered  { return PH.Color.stroke }
         return .clear
     }
 }
@@ -40,7 +34,6 @@ struct SkillLibraryRowCardStyle: ViewModifier {
 
 // MARK: - PH Section Head
 
-/// Section heading with SF icon + 1–2 word label (matches mock .ds-head style).
 struct PHSectionHead: View {
     let systemImage: String
     let label: String
@@ -55,7 +48,7 @@ struct PHSectionHead: View {
                 .font(PH.Font.sectionHead)
                 .foregroundStyle(PH.Color.secondary)
                 .textCase(.uppercase)
-                .tracking(0.3)
+                .tracking(0.6)
         }
         .padding(.bottom, PH.Spacing.sectionHeadMB)
     }
@@ -63,7 +56,6 @@ struct PHSectionHead: View {
 
 // MARK: - PH Filter Chip
 
-/// Flat pill-shaped filter chip used in list-pane headers.
 struct PHFilterChip: View {
     let label: String
     let isActive: Bool
@@ -74,11 +66,15 @@ struct PHFilterChip: View {
             Text(label)
                 .font(PH.Font.chip)
                 .foregroundStyle(isActive ? PH.Color.accent : PH.Color.secondary)
-                .padding(.horizontal, PH.Spacing.chipH + 2)
+                .padding(.horizontal, PH.Spacing.chipH)
                 .padding(.vertical, 3)
                 .background(
                     RoundedRectangle(cornerRadius: PH.Spacing.chipCorner)
                         .fill(isActive ? PH.Color.accentTint : PH.Color.chipBg)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: PH.Spacing.chipCorner)
+                        .stroke(isActive ? PH.Color.accent.opacity(0.18) : Color.clear, lineWidth: 1)
                 )
                 .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.chipCorner))
         }
@@ -95,28 +91,28 @@ struct SkillLibraryMetadataBlock: View {
         VStack(alignment: .leading, spacing: 10) {
             if !title.isEmpty {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(PH.Font.sectionHead)
+                    .foregroundStyle(PH.Color.secondary)
                     .textCase(.uppercase)
-                    .tracking(0.4)
+                    .tracking(0.6)
             }
             VStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: PH.Spacing.kvRowGap) {
                         Text(row.0)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 96, alignment: .leading)
+                            .font(PH.Font.kvKey)
+                            .foregroundStyle(PH.Color.secondary)
+                            .frame(width: PH.Spacing.kvColWidth, alignment: .leading)
                         Text(row.1)
-                            .font(.subheadline)
-                            .foregroundStyle(.primary)
+                            .font(PH.Font.kvValue)
+                            .foregroundStyle(PH.Color.primary)
                             .textSelection(.enabled)
                         Spacer()
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, PH.Spacing.kvRowV)
                     .padding(.horizontal, 2)
                     if index < rows.count - 1 {
-                        Divider().padding(.leading, 110)
+                        Divider().padding(.leading, PH.Spacing.kvColWidth + PH.Spacing.kvRowGap + 8)
                     }
                 }
             }
@@ -126,7 +122,6 @@ struct SkillLibraryMetadataBlock: View {
 
 // MARK: - Empty State
 
-/// Full-panel empty / zero-data state with a glassy icon well and optional actions.
 struct SkillLibraryEmptyState<Actions: View>: View {
     let title: String
     let systemImage: String
@@ -142,29 +137,19 @@ struct SkillLibraryEmptyState<Actions: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Icon well — flat tinted circle (content layer: no backdrop filter per Liquid Glass spec)
-            ZStack {
-                Circle()
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .frame(width: 68, height: 68)
-                    .overlay {
-                        Circle()
-                            .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
-                    }
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-                Image(systemName: systemImage)
-                    .font(.system(size: 26, weight: .light))
-                    .foregroundStyle(.secondary)
-            }
-
+        VStack(spacing: 16) {
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .light))
+                .foregroundStyle(PH.Color.secondary)
+                .frame(width: 48, height: 48)
+                .background(PH.Color.chipBg, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             VStack(spacing: 6) {
                 Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .font(PH.Font.paneTitle)
+                    .foregroundStyle(PH.Color.primary)
                 Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(PH.Font.rowSub)
+                    .foregroundStyle(PH.Color.secondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
             }
@@ -172,14 +157,12 @@ struct SkillLibraryEmptyState<Actions: View>: View {
             actions()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(40)
+        .padding(32)
     }
 }
 
 // MARK: - Inspector Card
 
-/// Opaque content card for inspector / detail sections.
-/// Uses flat NSColor surface per Liquid Glass content-layer spec (no backdrop-filter).
 struct SkillLibraryInspectorCard<Content: View>: View {
     let title: String?
     @ViewBuilder let content: () -> Content
@@ -193,10 +176,10 @@ struct SkillLibraryInspectorCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 14) {
             if let title, !title.isEmpty {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(PH.Font.sectionHead)
+                    .foregroundStyle(PH.Color.secondary)
                     .textCase(.uppercase)
-                    .tracking(0.4)
+                    .tracking(0.6)
             }
             content()
         }
@@ -205,3 +188,51 @@ struct SkillLibraryInspectorCard<Content: View>: View {
     }
 }
 
+enum PHChromeButtonEmphasis {
+    case standard
+    case accent
+}
+
+struct PHChromeButtonStyle: ButtonStyle {
+    let emphasis: PHChromeButtonEmphasis
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(foregroundColor)
+            .padding(.horizontal, 12)
+            .frame(height: PH.Spacing.btnHeight)
+            .background(backgroundColor(configuration.isPressed), in: RoundedRectangle(cornerRadius: PH.Spacing.btnCorner, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: PH.Spacing.btnCorner, style: .continuous)
+                    .stroke(borderColor, lineWidth: 1)
+            )
+    }
+
+    private var foregroundColor: Color {
+        switch emphasis {
+        case .standard:
+            return PH.Color.primary
+        case .accent:
+            return PH.Color.accent
+        }
+    }
+
+    private func backgroundColor(_ isPressed: Bool) -> Color {
+        switch emphasis {
+        case .standard:
+            return isPressed ? PH.Color.hoverFill : PH.Color.buttonBg
+        case .accent:
+            return isPressed ? PH.Color.accentTint.opacity(0.8) : PH.Color.accentTint
+        }
+    }
+
+    private var borderColor: Color {
+        switch emphasis {
+        case .standard:
+            return PH.Color.buttonBorder
+        case .accent:
+            return PH.Color.accent.opacity(0.18)
+        }
+    }
+}

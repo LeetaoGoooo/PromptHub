@@ -38,14 +38,14 @@ extension PH {
         // Accent
         static var accent: SwiftUI.Color {
             adaptive(
-                light: rgba(61, 103, 215),
-                dark: rgba(126, 166, 255)
+                light: rgba(36, 99, 235),
+                dark: rgba(125, 166, 255)
             )
         }
         static var accentTint: SwiftUI.Color {
             adaptive(
-                light: rgba(61, 103, 215, 0.10),
-                dark: rgba(48, 63, 97)
+                light: rgba(36, 99, 235, 0.14),
+                dark: rgba(44, 67, 112)
             )
         }
 
@@ -72,56 +72,74 @@ extension PH {
         // Surfaces
         static var stroke: SwiftUI.Color {
             adaptive(
-                light: rgba(31, 45, 74, 0.09),
+                light: rgba(17, 24, 39, 0.11),
                 dark: rgba(255, 255, 255, 0.16)
             )
         }
         static var strokeSoft: SwiftUI.Color {
             adaptive(
-                light: rgba(31, 45, 74, 0.055),
+                light: rgba(17, 24, 39, 0.06),
                 dark: rgba(255, 255, 255, 0.10)
             )
         }
         static var sidebarBg: SwiftUI.Color {
             adaptive(
-                light: rgba(33, 44, 72, 0.042),
+                light: rgba(244, 245, 247),
                 dark: rgba(255, 255, 255, 0.06)
             )
         }
         static var detailBg: SwiftUI.Color {
             adaptive(
-                light: rgba(255, 255, 255, 0.28),
+                light: rgba(255, 255, 255),
                 dark: rgba(31, 36, 46)
             )
         }
         static var chipBg: SwiftUI.Color {
             adaptive(
-                light: rgba(31, 45, 74, 0.055),
+                light: rgba(239, 241, 244),
                 dark: rgba(255, 255, 255, 0.10)
             )
         }
         static var badgeBg: SwiftUI.Color {
             adaptive(
-                light: rgba(31, 45, 74, 0.07),
+                light: rgba(239, 241, 244),
                 dark: rgba(255, 255, 255, 0.12)
             )
         }
         static var filterBg: SwiftUI.Color {
             adaptive(
-                light: rgba(255, 255, 255, 0.30),
+                light: rgba(244, 245, 247),
                 dark: rgba(255, 255, 255, 0.12)
             )
         }
         static var buttonBg: SwiftUI.Color {
             adaptive(
-                light: rgba(255, 255, 255, 0.52),
+                light: rgba(248, 249, 251),
                 dark: rgba(255, 255, 255, 0.10)
             )
         }
         static var buttonBorder: SwiftUI.Color {
             adaptive(
-                light: rgba(31, 45, 74, 0.09),
+                light: rgba(17, 24, 39, 0.10),
                 dark: rgba(255, 255, 255, 0.16)
+            )
+        }
+        static var selectedFill: SwiftUI.Color {
+            adaptive(
+                light: rgba(36, 99, 235),
+                dark: rgba(72, 128, 255)
+            )
+        }
+        static var hoverFill: SwiftUI.Color {
+            adaptive(
+                light: rgba(17, 24, 39, 0.035),
+                dark: rgba(255, 255, 255, 0.08)
+            )
+        }
+        static var windowBg: SwiftUI.Color {
+            adaptive(
+                light: rgba(249, 249, 250),
+                dark: rgba(28, 29, 33)
             )
         }
 
@@ -139,11 +157,11 @@ extension PH {
 extension PH {
     enum Font {
         /// Pane title — 15pt, bold, tracking -0.01em
-        static let paneTitle: SwiftUI.Font = .system(size: 15, weight: .bold)
+        static let paneTitle: SwiftUI.Font = .system(size: 14, weight: .semibold)
         static let paneTitleTracking: CGFloat = -0.15  // points equiv of -0.01em at 15pt
 
         /// Row primary name — 13pt, weight 650 (semibold maps closest)
-        static let rowName: SwiftUI.Font = .system(size: 13, weight: .semibold)
+        static let rowName: SwiftUI.Font = .system(size: 13, weight: .medium)
 
         /// Row secondary / sub line — 11pt, regular
         static let rowSub: SwiftUI.Font = .system(size: 11, weight: .regular)
@@ -156,10 +174,10 @@ extension PH {
         static let bodyLineSpacing: CGFloat = 7.5  // ≈ (13 * 0.58) / 1
 
         /// Section head label — 11pt, bold (used next to icon in ds-head)
-        static let sectionHead: SwiftUI.Font = .system(size: 11, weight: .bold)
+        static let sectionHead: SwiftUI.Font = .system(size: 10, weight: .semibold)
 
         /// Group separator label — 10pt, bold, uppercase (sidebar SEC_LBL)
-        static let groupLabel: SwiftUI.Font = .system(size: 10, weight: .bold)
+        static let groupLabel: SwiftUI.Font = .system(size: 10, weight: .semibold)
 
         /// Badge / count — 10pt, bold
         static let badge: SwiftUI.Font = .system(size: 10, weight: .bold)
@@ -178,7 +196,7 @@ extension PH {
         static let filter: SwiftUI.Font = .system(size: 12)
 
         /// Chip label — 11pt, bold
-        static let chip: SwiftUI.Font = .system(size: 11, weight: .bold)
+        static let chip: SwiftUI.Font = .system(size: 11, weight: .medium)
 
         /// Detail subtitle (below title in dh) — 12pt, regular
         static let detailSub: SwiftUI.Font = .system(size: 12, weight: .regular)
@@ -188,23 +206,23 @@ extension PH {
 // MARK: Spacing Tokens
 extension PH {
     enum Spacing {
-        static let rowH: CGFloat      = 8    // row vertical padding
-        static let rowV: CGFloat      = 9    // row horizontal padding
-        static let rowCorner: CGFloat = 7    // row border-radius
+        static let rowH: CGFloat      = 7    // row vertical padding
+        static let rowV: CGFloat      = 10   // row horizontal padding
+        static let rowCorner: CGFloat = 8    // row border-radius
         static let rowGap: CGFloat    = 3    // gap between row line 1 and line 2
         static let rowItemGap: CGFloat = 8   // gap between icon and name inside row top
 
-        static let sectionV: CGFloat  = 10   // section (ds) top/bottom padding
+        static let sectionV: CGFloat  = 8    // section (ds) top/bottom padding
         static let sectionHeadGap: CGFloat = 5    // gap between icon and label in ds-head
         static let sectionHeadMB: CGFloat  = 7    // margin-bottom of ds-head
-        static let detailH: CGFloat   = 15   // detail pane horizontal padding
-        static let detailB: CGFloat   = 15   // detail pane bottom padding
+        static let detailH: CGFloat   = 20   // detail pane horizontal padding
+        static let detailB: CGFloat   = 18   // detail pane bottom padding
 
         static let kvColWidth: CGFloat = 90  // KV left column fixed width
         static let kvRowGap: CGFloat   = 10  // horizontal gap between key and value
         static let kvRowV: CGFloat     = 5   // kv row vertical padding
 
-        static let chipH: CGFloat     = 6    // chip horizontal padding
+        static let chipH: CGFloat     = 7    // chip horizontal padding
         static let chipCorner: CGFloat = 6   // chip border-radius
         static let chipMinH: CGFloat   = 20  // chip minimum height
 
@@ -213,25 +231,25 @@ extension PH {
         static let badgeMinH: CGFloat  = 16   // badge minimum height
         static let badgeMinW: CGFloat  = 18   // badge minimum width
 
-        static let paneHeaderV: CGFloat = 10  // ph: vertical padding
-        static let paneHeaderH: CGFloat = 13  // ph: horizontal padding
+        static let paneHeaderV: CGFloat = 8   // ph: vertical padding
+        static let paneHeaderH: CGFloat = 14  // ph: horizontal padding
 
-        static let toolbarV: CGFloat   = 6   // tbar: vertical padding
-        static let toolbarH: CGFloat   = 8   // tbar: horizontal padding
+        static let toolbarV: CGFloat   = 5   // tbar: vertical padding
+        static let toolbarH: CGFloat   = 10  // tbar: horizontal padding
         static let toolbarGap: CGFloat = 6   // gap between search field and chips
 
         static let filterH: CGFloat    = 8   // filter field horizontal padding
         static let filterCorner: CGFloat = 7 // filter field radius
 
-        static let sbSectionGap: CGFloat = 3 // top margin of sidebar SEC_LBL
-        static let sbPad: CGFloat        = 6 // sidebar outer horizontal padding
-        static let sbRowGap: CGFloat     = 7 // gap inside sidebar nav row (icon → label)
+        static let sbSectionGap: CGFloat = 2 // top margin of sidebar SEC_LBL
+        static let sbPad: CGFloat        = 10 // sidebar outer horizontal padding
+        static let sbRowGap: CGFloat     = 8 // gap inside sidebar nav row (icon → label)
         static let sbChipGap: CGFloat    = 4 // gap between sidebar chips
 
         static let btnGap: CGFloat     = 5   // gap inside button (icon → text)
-        static let btnH: CGFloat       = 9   // button horizontal padding
-        static let btnHeight: CGFloat  = 27  // button standard height
-        static let btnSqSize: CGFloat  = 27  // square button width = height
+        static let btnH: CGFloat       = 10  // button horizontal padding
+        static let btnHeight: CGFloat  = 30  // button standard height
+        static let btnSqSize: CGFloat  = 30  // square button width = height
         static let btnCorner: CGFloat  = 8   // button border-radius
     }
 }
@@ -263,8 +281,8 @@ extension PH {
 extension PH {
     enum Motion {
         static let hover: Animation = .easeOut(duration: 0.18)
-        static let hoverLift: CGFloat = -1
-        static let hoverScale: CGFloat = 1.01
+        static let hoverLift: CGFloat = 0
+        static let hoverScale: CGFloat = 1
     }
 }
 

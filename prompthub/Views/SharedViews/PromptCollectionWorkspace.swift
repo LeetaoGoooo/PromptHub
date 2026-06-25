@@ -316,7 +316,7 @@ private struct PromptBrowserRow: View {
         }
 
         if isHovering {
-            return PH.Color.accentTint.opacity(0.18)
+            return PH.Color.hoverFill
         }
 
         return .clear
@@ -363,11 +363,8 @@ private struct PromptBrowserRow: View {
         .buttonStyle(.plain)
         .overlay {
             RoundedRectangle(cornerRadius: PH.Spacing.rowCorner)
-                .stroke(PH.Color.stroke.opacity(isHovering && !isSelected ? 1 : 0), lineWidth: 1)
+                .stroke(isSelected ? PH.Color.accent.opacity(0.18) : PH.Color.stroke.opacity(isHovering ? 1 : 0), lineWidth: 1)
         }
-        .offset(y: isHovering && !isSelected ? PH.Motion.hoverLift : 0)
-        .scaleEffect(isHovering && !isSelected ? PH.Motion.hoverScale : 1)
-        .shadow(color: Color.black.opacity(isHovering && !isSelected ? 0.05 : 0), radius: isHovering ? 8 : 0, x: 0, y: isHovering ? 4 : 0)
         .animation(PH.Motion.hover, value: isHovering)
         .onHover { hovering in
             isHovering = hovering
@@ -528,16 +525,19 @@ struct PromptCollectionSectionLabel: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: systemImage)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(PH.Color.secondary)
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .font(PH.Font.sectionHead)
+                .foregroundStyle(PH.Color.secondary)
+                .textCase(.uppercase)
+                .tracking(0.6)
             Text("\(count)")
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .font(PH.Font.badge.monospacedDigit())
+                .foregroundStyle(PH.Color.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(Color(NSColor.controlBackgroundColor))
+                .background(PH.Color.badgeBg)
                 .clipShape(Capsule())
         }
     }
@@ -590,10 +590,10 @@ struct PromptQuickActionButton: View {
     var body: some View {
         Button(action: action.onSelect) {
             Label(action.title, systemImage: action.systemImage)
-                .font(.callout)
+                .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 7)
+                .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
         .foregroundStyle(foregroundColor)
@@ -609,27 +609,27 @@ struct PromptQuickActionButton: View {
     private var foregroundColor: Color {
         switch action.emphasis {
         case .prominent:
-            return Color(NSColor.controlAccentColor)
+            return PH.Color.accent
         case .standard:
-            return .primary
+            return PH.Color.primary
         }
     }
 
     private var backgroundColor: Color {
         switch action.emphasis {
         case .prominent:
-            return Color(NSColor.controlAccentColor).opacity(0.10)
+            return PH.Color.accentTint
         case .standard:
-            return Color(NSColor.controlBackgroundColor).opacity(0.82)
+            return PH.Color.buttonBg
         }
     }
 
     private var borderColor: Color {
         switch action.emphasis {
         case .prominent:
-            return Color(NSColor.controlAccentColor).opacity(0.18)
+            return PH.Color.accent.opacity(0.18)
         case .standard:
-            return Color(NSColor.separatorColor).opacity(0.32)
+            return PH.Color.buttonBorder
         }
     }
 }
@@ -642,19 +642,18 @@ struct PromptCollectionKVList: View {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 HStack(alignment: .top, spacing: 12) {
                     Text(item.0)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 96, alignment: .leading)
+                        .font(PH.Font.kvKey)
+                        .foregroundStyle(PH.Color.secondary)
+                        .frame(width: PH.Spacing.kvColWidth, alignment: .leading)
                     Spacer()
                     Text(item.1)
-                        .fontWeight(.medium)
+                        .font(PH.Font.kvValue)
                         .multilineTextAlignment(.trailing)
                 }
-                .font(.callout)
-                .padding(.vertical, 8)
+                .padding(.vertical, PH.Spacing.kvRowV)
 
                 if index < items.count - 1 {
-                    Divider().padding(.leading, 108)
+                    Divider().padding(.leading, PH.Spacing.kvColWidth + 18)
                 }
             }
         }

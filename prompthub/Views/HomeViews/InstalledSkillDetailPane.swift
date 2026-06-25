@@ -347,12 +347,12 @@ struct InstalledSkillDetailPane: View {
             HStack(spacing: 10) {
                 if skill.package.remoteInstallDescriptor != nil {
                     Button("Review Update") { showingUpdateDiff = true }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
                 }
 
                 if skill.url != nil {
                     Button("Open Source Page", action: onOpenSourcePage)
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 }
             }
         }
@@ -409,41 +409,41 @@ struct InstalledSkillDetailPane: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
                 Button(editDraftButtonTitle, action: onEditDraft)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
 
                 if skill.package.remoteInstallDescriptor != nil {
                     Button("Review Update") { showingUpdateDiff = true }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 }
 
                 if !installedPackagePaths.isEmpty || localSkillFilePath != nil {
                     Button("Reveal Installed Files", action: revealInstalledFiles)
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 }
 
                 if skill.url != nil {
                     Button("Open Source Page", action: onOpenSourcePage)
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 }
             }
 
             VStack(alignment: .leading, spacing: 10) {
                 Button(editDraftButtonTitle, action: onEditDraft)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
 
                 if skill.package.remoteInstallDescriptor != nil {
                     Button("Review Update") { showingUpdateDiff = true }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 }
 
                 if !installedPackagePaths.isEmpty || localSkillFilePath != nil {
                     Button("Reveal Installed Files", action: revealInstalledFiles)
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 }
 
                 if skill.url != nil {
                     Button("Open Source Page", action: onOpenSourcePage)
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 }
             }
         }
@@ -529,10 +529,10 @@ struct InstalledSkillDetailPane: View {
                     Button(action: copyName) {
                         Label("Copy Name", systemImage: "doc.on.clipboard")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
 
                     Button("Remove", role: .destructive, action: onRemoveAll)
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
 
                     if !skill.agents.isEmpty {
                         Menu {
@@ -570,10 +570,10 @@ struct InstalledSkillDetailPane: View {
                     Button(action: copyName) {
                         Label("Copy Name", systemImage: "doc.on.clipboard")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
 
                     Button("Remove", role: .destructive, action: onRemoveAll)
-                        .buttonStyle(.bordered)
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
 
                     if !skill.agents.isEmpty {
                         Menu {

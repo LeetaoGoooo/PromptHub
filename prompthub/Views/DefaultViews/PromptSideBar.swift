@@ -37,15 +37,15 @@ struct PromptSideBar: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     promptsNavigationSection
-                    Divider().opacity(0.5).padding(.vertical, 10)
+                    Divider().opacity(0.6).padding(.vertical, 10)
                     skillsNavigationSection
-                    Divider().opacity(0.5).padding(.vertical, 10)
+                    Divider().opacity(0.6).padding(.vertical, 10)
                     agentsNavigationSection
-                    Divider().opacity(0.5).padding(.vertical, 10)
+                    Divider().opacity(0.6).padding(.vertical, 10)
                     specialNavigationSection
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 4)
+                .padding(.horizontal, PH.Spacing.sbPad)
+                .padding(.top, 2)
                 .padding(.bottom, 18)
             }
 
@@ -58,18 +58,18 @@ struct PromptSideBar: View {
     @ViewBuilder
     private var sidebarHeader: some View {
         Text("PromptHub")
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 12)
-            .padding(.top, 14)
-            .padding(.bottom, 8)
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(PH.Color.primary)
+            .padding(.horizontal, PH.Spacing.sbPad)
+            .padding(.top, 18)
+            .padding(.bottom, 12)
     }
 
     private var promptsNavigationSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             sidebarSectionHeader("Prompts")
 
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 sidebarSelectionButton(
                     title: "All",
                     icon: "square.grid.2x2",
@@ -111,10 +111,10 @@ struct PromptSideBar: View {
     }
 
     private var skillsNavigationSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             sidebarSectionHeader("Skills")
 
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 sidebarSelectionButton(
                     title: "Installed",
                     icon: "square.stack.3d.up.fill",
@@ -147,10 +147,10 @@ struct PromptSideBar: View {
     }
 
     private var agentsNavigationSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             sidebarSectionHeader("Agents")
 
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 sidebarSelectionButton(
                     title: "Workspaces",
                     icon: "terminal",
@@ -165,10 +165,10 @@ struct PromptSideBar: View {
     }
 
     private var specialNavigationSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             sidebarSectionHeader("Special")
 
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 sidebarSelectionButton(
                     title: "Settings",
                     icon: "gearshape",
@@ -193,10 +193,10 @@ struct PromptSideBar: View {
     @ViewBuilder
     private func sidebarSectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(PH.Font.sectionHead)
+            .font(PH.Font.groupLabel)
             .foregroundStyle(PH.Color.secondary)
             .textCase(.uppercase)
-            .tracking(0.3)
+            .tracking(0.8)
     }
 
     @ViewBuilder
@@ -210,18 +210,18 @@ struct PromptSideBar: View {
                     Image(systemName: "sparkles")
                         .imageScale(.small)
                     Text("Get Started Guide")
-                        .font(.caption.weight(.medium))
+                        .font(.system(size: 11, weight: .medium))
                     Spacer(minLength: 0)
                 }
-                .foregroundStyle(.accent)
+                .foregroundStyle(PH.Color.statusOK)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
-                .background(Color.accentColor.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .background(PH.Color.chipBg)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, PH.Spacing.sbPad)
             .padding(.top, 8)
             .help("Open the onboarding guide")
 
@@ -232,13 +232,13 @@ struct PromptSideBar: View {
                     handleCreateAction()
                 } label: {
                     Label(footerActionTitle, systemImage: footerActionSymbol)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(PH.Color.secondary)
                 }
                 .buttonStyle(.plain)
                 .help(footerActionHelp)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, PH.Spacing.sbPad)
             .padding(.vertical, 10)
         }
     }
@@ -297,11 +297,11 @@ private struct SidebarSelectionButton: View {
 
     private var backgroundFill: Color {
         if isActive {
-            return controlActiveState == .key ? PH.Color.accentTint : PH.Color.accentTint.opacity(0.45)
+            return controlActiveState == .key ? PH.Color.accentTint : PH.Color.accentTint.opacity(0.72)
         }
 
         if isHovering {
-            return PH.Color.accentTint.opacity(0.22)
+            return PH.Color.hoverFill
         }
 
         return .clear
@@ -309,30 +309,27 @@ private struct SidebarSelectionButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
+            HStack(spacing: PH.Spacing.sbRowGap) {
                 Image(systemName: icon)
                     .frame(width: 16)
-                    .foregroundStyle(isActive ? Color.accentColor : .secondary)
+                    .foregroundStyle(isActive ? PH.Color.accent : PH.Color.secondary)
                 Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .font(PH.Font.rowName)
+                    .foregroundStyle(isActive ? PH.Color.primary : PH.Color.primary)
                 Spacer(minLength: 8)
                 if let meta {
                     Text(meta)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(isActive ? Color.accentColor : .secondary)
+                        .font(PH.Font.badge)
+                        .foregroundStyle(isActive ? PH.Color.accent : PH.Color.secondary)
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.vertical, 8)
             .background(backgroundFill, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: PH.Spacing.rowCorner, style: .continuous)
-                    .stroke(PH.Color.stroke.opacity(isHovering && !isActive ? 1 : 0), lineWidth: 1)
+                    .stroke(isActive ? PH.Color.accent.opacity(0.18) : PH.Color.stroke.opacity(isHovering ? 1 : 0), lineWidth: 1)
             }
-            .offset(y: isHovering && !isActive ? PH.Motion.hoverLift : 0)
-            .scaleEffect(isHovering && !isActive ? PH.Motion.hoverScale : 1)
-            .shadow(color: Color.black.opacity(isHovering && !isActive ? 0.06 : 0), radius: isHovering ? 8 : 0, x: 0, y: isHovering ? 4 : 0)
             .contentShape(Rectangle())
             .animation(PH.Motion.hover, value: isHovering)
         }

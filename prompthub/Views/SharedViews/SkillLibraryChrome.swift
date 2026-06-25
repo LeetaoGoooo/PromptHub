@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 // MARK: - Metric Model
@@ -140,31 +139,6 @@ struct AgentsWorkspacePicker: View {
     }
 }
 
-// MARK: - Liquid Glass Material
-
-/// Bridges NSVisualEffectView into SwiftUI for true macOS vibrancy.
-/// This is the foundation of the Liquid Glass aesthetic — blending the window
-/// content behind the header surface rather than using a flat colour fill.
-struct LibraryGlassMaterial: NSViewRepresentable {
-    var material: NSVisualEffectView.Material
-    var blendingMode: NSVisualEffectView.BlendingMode
-
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
-    }
-}
-
-// MARK: - Header Card
-
 struct SkillLibraryHeaderCard<Accessory: View>: View {
     let title: String
     let subtitle: String
@@ -180,70 +154,55 @@ struct SkillLibraryHeaderCard<Accessory: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Row 1 — title only (full width, breathes)
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.primary)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(PH.Color.primary)
 
-            // Row 2 — subtitle (allowed to wrap up to 2 lines instead of mid-truncating)
             if !subtitle.isEmpty {
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(PH.Font.rowSub)
+                    .foregroundStyle(PH.Color.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            // Row 3 — accessory bar on its own row, right-aligned
             HStack(spacing: 6) {
                 Spacer(minLength: 0)
-                // FIX (line 38 crash): isolate AppKit-backed controls' layout pass.
                 HStack(spacing: 6) { accessory() }
                     .fixedSize(horizontal: true, vertical: false)
             }
 
-            // Row 4 — metric strip
             if !metrics.isEmpty {
-                HStack(spacing: 14) {
+                HStack(spacing: 12) {
                     ForEach(metrics) { metric in
-                        HStack(spacing: 5) {
+                        HStack(spacing: 4) {
                             Image(systemName: metric.systemImage)
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.tertiary)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(PH.Color.tertiary)
                             Text(metric.value)
-                                .font(.caption.weight(.semibold))
+                                .font(.system(size: 11, weight: .semibold))
                                 .monospacedDigit()
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(PH.Color.secondary)
                             Text(metric.title)
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                                .font(.system(size: 11))
+                                .foregroundStyle(PH.Color.tertiary)
                         }
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(.top, 2)
+                .padding(.top, 1)
             }
         }
-        .padding(.horizontal, 22)
-        .padding(.top, 16)
-        .padding(.bottom, 14)
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            // Liquid Glass: vibrancy layer + specular edge highlight
-            ZStack(alignment: .top) {
-                LibraryGlassMaterial(material: .headerView, blendingMode: .withinWindow)
-                LinearGradient(
-                    colors: [Color.white.opacity(0.11), Color.clear],
-                    startPoint: .top,
-                    endPoint: .init(x: 0.5, y: 0.6)
-                )
-            }
-        }
+        .background(PH.Color.detailBg)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color.primary.opacity(0.07))
-                .frame(height: 0.5)
+                .fill(PH.Color.strokeSoft)
+                .frame(height: 1)
         }
     }
 }
@@ -279,13 +238,7 @@ struct SkillLibraryScreen<Accessory: View, Content: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background {
-            // In-window content vibrancy. Use .contentBackground + .withinWindow
-            // so the surface samples the window's own backdrop rather than the
-            // desktop wallpaper behind the window (which .behindWindow would do).
-            LibraryGlassMaterial(material: .contentBackground, blendingMode: .withinWindow)
-                .ignoresSafeArea()
-        }
+        .background(PH.Color.windowBg.ignoresSafeArea())
     }
 }
 
@@ -327,11 +280,11 @@ struct WorkspaceSplitShell<Sidebar: View, Detail: View>: View {
                     maxHeight: .infinity,
                     alignment: .topLeading
                 )
-                .background(Color(NSColor.controlBackgroundColor))
+                .background(PH.Color.sidebarBg)
             detail()
                 .frame(minWidth: detailMinWidth, maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(PH.Color.windowBg)
     }
 }

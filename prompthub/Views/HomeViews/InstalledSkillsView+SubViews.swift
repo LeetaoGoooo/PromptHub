@@ -15,7 +15,7 @@ extension InstalledSkillsView {
                 description: "PromptHub needs access to CLI agent folders (like ~/.claude, ~/.cursor) to manage their skills."
             ) {
                 Button("Configure Access\u{2026}") { showingCLIAccessManager = true }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
             }
         } else if installedWorkspaceStore.isLoading && installedSkills.isEmpty {
             ProgressView("Loading installed skills...")
@@ -50,8 +50,7 @@ extension InstalledSkillsView {
             Button(action: fetchInstalledSkills) {
                 Label(installedWorkspaceStore.isLoading ? "Refreshing…" : "Refresh", systemImage: "arrow.clockwise")
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.accentColor)
+            .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
             .disabled(installedWorkspaceStore.isLoading)
             .help("Refresh installed skills")
 
@@ -77,16 +76,14 @@ extension InstalledSkillsView {
                     }
                 }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(skillsWithUpdates.isEmpty ? .accentColor : .orange)
+            .buttonStyle(PHChromeButtonStyle(emphasis: skillsWithUpdates.isEmpty ? .standard : .accent))
             .disabled(isCheckingUpdates)
             .help("Check all skills for available updates")
 
             Button(action: { showingAuditReport = true }) {
                 Label("Audit Installed Skills", systemImage: "checklist")
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.indigo)
+            .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
             .help("Audit all installed skills")
 
             Spacer(minLength: 12)
@@ -103,9 +100,9 @@ extension InstalledSkillsView {
                 fetchInstalledSkills()
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .background(Color(NSColor.windowBackgroundColor))
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .background(PH.Color.detailBg)
         .overlay(alignment: .bottom) {
             Divider().opacity(0.6)
         }
@@ -201,8 +198,8 @@ extension InstalledSkillsView {
                         Image(systemName: "arrow.up.arrow.down")
                         Text(skillsSortOrder.rawValue)
                     }
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(PH.Color.secondary)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
