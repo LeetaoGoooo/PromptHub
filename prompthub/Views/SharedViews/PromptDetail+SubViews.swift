@@ -1,5 +1,5 @@
-import SwiftUI
 import AlertToast
+import SwiftUI
 
 // MARK: - Sub Views
 
@@ -7,29 +7,45 @@ extension PromptDetail {
 
     @ViewBuilder
     var promptHeader: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline) {
-                TextField("Prompt Name", text: $prompt.name)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 28, weight: .bold))
-                    .focused($focusedField, equals: .name)
-                    .padding(.horizontal, -4)
-                Spacer()
-                headerActions
+        SkillLibraryInspectorCard {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline) {
+                    TextField("Prompt Name", text: $prompt.name)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 28, weight: .bold))
+                        .focused($focusedField, equals: .name)
+                        .padding(.horizontal, -4)
+                    Spacer()
+                    if let latestHistory = history.first {
+                        Text("v\(max(latestHistory.version, 1))")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                TextField("Add a description...", text: Binding(
+                    get: { prompt.desc ?? "" },
+                    set: { prompt.desc = $0.isEmpty ? nil : $0 }
+                ))
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, -4)
             }
-            TextField("Add a description...", text: Binding(
-                get: { prompt.desc ?? "" },
-                set: { prompt.desc = $0.isEmpty ? nil : $0 }
-            ))
-            .textFieldStyle(.plain)
-            .font(.subheadline)
-            .foregroundColor(.secondary)
-            .padding(.horizontal, -4)
         }
         .padding(.horizontal, 24)
         .padding(.top, 24)
-        .padding(.bottom, 16)
-        .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    @ViewBuilder
+    var promptActionCard: some View {
+        SkillLibraryInspectorCard(title: "Actions") {
+            HStack(spacing: 8) {
+                headerActions
+                Spacer()
+            }
+        }
+        .padding(.horizontal, 24)
     }
 
     @ViewBuilder
@@ -41,6 +57,23 @@ extension PromptDetail {
             Button { isShowingDiff.toggle() } label: { Label("Diff", systemImage: "clock.arrow.circlepath") }
                 .buttonStyle(.bordered).controlSize(.small).help("Toggle Diff View")
 
+            Button(action: promotePromptToSkill) {
+                Label("Promote to Skill", systemImage: "wand.and.stars.inverse")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Promote this prompt into a skill draft")
+
+            Button {
+                Task { await shareCreation() }
+            } label: {
+                Label(existingSharedCreation == nil ? "Share" : "Copy Share Link", systemImage: "square.and.arrow.up")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(isCreateShareLink)
+            .help("Share")
+
             Button(role: .destructive) {
                 showingDeletePromptConfirmation = true
             } label: {
@@ -49,14 +82,128 @@ extension PromptDetail {
             .buttonStyle(.bordered)
             .controlSize(.small)
             .help(isEphemeralDraft ? "Discard this empty prompt draft" : "Delete this prompt")
-
-            Divider().frame(height: 16).padding(.horizontal, 4)
-
-            Button { Task { await shareCreation() } } label: {
-                Image(systemName: "square.and.arrow.up").padding(4)
-            }
-            .buttonStyle(.plain).help("Share")
         }
+    }
+
+    @ViewBuilder
+    func promptInfoCard(latestHistory: PromptHistory) -> some View {
+        SkillLibraryInspectorCard(title: "Information") {
+            VStack(alignment: .leading, spacing: 10) {
+                LabeledContent("Version", value: "v\(max(latestHistory.version, 1))")
+                LabeledContent("Created", value: latestHistory.createdAt, format: .dateTime)
+                LabeledContent("Updated", value: latestHistory.updatedAt, format: .dateTime)
+                LabeledContent("Link", value: prompt.link?.isEmpty == false ? "Attached" : "None")
+                LabeledContent("External Sources", value: (prompt.externalSources?.isEmpty ?? true) ? "None" : "Attached")
+            }
+        }
+        .padding(.horizontal, 24)
+    }
+
+    @ViewBuilder
+    var promptSharingCard: some View {
+        SkillLibraryInspectorCard(title: "Sharing") {
+            if let shared = existingSharedCreation {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(shared.isPublic ? "Visible to community" : "Private link only")
+                                .font(.headline)
+                            Text("Reuse the current share record or switch its visibility.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { shared.isPublic },
+                            set: { _ in Task { await togglePublicStatus() } }
+                        ))
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                        .disabled(isTogglingPublic)
+                    }
+
+                    HStack(spacing: 8) {
+                        Button {
+                            Task { await shareCreation() }
+                        } label: {
+                            Label("Copy Share Link", systemImage: "link")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isCreateShareLink)
+
+                        if isTogglingPublic {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                    }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Not shared yet")
+                        .font(.headline)
+                    Text("Create a share link for this prompt without leaving the editor.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Button {
+                        Task { await shareCreation() }
+                    } label: {
+                        Label("Share to Community", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isCreateShareLink)
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+    }
+
+    @ViewBuilder
+    var promptHistoryCard: some View {
+        SkillLibraryInspectorCard(title: "History") {
+            if history.isEmpty {
+                Text("No history yet")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(history) { item in
+                        HStack(alignment: .top, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Version \(item.version)")
+                                    .font(.headline)
+                                Text(item.updatedAt, formatter: dateFormatter)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button {
+                                selectedHistoryVersion = item
+                            } label: {
+                                Label("Preview", systemImage: "eye")
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            Button {
+                                let copied = copyPromptToClipboard(item.promptText)
+                                showToastMsg(
+                                    msg: copied ? "Copied version \(item.version)" : "Failed to copy version \(item.version)",
+                                    alertType: copied ? .complete(Color.green) : .error(Color.red)
+                                )
+                            } label: {
+                                Label("Copy", systemImage: "doc.on.doc")
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                        .padding(12)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 24)
     }
 
     func versionDetailSheet(_ version: PromptHistory) -> some View {

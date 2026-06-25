@@ -27,7 +27,6 @@ struct PromptDetail: View {
     @State var toastType: AlertToast.AlertType = .regular
     @State var isShowingDiff = false
     @State var isShowingSingleTestView = false
-    @State var showInspector: Bool = true
     @State var isCreateShareLink = false
     @State var isTogglingPublic = false
     @State var showingDeletePromptConfirmation = false
@@ -86,9 +85,10 @@ struct PromptDetail: View {
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
                 promptHeader
+                promptActionCard
                 if let latestHistory = history.first {
                     LatestVersionView(
                         latestHistory: latestHistory,
@@ -103,25 +103,20 @@ struct PromptDetail: View {
                         modifyPromptWithOpenAIStream: modifyPromptWithOpenAIStream,
                         onShare: shareCreation
                     )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 24)
+
+                    promptInfoCard(latestHistory: latestHistory)
+                    promptSharingCard
+                    promptHistoryCard
                 } else {
                     ContentUnavailableView("No Content", systemImage: "doc.text")
+                        .frame(maxWidth: .infinity, minHeight: 320)
+                        .padding(.horizontal, 24)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            if showInspector {
-                Divider()
-                InspectorView(
-                    prompt: prompt,
-                    selectedHistoryVersion: $selectedHistoryVersion,
-                    showToastMsg: showToastMsg,
-                    copyPromptToClipboard: copyPromptToClipboard,
-                    deleteHistoryItem: { modelContext.delete($0) },
-                    onShare: shareCreation,
-                    onTogglePublic: togglePublicStatus
-                )
-                .transition(.move(edge: .trailing))
-            }
+            .padding(.bottom, 24)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
@@ -145,22 +140,6 @@ struct PromptDetail: View {
         .toast(isPresenting: $showToast) { AlertToast(type: toastType, title: toastTitle) }
         .onChange(of: prompt.name)  { try? modelContext.save() }
         .onChange(of: prompt.desc)  { try? modelContext.save() }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: promotePromptToSkill) {
-                    Image(systemName: "wand.and.stars.inverse")
-                }
-                .help("Promote this prompt into a skill draft")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { showInspector.toggle() }
-                } label: {
-                    Image(systemName: "sidebar.right")
-                }
-                .help("Toggle Inspector")
-            }
-        }
     }
 }
 
