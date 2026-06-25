@@ -124,7 +124,7 @@ struct SearchableSharedCreation: SearchableItem, Identifiable {
     var type: SearchResultType { .shared }
 
     var navigationTarget: SearchNavigationTarget? {
-        .selection(.shared, query: creation.name)
+        .selection(.prompts(.shared), query: creation.name)
     }
 }
 
@@ -158,7 +158,7 @@ struct SearchableGalleryPrompt: SearchableItem, Identifiable {
     var type: SearchResultType { .gallery }
 
     var navigationTarget: SearchNavigationTarget? {
-        .selection(.explore, query: galleryPrompt.name)
+        .selection(.prompts(.explore), query: galleryPrompt.name)
     }
 }
 
@@ -254,7 +254,7 @@ struct SearchableInstalledSkill: SearchableItem, Identifiable {
     var type: SearchResultType { .installedSkill }
 
     var navigationTarget: SearchNavigationTarget? {
-        .selection(.installedSkills, query: skill.displayName)
+        .selection(.skills(.installed), query: skill.displayName)
     }
 }
 
@@ -295,7 +295,7 @@ struct SearchableCatalogSkill: SearchableItem, Identifiable {
     var type: SearchResultType { .catalogSkill }
 
     var navigationTarget: SearchNavigationTarget? {
-        .selection(.skillStore, query: skill.displayName)
+        .selection(.skills(.store), query: skill.displayName)
     }
 }
 

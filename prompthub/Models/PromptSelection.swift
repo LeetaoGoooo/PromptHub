@@ -1,46 +1,147 @@
-// MARK: - Navigation Selection
+import Foundation
 
-enum PromptSelection: Hashable, Equatable {
-    case allPrompts
+enum WorkspaceDomain: Hashable {
+    case prompts
+    case skills
+    case agents
+    case special
+}
+
+enum PromptWorkspaceLens: Hashable {
+    case all
     case mine
     case shared
     case explore
-    case mySkills
-    case prompt(Prompt)
-    case skill(Skill)
-    case skillStore
-    case installedSkills
+}
+
+enum SkillWorkspaceLens: Hashable {
+    case installed
+    case drafts
+    case store
+}
+
+enum AgentWorkspaceLens: Hashable {
+    case workspaces
+}
+
+enum WorkspaceSpecialPage: Hashable {
     case settings
     case cliDashboard
     case onboarding
+}
 
-    static func == (lhs: PromptSelection, rhs: PromptSelection) -> Bool {
-        switch (lhs, rhs) {
-        case (.allPrompts, .allPrompts), (.mine, .mine), (.shared, .shared),
-             (.explore, .explore), (.mySkills, .mySkills), (.skillStore, .skillStore),
-             (.installedSkills, .installedSkills), (.settings, .settings),
-             (.cliDashboard, .cliDashboard), (.onboarding, .onboarding): return true
-        case (.prompt(let l), .prompt(let r)): return l.id == r.id
-        case (.skill(let l), .skill(let r)):   return l.id == r.id
-        default: return false
+enum WorkspaceDetailSelection: Hashable {
+    case prompt(UUID)
+    case skill(UUID)
+}
+
+enum WorkspaceRoute: Hashable {
+    case prompts(PromptWorkspaceLens)
+    case skills(SkillWorkspaceLens)
+    case agents(AgentWorkspaceLens)
+    case special(WorkspaceSpecialPage)
+
+    var domain: WorkspaceDomain {
+        switch self {
+        case .prompts: return .prompts
+        case .skills: return .skills
+        case .agents: return .agents
+        case .special: return .special
+        }
+    }
+}
+
+struct WorkspaceNavigationState: Hashable {
+    var domain: WorkspaceDomain = .prompts
+    var promptLens: PromptWorkspaceLens = .all
+    var skillLens: SkillWorkspaceLens = .installed
+    var agentLens: AgentWorkspaceLens = .workspaces
+    var detailSelection: WorkspaceDetailSelection? = nil
+    var specialPage: WorkspaceSpecialPage? = nil
+    var lastWorkspaceDomain: WorkspaceDomain = .prompts
+
+    var currentRoute: WorkspaceRoute {
+        switch domain {
+        case .prompts:
+            return .prompts(promptLens)
+        case .skills:
+            return .skills(skillLens)
+        case .agents:
+            return .agents(agentLens)
+        case .special:
+            return .special(specialPage ?? .settings)
         }
     }
 
-    func hash(into hasher: inout Hasher) {
-        switch self {
-        case .allPrompts:      hasher.combine("allPrompts")
-        case .mine:            hasher.combine("mine")
-        case .shared:          hasher.combine("shared")
-        case .explore:         hasher.combine("explore")
-        case .mySkills:        hasher.combine("mySkills")
-        case .skillStore:      hasher.combine("skillStore")
-        case .installedSkills: hasher.combine("installedSkills")
-        case .settings:        hasher.combine("settings")
-        case .cliDashboard:    hasher.combine("cliDashboard")
-        case .onboarding:      hasher.combine("onboarding")
-        case .prompt(let p):   hasher.combine("prompt"); hasher.combine(p.id)
-        case .skill(let s):    hasher.combine("skill"); hasher.combine(s.id)
+    var currentWorkspaceDomain: WorkspaceDomain {
+        domain == .special ? lastWorkspaceDomain : domain
+    }
+
+    var isDetailPresented: Bool {
+        detailSelection != nil
+    }
+
+    mutating func showPrompts(_ lens: PromptWorkspaceLens? = nil) {
+        if domain != .special {
+            lastWorkspaceDomain = .prompts
         }
+        domain = .prompts
+        specialPage = nil
+        detailSelection = nil
+        if let lens { promptLens = lens }
+    }
+
+    mutating func showSkills(_ lens: SkillWorkspaceLens? = nil) {
+        if domain != .special {
+            lastWorkspaceDomain = .skills
+        }
+        domain = .skills
+        specialPage = nil
+        detailSelection = nil
+        if let lens { skillLens = lens }
+    }
+
+    mutating func showAgents(_ lens: AgentWorkspaceLens? = nil) {
+        if domain != .special {
+            lastWorkspaceDomain = .agents
+        }
+        domain = .agents
+        specialPage = nil
+        detailSelection = nil
+        if let lens { agentLens = lens }
+    }
+
+    mutating func showSpecial(_ page: WorkspaceSpecialPage) {
+        if domain != .special {
+            lastWorkspaceDomain = domain
+        }
+        domain = .special
+        specialPage = page
+        detailSelection = nil
+    }
+
+    mutating func selectPromptDetail(_ promptID: UUID) {
+        lastWorkspaceDomain = .prompts
+        domain = .prompts
+        specialPage = nil
+        detailSelection = .prompt(promptID)
+    }
+
+    mutating func selectSkillDetail(_ skillID: UUID) {
+        lastWorkspaceDomain = .skills
+        domain = .skills
+        specialPage = nil
+        detailSelection = .skill(skillID)
+    }
+
+    mutating func returnFromDetail() {
+        detailSelection = nil
+    }
+
+    mutating func returnFromSpecial() {
+        domain = lastWorkspaceDomain
+        specialPage = nil
+        detailSelection = nil
     }
 }
 

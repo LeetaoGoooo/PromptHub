@@ -1,23 +1,20 @@
 //
-//  PromptSideBar.swift
-//  prompthub
+//  PromptSideBar.swift
+//  prompthub
 //
-//  Created by leetao on 2025/3/1.
+//  Created by leetao on 2025/3/1.
 //
 
 import SwiftData
 import SwiftUI
 
 struct PromptSideBar: View {
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.controlActiveState) private var controlActiveState
     @Query(sort: \Prompt.name) var prompts: [Prompt]
-    @Query(sort: \Skill.updatedAt, order: .reverse) private var skillDrafts: [Skill]
-    @Query private var sharedCreations: [SharedCreation]
     @ObservedObject private var cliAccess = CLIDirectoryAccessManager.shared
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
 
-    @Binding var promptSelection: PromptSelection
+    @Binding var navigationState: WorkspaceNavigationState
     let onCreateNewPrompt: () -> Void
     let onCreateNewSkill: () -> Void
 
@@ -29,14 +26,15 @@ struct PromptSideBar: View {
     private var allInstalledCount: Int { installedSkills.count }
 
     private var isPromptDetailSelected: Bool {
-        if case .prompt = promptSelection { return true }
+        if case .prompt = navigationState.detailSelection { return true }
         return false
     }
+
     private var isSkillDraftDetailSelected: Bool {
-        if case .skill = promptSelection { return true }
+        if case .skill = navigationState.detailSelection { return true }
         return false
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             sidebarHeader
@@ -79,11 +77,9 @@ struct PromptSideBar: View {
                     title: "Prompts",
                     icon: "square.grid.2x2",
                     meta: metaCount(promptsCount),
-                    isActive: promptSelection == .allPrompts || promptSelection == .mine || promptSelection == .shared || promptSelection == .explore || isPromptDetailSelected
+                    isActive: navigationState.domain == .prompts || isPromptDetailSelected
                 ) {
-                    if promptSelection != .allPrompts && promptSelection != .mine && promptSelection != .shared && promptSelection != .explore && !isPromptDetailSelected {
-                        promptSelection = .allPrompts
-                    }
+                    navigationState.showPrompts(.all)
                 }
                 .keyboardShortcut("1", modifiers: .command)
             }
@@ -99,11 +95,9 @@ struct PromptSideBar: View {
                     title: "Skills",
                     icon: "square.stack.3d.up.fill",
                     meta: metaCount(allInstalledCount),
-                    isActive: promptSelection == .installedSkills || promptSelection == .mySkills || promptSelection == .skillStore || isSkillDraftDetailSelected
+                    isActive: navigationState.domain == .skills || isSkillDraftDetailSelected
                 ) {
-                    if promptSelection != .installedSkills && promptSelection != .mySkills && promptSelection != .skillStore && !isSkillDraftDetailSelected {
-                        promptSelection = .installedSkills
-                    }
+                    navigationState.showSkills(.installed)
                 }
                 .keyboardShortcut("2", modifiers: .command)
             }
@@ -115,8 +109,13 @@ struct PromptSideBar: View {
             sidebarSectionHeader("Agents")
 
             VStack(spacing: 6) {
-                sidebarSelectionButton(title: "Workspaces", icon: "terminal", meta: metaCount(grantedAgentCount), isActive: promptSelection == .cliDashboard) {
-                    promptSelection = .cliDashboard
+                sidebarSelectionButton(
+                    title: "Workspaces",
+                    icon: "terminal",
+                    meta: metaCount(grantedAgentCount),
+                    isActive: navigationState.domain == .special && navigationState.specialPage == .cliDashboard
+                ) {
+                    navigationState.showSpecial(.cliDashboard)
                 }
                 .keyboardShortcut("3", modifiers: .command)
             }
@@ -137,7 +136,7 @@ struct PromptSideBar: View {
         VStack(spacing: 0) {
             Divider()
             Button {
-                promptSelection = .onboarding
+                navigationState.showSpecial(.onboarding)
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "sparkles")
@@ -160,7 +159,7 @@ struct PromptSideBar: View {
 
             HStack {
                 Button {
-                    promptSelection = .settings
+                    navigationState.showSpecial(.settings)
                 } label: {
                     Image(systemName: "gearshape")
                         .imageScale(.medium)
@@ -187,8 +186,8 @@ struct PromptSideBar: View {
     }
 
     private var footerActionTitle: String {
-        switch promptSelection {
-        case .mySkills, .skill, .skillStore, .installedSkills:
+        switch navigationState.domain {
+        case .skills:
             return "New skill"
         default:
             return "New prompt"
@@ -196,17 +195,12 @@ struct PromptSideBar: View {
     }
 
     private var footerActionSymbol: String {
-        switch promptSelection {
-        case .mySkills, .skill, .skillStore, .installedSkills:
-            return "plus"
-        default:
-            return "plus"
-        }
+        "plus"
     }
 
     private var footerActionHelp: String {
-        switch promptSelection {
-        case .mySkills, .skill, .skillStore, .installedSkills:
+        switch navigationState.domain {
+        case .skills:
             return "New Skill Draft (Cmd+N)"
         default:
             return "New Prompt (Cmd+N)"
@@ -214,8 +208,8 @@ struct PromptSideBar: View {
     }
 
     private func handleCreateAction() {
-        switch promptSelection {
-        case .mySkills, .skill, .skillStore, .installedSkills:
+        switch navigationState.domain {
+        case .skills:
             onCreateNewSkill()
         default:
             onCreateNewPrompt()
@@ -229,19 +223,6 @@ struct PromptSideBar: View {
     @ViewBuilder
     private func sidebarSelectionButton(title: String, icon: String, meta: String?, isActive: Bool, action: @escaping () -> Void) -> some View {
         SidebarSelectionButton(title: title, icon: icon, meta: meta, isActive: isActive, action: action)
-    }
-
-    private func deletePrompt(_ prompt: Prompt) {
-        modelContext.delete(prompt)
-
-        do {
-            try modelContext.save()
-            if case .prompt(let selectedPrompt) = promptSelection, selectedPrompt == prompt {
-                promptSelection = .allPrompts
-            }
-        } catch {
-            print("Failed to delete prompt: \(error.localizedDescription)")
-        }
     }
 }
 

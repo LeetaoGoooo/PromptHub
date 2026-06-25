@@ -9,7 +9,7 @@ struct InstalledSkillsView: View {
     let draftService = SkillDraftService.shared
     @Query(sort: \Skill.updatedAt, order: .reverse) var skillDrafts: [Skill]
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
-    @Binding var promptSelection: PromptSelection
+    @Binding var navigationState: WorkspaceNavigationState
     let searchText: String
     @Binding var scopeFilter: SkillsSidebarScopeFilter
     @Binding var sourceFilter: SkillsSidebarSourceFilter
@@ -137,7 +137,7 @@ struct InstalledSkillsView: View {
             metrics: headerMetrics
         ) {
             HStack(spacing: 6) {
-                SkillsWorkspacePicker(promptSelection: $promptSelection)
+                SkillsWorkspacePicker(navigationState: $navigationState)
 
                 Divider().frame(height: 14)
 

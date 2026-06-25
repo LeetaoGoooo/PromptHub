@@ -27,30 +27,28 @@ enum SkillsWorkspaceTab: String, CaseIterable, Identifiable {
 }
 
 struct SkillsWorkspacePicker: View {
-    @Binding var promptSelection: PromptSelection
+    @Binding var navigationState: WorkspaceNavigationState
 
     private var selectedTab: Binding<SkillsWorkspaceTab> {
         Binding(
             get: {
-                switch promptSelection {
-                case .installedSkills:
+                switch navigationState.skillLens {
+                case .installed:
                     return .installed
-                case .mySkills, .skill:
+                case .drafts:
                     return .drafts
-                case .skillStore:
+                case .store:
                     return .discover
-                default:
-                    return .installed
                 }
             },
             set: { newValue in
                 switch newValue {
                 case .installed:
-                    promptSelection = .installedSkills
+                    navigationState.showSkills(.installed)
                 case .drafts:
-                    promptSelection = .mySkills
+                    navigationState.showSkills(.drafts)
                 case .discover:
-                    promptSelection = .skillStore
+                    navigationState.showSkills(.store)
                 }
             }
         )
@@ -89,24 +87,24 @@ enum PromptsWorkspaceTab: String, CaseIterable, Identifiable {
 }
 
 struct PromptsWorkspacePicker: View {
-    @Binding var promptSelection: PromptSelection
+    @Binding var navigationState: WorkspaceNavigationState
 
     private var selectedTab: Binding<PromptsWorkspaceTab> {
         Binding(
             get: {
-                switch promptSelection {
+                switch navigationState.promptLens {
+                case .all:     return .all
                 case .mine:    return .mine
                 case .shared:  return .shared
                 case .explore: return .explore
-                default:       return .all
                 }
             },
             set: { newValue in
                 switch newValue {
-                case .all:     promptSelection = .allPrompts
-                case .mine:    promptSelection = .mine
-                case .shared:  promptSelection = .shared
-                case .explore: promptSelection = .explore
+                case .all:     navigationState.showPrompts(.all)
+                case .mine:    navigationState.showPrompts(.mine)
+                case .shared:  navigationState.showPrompts(.shared)
+                case .explore: navigationState.showPrompts(.explore)
                 }
             }
         )
@@ -120,6 +118,24 @@ struct PromptsWorkspacePicker: View {
         }
         .pickerStyle(.segmented)
         .frame(width: 240)
+        .labelsHidden()
+    }
+}
+
+struct AgentsWorkspacePicker: View {
+    @Binding var navigationState: WorkspaceNavigationState
+
+    var body: some View {
+        Picker("Agents Workspace", selection: Binding(
+            get: { navigationState.agentLens },
+            set: { newValue in
+                navigationState.showAgents(newValue)
+            }
+        )) {
+            Text("Workspaces").tag(AgentWorkspaceLens.workspaces)
+        }
+        .pickerStyle(.segmented)
+        .frame(width: 180)
         .labelsHidden()
     }
 }
@@ -313,4 +329,3 @@ struct SkillLibraryBrowser<Sidebar: View, Detail: View>: View {
         .background(Color(NSColor.windowBackgroundColor))
     }
 }
-

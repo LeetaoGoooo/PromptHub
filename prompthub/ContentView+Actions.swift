@@ -34,18 +34,18 @@ extension ContentView {
         modelContext.insert(initialHistory)
         do {
             try modelContext.save()
-            promptSelection = .prompt(newPrompt)
+            navigationState.selectPromptDetail(newPrompt.id)
         } catch {
             showToastMessage("Failed to create new prompt", .error(.red))
         }
     }
 
-    func deletePrompt(_ prompt: Prompt, returningTo selection: PromptSelection = .allPrompts) {
+    func deletePrompt(_ prompt: Prompt) {
         modelContext.delete(prompt)
 
         do {
             try modelContext.save()
-            promptSelection = selection
+            navigationState.showPrompts(.all)
             showToastMessage("Prompt deleted", .complete(.green))
         } catch {
             showToastMessage("Failed to delete prompt", .error(.red))
@@ -55,7 +55,7 @@ extension ContentView {
     func createNewSkillDraft() {
         do {
             let draft = try skillDraftService.createDraft(in: modelContext)
-            promptSelection = .skill(draft)
+            navigationState.selectSkillDetail(draft.id)
         } catch {
             showToastMessage("Failed to create new skill draft", .error(.red))
         }
@@ -66,20 +66,29 @@ extension ContentView {
         case .prompt(let promptID):
             searchText = ""
             if let prompt = prompts.first(where: { $0.id == promptID }) {
-                promptSelection = .prompt(prompt)
+                navigationState.selectPromptDetail(prompt.id)
             } else {
-                promptSelection = .allPrompts
+                navigationState.showPrompts(.all)
             }
         case .skill(let skillID):
             searchText = ""
             if let skill = skillDrafts.first(where: { $0.id == skillID }) {
-                promptSelection = .skill(skill)
+                navigationState.selectSkillDetail(skill.id)
             } else {
-                promptSelection = .mySkills
+                navigationState.showSkills(.drafts)
             }
-        case .selection(let selection, let query):
-            promptSelection = selection
+        case .selection(let route, let query):
             searchText = query ?? ""
+            switch route {
+            case .prompts(let lens):
+                navigationState.showPrompts(lens)
+            case .skills(let lens):
+                navigationState.showSkills(lens)
+            case .agents(let lens):
+                navigationState.showAgents(lens)
+            case .special(let page):
+                navigationState.showSpecial(page)
+            }
         case .newPrompt:
             searchText = ""
             createNewPrompt()

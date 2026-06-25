@@ -2,49 +2,43 @@ import SwiftUI
 
 struct SkillsRootView: View {
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
-    @Binding var promptSelection: PromptSelection
+    @Binding var navigationState: WorkspaceNavigationState
     let searchText: String
     @Binding var skillsScopeFilter: SkillsSidebarScopeFilter
     @Binding var skillsSourceFilter: SkillsSidebarSourceFilter
 
     var body: some View {
-        switch promptSelection {
-        case .skillStore:
-            SkillStoreView(promptSelection: $promptSelection, searchText: searchText)
+        switch navigationState.skillLens {
+        case .store:
+            SkillStoreView(navigationState: $navigationState, searchText: searchText)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .background(Color(NSColor.windowBackgroundColor))
-        case .installedSkills:
+        case .installed:
             InstalledSkillsView(
                 installedWorkspaceStore: installedWorkspaceStore,
-                promptSelection: $promptSelection,
+                navigationState: $navigationState,
                 searchText: searchText,
                 scopeFilter: $skillsScopeFilter,
                 sourceFilter: $skillsSourceFilter,
                 onSelectSkillDraft: { skill in
-                    promptSelection = .skill(skill)
+                    navigationState.selectSkillDetail(skill.id)
                 }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Color(NSColor.windowBackgroundColor))
-        case .mySkills:
+        case .drafts:
             MySkillsView(
-                promptSelection: $promptSelection,
+                navigationState: $navigationState,
                 searchText: searchText,
                 onSelectSkill: { skill in
-                    promptSelection = .skill(skill)
+                    navigationState.selectSkillDetail(skill.id)
                 },
                 onCreateSkill: { skill in
-                    promptSelection = .skill(skill)
+                    navigationState.selectSkillDetail(skill.id)
                 }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Color(NSColor.windowBackgroundColor))
-        case .skill(let selectedSkill):
-            SkillDraftDetailView(skill: selectedSkill)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(Color(NSColor.windowBackgroundColor))
-        default:
-            EmptyView()
         }
     }
 }

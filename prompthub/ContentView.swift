@@ -10,7 +10,7 @@ struct ContentView: View {
     let skillDraftService = SkillDraftService.shared
     @StateObject private var installedWorkspaceStore = InstalledSkillsWorkspaceStore()
 
-    @State var promptSelection: PromptSelection = .allPrompts
+    @State var navigationState = WorkspaceNavigationState()
     @AppStorage("onboardingCompleted") private var onboardingCompleted = false
     @State var searchText = ""
     @State var galleryPrompts: [GalleryPrompt] = []
@@ -26,86 +26,123 @@ struct ContentView: View {
 
     var currentAppVersion: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown" }
 
-    private var searchPrompt: String {
-        switch promptSelection {
-        case .mySkills, .skill:          return "Search skills..."
-        case .skillStore:                return "Search skill catalog..."
-        case .installedSkills:           return "Search installed skills..."
-        case .cliDashboard, .settings, .onboarding:
-            return ""
-        default:                         return "Search prompts..."
-        }
+    private var currentPrompt: Prompt? {
+        guard case .prompt(let promptID) = navigationState.detailSelection else { return nil }
+        return prompts.first(where: { $0.id == promptID })
     }
 
-    private var isSidebarSearchEnabled: Bool {
-        switch promptSelection {
-        case .cliDashboard, .settings, .onboarding:
-            return false
-        default:
-            return true
+    private var currentSkill: Skill? {
+        guard case .skill(let skillID) = navigationState.detailSelection else { return nil }
+        return skillDrafts.first(where: { $0.id == skillID })
+    }
+
+    private var searchPrompt: String {
+        if navigationState.domain == .special {
+            return ""
+        }
+
+        switch navigationState.domain {
+        case .prompts:
+            return "Search prompts..."
+        case .skills:
+            switch navigationState.skillLens {
+            case .installed: return "Search installed skills..."
+            case .drafts:    return "Search skills..."
+            case .store:     return "Search skill catalog..."
+            }
+        case .agents:
+            return "Search workspaces..."
+        case .special:
+            return ""
         }
     }
 
     private var navigationTitle: String {
-        switch promptSelection {
-        case .settings:          return "Settings"
-        case .allPrompts:        return "All Prompts"
-        case .mine:              return "My Prompts"
-        case .shared:            return "Shared with Me"
-        case .explore:           return "Explore Gallery"
-        case .mySkills:          return "My Skills"
-        case .skillStore:        return "Skill Store"
-        case .installedSkills:   return "Installed Skills"
-        case .cliDashboard:      return "CLI Integration"
-        case .onboarding:        return "Get Started"
-        case .prompt(let p):     return p.name
-        case .skill(let s):      return s.displayName
+        switch navigationState.domain {
+        case .special:
+            switch navigationState.specialPage {
+            case .settings:     return "Settings"
+            case .cliDashboard: return "CLI Integration"
+            case .onboarding:   return "Get Started"
+            case nil:           return ""
+            }
+        case .prompts:
+            if let currentPrompt { return currentPrompt.name }
+            switch navigationState.promptLens {
+            case .all:     return "All Prompts"
+            case .mine:    return "My Prompts"
+            case .shared:  return "Shared with Me"
+            case .explore: return "Explore Gallery"
+            }
+        case .skills:
+            if let currentSkill { return currentSkill.displayName }
+            switch navigationState.skillLens {
+            case .installed: return "Installed Skills"
+            case .drafts:    return "My Skills"
+            case .store:     return "Skill Store"
+            }
+        case .agents:
+            return "Workspaces"
         }
     }
 
     private var minimumMainWindowContentSize: CGSize {
-        switch promptSelection {
-        case .cliDashboard:
+        switch navigationState.domain {
+        case .special where navigationState.specialPage == .cliDashboard:
             return CGSize(width: PH.Layout.mainWindowCLIMinWidth, height: 520)
-        case .onboarding:
+        case .special where navigationState.specialPage == .onboarding:
             return CGSize(width: PH.Layout.mainWindowOnboardingMinWidth, height: 480)
-        case .prompt:
+        case .prompts where currentPrompt != nil:
             return CGSize(width: PH.Layout.mainWindowPromptDetailMinWidth, height: PH.Layout.mainWindowMinHeightCap)
-        case .skill:
+        case .skills where currentSkill != nil:
             return CGSize(width: PH.Layout.mainWindowSkillDetailMinWidth, height: PH.Layout.mainWindowMinHeightCap)
-        case .mySkills, .skillStore, .installedSkills:
+        case .skills:
             return CGSize(width: PH.Layout.mainWindowSkillsMinWidth, height: PH.Layout.mainWindowMinHeightCap)
-        default:
+        case .agents:
+            return CGSize(width: PH.Layout.mainWindowSkillsMinWidth, height: PH.Layout.mainWindowMinHeightCap)
+        case .prompts:
+            return CGSize(width: PH.Layout.mainWindowPromptsMinWidth, height: PH.Layout.mainWindowMinHeightCap)
+        case .special:
             return CGSize(width: PH.Layout.mainWindowPromptsMinWidth, height: PH.Layout.mainWindowMinHeightCap)
         }
     }
 
     private var windowSizingDebugName: String {
-        switch promptSelection {
-        case .allPrompts:
-            return "allPrompts"
-        case .mine:
-            return "myPrompts"
-        case .shared:
-            return "sharedPrompts"
-        case .explore:
-            return "explorePrompts"
-        case .prompt:
-            return "promptDetail"
-        case .mySkills:
-            return "mySkills"
-        case .skillStore:
-            return "skillStore"
-        case .installedSkills:
-            return "installedSkills"
-        case .skill:
-            return "skillDetail"
-        case .cliDashboard:
-            return "cliDashboard"
-        case .settings:
-            return "settings"
-        case .onboarding:
-            return "onboarding"
+        switch navigationState.domain {
+        case .prompts:
+            switch navigationState.detailSelection {
+            case .prompt:
+                return "promptDetail"
+            case .skill:
+                return "skillDetail"
+            case nil:
+                switch navigationState.promptLens {
+                case .all:     return "allPrompts"
+                case .mine:    return "myPrompts"
+                case .shared:  return "sharedPrompts"
+                case .explore: return "explorePrompts"
+                }
+            }
+        case .skills:
+            switch navigationState.detailSelection {
+            case .skill:
+                return "skillDetail"
+            default:
+                switch navigationState.skillLens {
+                case .installed: return "installedSkills"
+                case .drafts:    return "mySkills"
+                case .store:     return "skillStore"
+                }
+            }
+        case .agents:
+            return "agents"
+        case .special:
+            switch navigationState.specialPage {
+            case .settings:     return "settings"
+            case .cliDashboard: return "cliDashboard"
+            case .onboarding:   return "onboarding"
+            case nil:           return "special"
+            }
         }
     }
 
@@ -113,17 +150,12 @@ struct ContentView: View {
         NavigationSplitView {
             PromptSideBar(
                 installedWorkspaceStore: installedWorkspaceStore,
-                promptSelection: $promptSelection,
+                navigationState: $navigationState,
                 onCreateNewPrompt: createNewPrompt,
                 onCreateNewSkill: createNewSkillDraft
             )
             .navigationSplitViewColumnWidth(min: 210, ideal: 235, max: 275)
             .frame(minWidth: 210)
-            // Declare an (empty) sidebar toolbar so SwiftUI reserves the
-            // window title-bar safe area for this column. Without it, the
-            // sidebar's custom VStack starts at window y=0 and content
-            // (PromptHub title + search) gets squeezed under the traffic
-            // lights when the window frame is restored from a prior session.
             .toolbar {
                 ToolbarItem(placement: .navigation) {
                     Color.clear.frame(width: 1, height: 1)
@@ -131,42 +163,20 @@ struct ContentView: View {
             }
         } detail: {
             NavigationStack {
-                switch promptSelection {
-                case .settings:
-                    SettingsView()
-                case .cliDashboard:
-                    CLIDashboardView()
-                case .onboarding:
-                    OnboardingView(onFinish: { promptSelection = .allPrompts },
-                                   onCLI: { promptSelection = .cliDashboard },
-                                   onSettings: { promptSelection = .settings })
-                case .prompt(let selectedPrompt):
-                    PromptDetail(
-                        prompt: selectedPrompt,
-                        onPromoteToSkill: { skill in promptSelection = .skill(skill) },
-                        onDeletePrompt: { prompt in deletePrompt(prompt) }
-                    )
-                case .mySkills, .skillStore, .installedSkills, .skill:
-                    SkillsRootView(
-                        installedWorkspaceStore: installedWorkspaceStore,
-                        promptSelection: $promptSelection,
-                        searchText: searchText,
-                        skillsScopeFilter: $skillsScopeFilter,
-                        skillsSourceFilter: $skillsSourceFilter
-                    )
-                default:
-                    contentForDefaultSelection
-                }
+                detailContent
             }
-            .navigationTitle("")
+            .navigationTitle(navigationTitle)
             .toolbar { toolbarContent }
             .searchable(text: $searchText, placement: .toolbar, prompt: searchPrompt)
             .onKeyPress(.escape) {
-                if case .prompt = promptSelection { promptSelection = .allPrompts; return .handled }
-                if case .skill = promptSelection  { promptSelection = .mySkills; return .handled }
-                if case .cliDashboard = promptSelection { promptSelection = .allPrompts; return .handled }
-                if case .onboarding = promptSelection  { promptSelection = .allPrompts; return .handled }
-                if case .settings = promptSelection { promptSelection = .allPrompts; return .handled }
+                if navigationState.detailSelection != nil {
+                    navigationState.returnFromDetail()
+                    return .handled
+                }
+                if navigationState.domain == .special {
+                    navigationState.returnFromSpecial()
+                    return .handled
+                }
                 return .ignored
             }
             .toast(isPresenting: $showToast) { AlertToast(type: toastType, title: toastMessage) }
@@ -175,7 +185,7 @@ struct ContentView: View {
                 checkForWhatsNew()
                 refreshInstalledWorkspace()
                 if !onboardingCompleted {
-                    promptSelection = .onboarding
+                    navigationState.showSpecial(.onboarding)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in
@@ -195,39 +205,109 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private var contentForDefaultSelection: some View {
-        switch promptSelection {
-        case .allPrompts:
-            AllPromptsView(searchText: searchText, galleryPrompts: galleryPrompts, isLoading: isLoading, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard, onSelectPrompt: { promptSelection = .prompt($0) }, onCreatePrompt: createNewPrompt, onRenderPrompt: { showingPromptRender = true })
+    private var detailContent: some View {
+        switch navigationState.domain {
+        case .special:
+            switch navigationState.specialPage {
+            case .settings:
+                SettingsView()
+            case .cliDashboard:
+                CLIDashboardView()
+            case .onboarding:
+                OnboardingView(
+                    onFinish: { navigationState.showPrompts(.all) },
+                    onCLI: { navigationState.showSpecial(.cliDashboard) },
+                    onSettings: { navigationState.showSpecial(.settings) }
+                )
+            case nil:
+                EmptyView()
+            }
+        case .prompts:
+            if let currentPrompt {
+                PromptDetail(
+                    prompt: currentPrompt,
+                    onPromoteToSkill: { skill in navigationState.selectSkillDetail(skill.id) },
+                    onDeletePrompt: { prompt in deletePrompt(prompt) }
+                )
+            } else {
+                promptsContent
+            }
+        case .skills:
+            if let currentSkill {
+                SkillDraftDetailView(skill: currentSkill)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .background(Color(NSColor.windowBackgroundColor))
+            } else {
+                SkillsRootView(
+                    installedWorkspaceStore: installedWorkspaceStore,
+                    navigationState: $navigationState,
+                    searchText: searchText,
+                    skillsScopeFilter: $skillsScopeFilter,
+                    skillsSourceFilter: $skillsSourceFilter
+                )
+            }
+        case .agents:
+            CLIDashboardView()
+        }
+    }
+
+    @ViewBuilder
+    private var promptsContent: some View {
+        switch navigationState.promptLens {
+        case .all:
+            AllPromptsView(
+                searchText: searchText,
+                galleryPrompts: galleryPrompts,
+                isLoading: isLoading,
+                showToastMsg: showToastMessage,
+                copyPromptToClipboard: copyToClipboard,
+                onSelectPrompt: { navigationState.selectPromptDetail($0.id) },
+                onCreatePrompt: createNewPrompt,
+                onRenderPrompt: { showingPromptRender = true }
+            )
         case .mine:
-            MyPromptsView(searchText: searchText, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard, onSelectPrompt: { promptSelection = .prompt($0) }, onCreatePrompt: createNewPrompt, onRenderPrompt: { showingPromptRender = true })
+            MyPromptsView(
+                searchText: searchText,
+                showToastMsg: showToastMessage,
+                copyPromptToClipboard: copyToClipboard,
+                onSelectPrompt: { navigationState.selectPromptDetail($0.id) },
+                onCreatePrompt: createNewPrompt,
+                onRenderPrompt: { showingPromptRender = true }
+            )
         case .shared:
             SharedCreationsView(searchText: searchText, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard)
         case .explore:
-            ExploreView(searchText: searchText, galleryPrompts: galleryPrompts, isLoading: isLoading, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard, onRefreshGallery: loadGalleryPrompts)
-        default:
-            EmptyView()
+            ExploreView(
+                searchText: searchText,
+                galleryPrompts: galleryPrompts,
+                isLoading: isLoading,
+                showToastMsg: showToastMessage,
+                copyPromptToClipboard: copyToClipboard,
+                onRefreshGallery: loadGalleryPrompts
+            )
         }
     }
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            switch promptSelection {
-            case .mySkills, .skillStore, .installedSkills, .skill:
-                SkillsWorkspacePicker(promptSelection: $promptSelection)
-            case .allPrompts, .mine, .shared, .explore, .prompt:
-                PromptsWorkspacePicker(promptSelection: $promptSelection)
-            default:
+            switch navigationState.domain {
+            case .prompts:
+                PromptsWorkspacePicker(navigationState: $navigationState)
+            case .skills:
+                SkillsWorkspacePicker(navigationState: $navigationState)
+            case .agents:
+                AgentsWorkspacePicker(navigationState: $navigationState)
+            case .special:
                 EmptyView()
             }
         }
         ToolbarItem(placement: .primaryAction) {
-            switch promptSelection {
-            case .mySkills, .skillStore, .installedSkills, .skill:
+            switch navigationState.domain {
+            case .skills:
                 Button(action: createNewSkillDraft) { Label("New Skill Draft", systemImage: "plus") }
                     .keyboardShortcut("n", modifiers: .command).help("Create a new skill draft (Cmd+N)")
-            case .settings, .cliDashboard, .onboarding:
+            case .special:
                 EmptyView()
             default:
                 Button(action: createNewPrompt) { Label("New Prompt", systemImage: "plus") }
@@ -235,12 +315,9 @@ struct ContentView: View {
             }
         }
         ToolbarItem(placement: .secondaryAction) {
-            switch promptSelection {
-            case .allPrompts, .mine, .prompt:
+            if navigationState.domain == .prompts {
                 Button { showingPromptRender = true } label: { Label("Render Prompt…", systemImage: "play.rectangle") }
                     .help("Render a prompt with variable substitution")
-            default:
-                EmptyView()
             }
         }
     }

@@ -58,7 +58,7 @@ struct SearchView: View {
                 description: "Browse your full prompt library",
                 content: "all prompts library",
                 searchableContent: "all prompts prompt library",
-                navigationTarget: .selection(.allPrompts, query: nil)
+                navigationTarget: .selection(.prompts(.all), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-my-prompts",
@@ -66,7 +66,7 @@ struct SearchView: View {
                 description: "Open your private prompts",
                 content: "my prompts private",
                 searchableContent: "my prompts private library",
-                navigationTarget: .selection(.mine, query: nil)
+                navigationTarget: .selection(.prompts(.mine), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-explore",
@@ -74,7 +74,7 @@ struct SearchView: View {
                 description: "Browse built-in prompt gallery",
                 content: "explore gallery",
                 searchableContent: "explore gallery prompts",
-                navigationTarget: .selection(.explore, query: nil)
+                navigationTarget: .selection(.prompts(.explore), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-shared",
@@ -82,7 +82,7 @@ struct SearchView: View {
                 description: "Open shared and community prompts",
                 content: "shared library",
                 searchableContent: "shared community library prompts",
-                navigationTarget: .selection(.shared, query: nil)
+                navigationTarget: .selection(.prompts(.shared), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-my-skills",
@@ -90,7 +90,7 @@ struct SearchView: View {
                 description: "Open authored skill drafts",
                 content: "my skills",
                 searchableContent: "my skills drafts",
-                navigationTarget: .selection(.mySkills, query: nil)
+                navigationTarget: .selection(.skills(.drafts), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-skill-store",
@@ -98,7 +98,7 @@ struct SearchView: View {
                 description: "Browse catalog skills",
                 content: "skill store",
                 searchableContent: "skill store catalog discover",
-                navigationTarget: .selection(.skillStore, query: nil)
+                navigationTarget: .selection(.skills(.store), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-installed-skills",
@@ -106,7 +106,7 @@ struct SearchView: View {
                 description: "Audit installed CLI skills",
                 content: "installed skills",
                 searchableContent: "installed skills audit",
-                navigationTarget: .selection(.installedSkills, query: nil)
+                navigationTarget: .selection(.skills(.installed), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-cli",
@@ -114,7 +114,7 @@ struct SearchView: View {
                 description: "Open agent and workspace integration",
                 content: "cli integration",
                 searchableContent: "cli integration agents workspaces",
-                navigationTarget: .selection(.cliDashboard, query: nil)
+                navigationTarget: .selection(.special(.cliDashboard), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-settings",
@@ -122,7 +122,7 @@ struct SearchView: View {
                 description: "Open PromptHub settings",
                 content: "settings preferences",
                 searchableContent: "settings preferences",
-                navigationTarget: .selection(.settings, query: nil)
+                navigationTarget: .selection(.special(.settings), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-onboarding",
@@ -130,7 +130,7 @@ struct SearchView: View {
                 description: "Open onboarding and setup guidance",
                 content: "get started onboarding",
                 searchableContent: "get started onboarding guide",
-                navigationTarget: .selection(.onboarding, query: nil)
+                navigationTarget: .selection(.special(.onboarding), query: nil)
             )
         ]
     }

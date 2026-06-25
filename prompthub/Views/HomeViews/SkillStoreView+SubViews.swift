@@ -9,7 +9,7 @@ extension SkillStoreView {
     @ViewBuilder
     var accessoryBar: some View {
         HStack(spacing: 6) {
-            SkillsWorkspacePicker(promptSelection: $promptSelection)
+            SkillsWorkspacePicker(navigationState: $navigationState)
 
             Divider().frame(height: 14)
 

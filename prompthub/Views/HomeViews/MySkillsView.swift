@@ -5,7 +5,7 @@ import SwiftUI
 struct MySkillsView: View {
     @Environment(\.modelContext) var modelContext
     @Query(sort: \Skill.updatedAt, order: .reverse) var skillDrafts: [Skill]
-    @Binding var promptSelection: PromptSelection
+    @Binding var navigationState: WorkspaceNavigationState
 
     let draftService = SkillDraftService.shared
 
@@ -19,12 +19,12 @@ struct MySkillsView: View {
 
     var body: some View {
         SkillLibraryScreen(
-            title: "My Skills",
-            subtitle: "Write, version, and install first-class skill drafts. Prompts can graduate into reusable skills without leaving the authoring flow.",
-            metrics: headerMetrics,
-            accessory: {
-                HStack(spacing: 6) {
-                    SkillsWorkspacePicker(promptSelection: $promptSelection)
+                title: "My Skills",
+                subtitle: "Write, version, and install first-class skill drafts. Prompts can graduate into reusable skills without leaving the authoring flow.",
+                metrics: headerMetrics,
+                accessory: {
+                    HStack(spacing: 6) {
+                    SkillsWorkspacePicker(navigationState: $navigationState)
 
                     Divider().frame(height: 14)
 
