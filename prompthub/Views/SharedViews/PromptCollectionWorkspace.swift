@@ -113,17 +113,14 @@ struct PromptBrowserScreen<Actions: View, EmptyState: View>: View {
     @ViewBuilder let emptyState: () -> EmptyState
 
     var body: some View {
-        VStack(spacing: 0) {
-            PromptCollectionHeader(
-                title: title,
-                subtitle: subtitle,
-                systemImage: systemImage,
-                metrics: metrics,
-                actions: actions
-            )
-            .padding(.horizontal, 24)
-            .padding(.vertical, 20)
-
+        SkillLibraryScreen(
+            title: title,
+            subtitle: subtitle,
+            metrics: metrics.map {
+                SkillLibraryMetric(value: $0.value, title: $0.title, systemImage: $0.systemImage)
+            },
+            accessory: actions
+        ) {
             PromptBrowserWorkspace(
                 sections: sections,
                 selectedItemID: $selectedItemID,
@@ -131,8 +128,6 @@ struct PromptBrowserScreen<Actions: View, EmptyState: View>: View {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(NSColor.windowBackgroundColor))
     }
 }
 
@@ -522,51 +517,6 @@ private struct PromptBrowserDetail: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
-    }
-}
-
-private struct PromptCollectionHeader<Actions: View>: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String
-    let metrics: [PromptCollectionMetric]
-    @ViewBuilder let actions: () -> Actions
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: systemImage)
-                        .foregroundStyle(.secondary)
-                    Text(title)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                }
-                Text(subtitle)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                if !metrics.isEmpty {
-                    HStack(spacing: 12) {
-                        ForEach(metrics) { metric in
-                            Label {
-                                Text("\(metric.value) \(metric.title)")
-                            } icon: {
-                                Image(systemName: metric.systemImage)
-                            }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-
-            Spacer(minLength: 16)
-
-            HStack(spacing: 8) {
-                actions()
-            }
-        }
     }
 }
 
