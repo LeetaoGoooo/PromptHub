@@ -33,19 +33,26 @@ struct SkillStoreView: View {
     @State var toastMessage = ""
     @State var toastType: AlertToast.AlertType = .regular
     @State var pendingInstall: PendingCatalogInstall?
-    @State var searchTask: Task<Void, Never>?
-    @State var remoteQuery = ""
 
     var availableSkills: [CatalogSkill]          { workspaceSnapshot.catalogSkills }
+    var filteredAvailableSkills: [CatalogSkill] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return availableSkills }
+        return availableSkills.filter { skill in
+            skill.displayName.localizedCaseInsensitiveContains(query) ||
+            skill.package.rawValue.localizedCaseInsensitiveContains(query) ||
+            skill.summary.localizedCaseInsensitiveContains(query) ||
+            (skill.displaySource?.localizedCaseInsensitiveContains(query) ?? false)
+        }
+    }
     var installedSkills: [InstalledSkillSnapshot]  { workspaceSnapshot.installedSkills }
     var installationRegistry: [String: CatalogSkillInstallationState] { workspaceSnapshot.installationRegistry }
-    var activeQuery: String { remoteQuery.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var selectedSkill: CatalogSkill? {
-        if let selectedSkillID, let matched = availableSkills.first(where: { $0.id == selectedSkillID }) {
+        if let selectedSkillID, let matched = filteredAvailableSkills.first(where: { $0.id == selectedSkillID }) {
             return matched
         }
-        return availableSkills.first
+        return filteredAvailableSkills.first
     }
 
     private var headerMetrics: [SkillLibraryMetric] {
@@ -66,27 +73,26 @@ struct SkillStoreView: View {
         } content: {
             mainContent
         }
-        .onChange(of: searchText) { _, newValue in
-            if remoteQuery != newValue {
-                remoteQuery = newValue
-            }
-            debouncedSearch(query: newValue)
-        }
-        .sheet(isPresented: $showingCLIAccessManager, onDismiss: { fetchSkills(query: activeQuery) }) {
+        .sheet(isPresented: $showingCLIAccessManager, onDismiss: { fetchSkills() }) {
             CLIAccessManagerView()
         }
-        .sheet(isPresented: $showingPrivateSourceInstall, onDismiss: { fetchSkills(query: activeQuery) }) {
+        .sheet(isPresented: $showingPrivateSourceInstall, onDismiss: { fetchSkills() }) {
             PrivateSourceInstallSheet()
         }
-        .sheet(isPresented: $showingGitHubInstall, onDismiss: { fetchSkills(query: activeQuery) }) {
+        .sheet(isPresented: $showingGitHubInstall, onDismiss: { fetchSkills() }) {
             GitHubRepoInstallSheet()
         }
         .onAppear {
-            remoteQuery = searchText
-            fetchSkills(query: remoteQuery)
+            fetchSkills()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in fetchSkills(query: activeQuery) }
-        .onReceive(NotificationCenter.default.publisher(for: .skillProjectSelectionDidChange)) { _ in fetchSkills(query: activeQuery) }
+        .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in fetchSkills() }
+        .onReceive(NotificationCenter.default.publisher(for: .skillProjectSelectionDidChange)) { _ in fetchSkills() }
+        .onChange(of: workspaceSnapshot.catalogSkills.map(\.id)) { _, _ in
+            syncSelection()
+        }
+        .onChange(of: searchText) { _, _ in
+            syncSelection()
+        }
         .alert("Skill Store", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -111,5 +117,17 @@ struct SkillStoreView: View {
             }
         }
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    func syncSelection() {
+        let ids = Set(filteredAvailableSkills.map(\.id))
+        guard !ids.isEmpty else {
+            selectedSkillID = nil
+            return
+        }
+        if let selectedSkillID, ids.contains(selectedSkillID) {
+            return
+        }
+        selectedSkillID = filteredAvailableSkills.first?.id
     }
 }

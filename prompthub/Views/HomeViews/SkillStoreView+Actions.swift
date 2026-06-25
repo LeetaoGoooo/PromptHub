@@ -7,27 +7,16 @@ import SwiftUI
 
 extension SkillStoreView {
 
-    func debouncedSearch(query: String) {
-        searchTask?.cancel()
-        searchTask = Task {
-            try? await Task.sleep(nanoseconds: 400_000_000)
-            guard !Task.isCancelled else { return }
-            await MainActor.run { fetchSkills(query: query) }
-        }
-    }
-
-    func fetchSkills(query: String = "") {
+    func fetchSkills() {
         guard cliAccessManager.anyAccessGranted else { return }
         isLoading = true
         errorMessage = nil
         Task {
             do {
                 workspaceSnapshot = try await workspaceService.loadSkillStore(
-                    query: query, authoredDraftCount: skillDrafts.count
+                    query: "", authoredDraftCount: skillDrafts.count
                 )
-                if !availableSkills.contains(where: { $0.id == selectedSkillID }) {
-                    selectedSkillID = availableSkills.first?.id
-                }
+                syncSelection()
             } catch {
                 errorMessage = workspaceService.userFacingErrorMessage(for: error)
             }
@@ -41,10 +30,11 @@ extension SkillStoreView {
         Task {
             do {
                 let snapshot = try await workspaceService.installCatalogSkill(
-                    skill, query: activeQuery, scope: scope, targetAgents: targetAgents,
+                    skill, query: "", scope: scope, targetAgents: targetAgents,
                     authoredDraftCount: skillDrafts.count, existingSnapshot: workspaceSnapshot
                 )
                 workspaceSnapshot = snapshot
+                syncSelection()
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                     installingSkillIDs.remove(skill.id)
                     recentlyInstalledIDs.insert(skill.id)
@@ -68,10 +58,11 @@ extension SkillStoreView {
         Task {
             do {
                 let snapshot = try await workspaceService.removeCatalogSkill(
-                    skill, query: activeQuery, scope: scope, installedSkills: installedSkills,
+                    skill, query: "", scope: scope, installedSkills: installedSkills,
                     authoredDraftCount: skillDrafts.count, existingSnapshot: workspaceSnapshot
                 )
                 workspaceSnapshot = snapshot
+                syncSelection()
                 showToastMessage("Removed \(skill.displayName) from \(scope.displayName.lowercased())", .complete(.green))
             } catch {
                 errorMessage = "Failed to remove \(skill.displayName): \(workspaceService.userFacingErrorMessage(for: error))"
@@ -103,13 +94,14 @@ extension SkillStoreView {
             defer { isInstallingLocalSkill = false }
             do {
                 let snapshot = try await workspaceService.installLocalSkill(
-                    at: selectedURL, query: activeQuery,
+                    at: selectedURL, query: "",
                     scope: isGlobal ? .global : .project,
                     targetAgents: AgentWorkflow.defaultTargets,
                     authoredDraftCount: skillDrafts.count,
                     existingSnapshot: workspaceSnapshot
                 )
                 workspaceSnapshot = snapshot
+                syncSelection()
                 showToastMessage(
                     "Imported local skill into \((isGlobal ? SkillInstallScope.global : .project).displayName.lowercased())",
                     .complete(.green)

@@ -19,7 +19,7 @@ extension SkillStoreView {
                 chooseProjectRoot()
             }
 
-            Button { fetchSkills(query: activeQuery) } label: { Image(systemName: "arrow.clockwise") }
+            Button { fetchSkills() } label: { Image(systemName: "arrow.clockwise") }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
                 .accessibilityLabel("Refresh catalog")
@@ -70,14 +70,8 @@ extension SkillStoreView {
                 systemImage: "exclamationmark.triangle.fill",
                 description: error
             ) {
-                Button("Retry") { fetchSkills(query: activeQuery) }.buttonStyle(.borderedProminent)
+                Button("Retry") { fetchSkills() }.buttonStyle(.borderedProminent)
             }
-        } else if !isLoading && availableSkills.isEmpty && !activeQuery.isEmpty {
-            SkillLibraryEmptyState(
-                title: "No Skills Found",
-                systemImage: "magnifyingglass",
-                description: "No skills match \"\(activeQuery)\". Try a different search term."
-            )
         } else if !cliAccessManager.anyAccessGranted {
             SkillLibraryEmptyState(
                 title: "CLI Access Required",
@@ -87,6 +81,18 @@ extension SkillStoreView {
                 Button("Configure Access\u{2026}") { showingCLIAccessManager = true }
                     .buttonStyle(.borderedProminent)
             }
+        } else if !isLoading && availableSkills.isEmpty {
+            SkillLibraryEmptyState(
+                title: "No Skills Available",
+                systemImage: "shippingbox",
+                description: "The current catalog did not return any skills. Refresh to try again."
+            )
+        } else if !isLoading && filteredAvailableSkills.isEmpty && !searchText.isEmpty {
+            SkillLibraryEmptyState(
+                title: "No Skills Found",
+                systemImage: "magnifyingglass",
+                description: "No skills match \"\(searchText)\" in the loaded catalog. Try a different search term."
+            )
         } else {
             skillBrowser
         }
@@ -108,21 +114,14 @@ extension SkillStoreView {
                 .background(Color(NSColor.controlBackgroundColor))
             }
             VStack(alignment: .leading, spacing: 8) {
-                Text("Search Remote Skills")
+                Text("Loaded Catalog")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
 
-                TextField("Search the remote catalog…", text: $remoteQuery)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit {
-                        fetchSkills(query: remoteQuery)
-                    }
-                    .onChange(of: remoteQuery) { _, newValue in
-                        debouncedSearch(query: newValue)
-                    }
-
-                Text("Results are fetched from the current skills catalog, not just filtered locally.")
+                Text(searchText.isEmpty
+                     ? "Toolbar search filters the currently loaded catalog locally. Refresh only reloads catalog data."
+                     : "Showing local matches for \"\(searchText)\" inside the current catalog snapshot.")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
@@ -136,7 +135,9 @@ extension SkillStoreView {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
-                    Text("\(availableSkills.count) catalog skills")
+                    Text(searchText.isEmpty
+                         ? "\(filteredAvailableSkills.count) catalog skills"
+                         : "\(filteredAvailableSkills.count) of \(availableSkills.count) catalog skills")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
                 }
@@ -147,9 +148,9 @@ extension SkillStoreView {
             .background(Color(NSColor.windowBackgroundColor).opacity(0.82))
 
             List {
-                if !availableSkills.isEmpty {
-                    Section("Catalog (\(availableSkills.count))") {
-                        ForEach(availableSkills) { skill in
+                if !filteredAvailableSkills.isEmpty {
+                    Section("Catalog (\(filteredAvailableSkills.count))") {
+                        ForEach(filteredAvailableSkills) { skill in
                             let info = workspaceService.installationState(for: skill, registry: installationRegistry)
                             Button { selectedSkillID = skill.id } label: {
                                 SkillStoreListRow(
