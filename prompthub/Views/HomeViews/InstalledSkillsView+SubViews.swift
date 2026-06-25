@@ -250,6 +250,7 @@ extension InstalledSkillsView {
                     isLoadingStructuralQuality: isLoadingStructuralQuality,
                     isAdding: addingSkillIDs.contains(selectedSkill.id),
                     isRemoving: removingSkillIDs.contains(selectedSkill.id),
+                    hasUpdate: skillsWithUpdates.contains(selectedSkill.id),
                     onEditDraft: { openDraft(for: selectedSkill) },
                     onAddAgents: { agents in addSkillTargets(selectedSkill, agents: agents) },
                     onRemoveAll: { pendingRemoval = PendingRemoval(skill: selectedSkill, targetAgents: nil) },

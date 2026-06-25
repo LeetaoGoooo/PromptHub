@@ -13,6 +13,7 @@ struct InstalledSkillDetailPane: View {
     let isLoadingStructuralQuality: Bool
     let isAdding: Bool
     let isRemoving: Bool
+    let hasUpdate: Bool
     let onEditDraft: () -> Void
     let onAddAgents: ([AgentWorkflow]) -> Void
     let onRemoveAll: () -> Void
@@ -266,10 +267,12 @@ struct InstalledSkillDetailPane: View {
     var body: some View {
         SkillLibraryInspectorCard {
             VStack(alignment: .leading, spacing: 22) {
-                headerSection
-                quickActionsSection
-                overviewSection
-                diagnosticsSection
+                heroSection
+                installScopeSection
+                healthSection
+                sourceIntegritySection
+                updateStatusSection
+                auditFindingsSection
                 footerSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -351,6 +354,132 @@ struct InstalledSkillDetailPane: View {
         }
     }
 
+    private var heroSection: some View {
+        detailSectionCard {
+            HStack(alignment: .top, spacing: 18) {
+                Image(systemName: iconSymbol)
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 56, height: 56)
+                    .background(iconColor.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    headerSection
+
+                    Text(summaryText)
+                        .font(PH.Font.body)
+                        .foregroundStyle(PH.Color.secondary)
+                        .lineSpacing(PH.Font.bodyLineSpacing)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    SkillLibraryMetadataBlock(title: "Source", rows: [
+                        ("Source", skill.displaySource ?? "Local only"),
+                        ("Identifier", skill.package.rawValue),
+                        ("Draft", linkedDraftSummary)
+                    ])
+                }
+            }
+
+            primaryActionButtons
+        }
+    }
+
+    private var installScopeSection: some View {
+        detailSectionCard {
+            PHSectionHead(systemImage: "square.stack.3d.up", label: "Install Scope")
+
+            SkillLibraryMetadataBlock(title: "Coverage", rows: [
+                ("Scope", skill.isGlobal ? "Global" : "Project"),
+                ("Projects", projectSummary),
+                ("Connected CLIs", coverageSummary)
+            ])
+
+            InstalledSkillScopeMatrixView(skill: skill)
+
+            footerActionButtons
+        }
+    }
+
+    private var healthSection: some View {
+        detailSectionCard {
+            PHSectionHead(systemImage: "heart.text.square", label: "Health")
+
+            SkillLibraryMetadataBlock(title: "Health Summary", rows: [
+                ("Structure", qualitySummary),
+                ("Visibility", visibilitySummary),
+                ("Integrity", integritySummary)
+            ])
+
+            InstalledSkillStructuralQualityView(
+                structuralQuality: structuralQuality,
+                isLoading: isLoadingStructuralQuality
+            )
+
+            InstalledSkillAgentVisibilityView(
+                visibility: agentVisibility,
+                isLoading: isLoadingVisibility
+            )
+        }
+    }
+
+    private var sourceIntegritySection: some View {
+        detailSectionCard {
+            PHSectionHead(systemImage: "checkmark.shield", label: "Source Integrity")
+
+            SkillLibraryMetadataBlock(title: "Package", rows: sourceRows)
+
+            if !installedPackagePaths.isEmpty {
+                SkillLibraryMetadataBlock(
+                    title: installedPackagePaths.count > 1 ? "Installed Packages" : "Installed Package",
+                    rows: installedPackagePaths.enumerated().map { index, path in
+                        (installedPackagePaths.count > 1 ? "Path \(index + 1)" : "Path", path)
+                    }
+                )
+            } else if let localSkillFilePath {
+                SkillLibraryMetadataBlock(title: "Installed Files", rows: [
+                    ("Primary File", localSkillFilePath)
+                ])
+            }
+
+            InstalledSkillIntegrityView(
+                integrity: sourceIntegrity,
+                isLoading: isLoadingIntegrity
+            )
+        }
+    }
+
+    private var updateStatusSection: some View {
+        detailSectionCard {
+            PHSectionHead(systemImage: "arrow.triangle.2.circlepath", label: "Update Status")
+
+            SkillLibraryMetadataBlock(title: "Remote Status", rows: [
+                ("Source Type", skill.package.remoteInstallDescriptor == nil ? "Local only" : "Remote backed"),
+                ("Update State", updateSummaryText),
+                ("Action", skill.package.remoteInstallDescriptor == nil ? "No remote update path" : "Review update diff")
+            ])
+
+            HStack(spacing: 10) {
+                if skill.package.remoteInstallDescriptor != nil {
+                    Button("Review Update") { showingUpdateDiff = true }
+                        .buttonStyle(.borderedProminent)
+                }
+
+                if skill.url != nil {
+                    Button("Open Source Page", action: onOpenSourcePage)
+                        .buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+
+    private var auditFindingsSection: some View {
+        detailSectionCard {
+            PHSectionHead(systemImage: "checklist", label: "Audit Findings")
+            auditDiagnosticsBlock
+        }
+    }
+
     private var qualityPill: some View {
         HStack(spacing: 8) {
             Text(qualityBadgeText)
@@ -381,6 +510,14 @@ struct InstalledSkillDetailPane: View {
         case .poor:
             return .red
         }
+    }
+
+    private var updateSummaryText: String {
+        guard skill.package.remoteInstallDescriptor != nil else {
+            return "Not available for local-only skills"
+        }
+
+        return hasUpdate ? "Update available" : "No pending update detected"
     }
 
     private var quickActionsSection: some View {
