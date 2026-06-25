@@ -179,20 +179,18 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(24)
             } else {
-                GeometryReader { geometry in
-                    HSplitView {
+                WorkspaceSplitShell(
+                    sidebarMinWidth: 240,
+                    sidebarIdealWidth: 300,
+                    sidebarMaxWidth: 380,
+                    detailMinWidth: 280,
+                    sidebar: {
                         listPane
+                    },
+                    detail: {
                         detailPane
                     }
-                    .frame(
-                        minWidth: 0,
-                        maxWidth: .infinity,
-                        minHeight: 0,
-                        maxHeight: .infinity,
-                        alignment: .topLeading
-                    )
-                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
-                }
+                )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -280,8 +278,7 @@ private struct PromptBrowserWorkspace<EmptyState: View>: View {
             .frame(minHeight: 0, idealHeight: 0, maxHeight: .infinity, alignment: .top)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(minWidth: 240, idealWidth: 300, maxWidth: 380, maxHeight: .infinity)
-        .background(Color(NSColor.controlBackgroundColor))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var detailPane: some View {

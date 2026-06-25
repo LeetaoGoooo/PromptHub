@@ -289,9 +289,11 @@ struct SkillLibraryScreen<Accessory: View, Content: View>: View {
     }
 }
 
-// MARK: - Browser Split Layout
+// MARK: - Shared Split Shell
 
-struct SkillLibraryBrowser<Sidebar: View, Detail: View>: View {
+/// Shared two-pane shell for workspace browsers.
+/// Keeps split sizing and background behavior consistent across prompt and skill surfaces.
+struct WorkspaceSplitShell<Sidebar: View, Detail: View>: View {
     let sidebarMinWidth: CGFloat
     let sidebarIdealWidth: CGFloat
     let sidebarMaxWidth: CGFloat
@@ -299,10 +301,14 @@ struct SkillLibraryBrowser<Sidebar: View, Detail: View>: View {
     @ViewBuilder let sidebar: () -> Sidebar
     @ViewBuilder let detail: () -> Detail
 
-            init(sidebarMinWidth: CGFloat = 200, sidebarIdealWidth: CGFloat = 240,
-                sidebarMaxWidth: CGFloat = 360, detailMinWidth: CGFloat = 320,
-         @ViewBuilder sidebar: @escaping () -> Sidebar,
-         @ViewBuilder detail: @escaping () -> Detail) {
+    init(
+        sidebarMinWidth: CGFloat = 200,
+        sidebarIdealWidth: CGFloat = 240,
+        sidebarMaxWidth: CGFloat = 360,
+        detailMinWidth: CGFloat = 320,
+        @ViewBuilder sidebar: @escaping () -> Sidebar,
+        @ViewBuilder detail: @escaping () -> Detail
+    ) {
         self.sidebarMinWidth = sidebarMinWidth
         self.sidebarIdealWidth = sidebarIdealWidth
         self.sidebarMaxWidth = sidebarMaxWidth
@@ -329,3 +335,5 @@ struct SkillLibraryBrowser<Sidebar: View, Detail: View>: View {
         .background(Color(NSColor.windowBackgroundColor))
     }
 }
+
+typealias SkillLibraryBrowser<Sidebar: View, Detail: View> = WorkspaceSplitShell<Sidebar, Detail>
