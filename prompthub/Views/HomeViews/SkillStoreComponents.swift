@@ -92,11 +92,3 @@ struct SkillInstallationBadges: View {
             .clipShape(Capsule())
     }
 }
-
-// MARK: - Inspector Chrome
-
-struct SkillStoreInspectorChrome: ViewModifier {
-    func body(content: Content) -> some View {
-        SkillLibraryInspectorCard { content }
-    }
-}

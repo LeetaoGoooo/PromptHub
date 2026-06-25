@@ -27,81 +27,82 @@ struct SkillStoreDetailPane: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .top, spacing: 18) {
-                Image(systemName: iconSymbol)
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(iconColor)
-                    .frame(width: 56, height: 56)
-                    .background(iconColor.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+        SkillLibraryInspectorCard {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(alignment: .top, spacing: 18) {
+                    Image(systemName: iconSymbol)
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(iconColor)
+                        .frame(width: 56, height: 56)
+                        .background(iconColor.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(skill.displayName).font(.title2.weight(.semibold))
-                    if let source = skill.displaySource {
-                        Text(source).font(.subheadline).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(skill.displayName).font(.title2.weight(.semibold))
+                        if let source = skill.displaySource {
+                            Text(source).font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        SkillInstallationBadges(
+                            installationState: installationState,
+                            isInstalling: isInstalling,
+                            justInstalled: justInstalled
+                        )
                     }
-                    SkillInstallationBadges(
-                        installationState: installationState,
-                        isInstalling: isInstalling,
-                        justInstalled: justInstalled
-                    )
+                    Spacer()
                 }
-                Spacer()
-            }
 
-            Text(skill.summary).font(.body).foregroundStyle(.secondary)
+                Text(skill.summary).font(.body).foregroundStyle(.secondary)
 
-            SkillLibraryMetadataBlock(
-                title: "Availability",
-                rows: [
-                    ("Scopes", installationState.scopes.isEmpty ? "Not installed yet" : installationState.scopes.map(\.displayName).joined(separator: ", ")),
-                    ("Project CLIs", cliDescription(for: .project)),
-                    ("Global CLIs",  cliDescription(for: .global))
-                ]
-            )
+                SkillLibraryMetadataBlock(
+                    title: "Availability",
+                    rows: [
+                        ("Scopes", installationState.scopes.isEmpty ? "Not installed yet" : installationState.scopes.map(\.displayName).joined(separator: ", ")),
+                        ("Project CLIs", cliDescription(for: .project)),
+                        ("Global CLIs",  cliDescription(for: .global))
+                    ]
+                )
 
-            SkillLibraryMetadataBlock(
-                title: "Package",
-                rows: [
-                    ("Identifier", skill.package.rawValue),
-                    ("Managed", skill.isManagedByPromptHub ? "PromptHub managed" : "External")
-                ]
-            )
+                SkillLibraryMetadataBlock(
+                    title: "Package",
+                    rows: [
+                        ("Identifier", skill.package.rawValue),
+                        ("Managed", skill.isManagedByPromptHub ? "PromptHub managed" : "External")
+                    ]
+                )
 
-            Divider()
+                Divider()
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Quick Actions")
-                    .font(.headline)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Quick Actions")
+                        .font(.headline)
 
-                HStack(spacing: 10) {
-                    installActions
-                    if skill.url != nil {
-                        Button("Open Source Page", action: onOpenSourcePage).buttonStyle(.bordered)
+                    HStack(spacing: 10) {
+                        installActions
+                        if skill.url != nil {
+                            Button("Open Source Page", action: onOpenSourcePage).buttonStyle(.bordered)
+                        }
                     }
                 }
-            }
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Summary")
-                    .font(.headline)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Summary")
+                        .font(.headline)
 
-                ScrollView {
-                    Text(skill.summary)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(14)
+                    ScrollView {
+                        Text(skill.summary)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(14)
+                    }
+                    .frame(minHeight: 96, idealHeight: 120, maxHeight: 140)
+                    .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
                 }
-                .frame(minHeight: 96, idealHeight: 120, maxHeight: 140)
-                .background(Color(NSColor.textBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
-            }
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(SkillStoreInspectorChrome())
     }
 
     @ViewBuilder

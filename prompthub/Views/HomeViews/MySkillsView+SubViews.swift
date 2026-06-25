@@ -105,7 +105,7 @@ extension MySkillsView {
     }
 
     var skillBrowser: some View {
-        SkillLibraryBrowser { skillListPane } detail: { skillDetailPane }
+        WorkspaceSplitShell { skillListPane } detail: { skillDetailPane }
     }
 
     var skillListPane: some View {

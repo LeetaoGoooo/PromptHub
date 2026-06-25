@@ -335,5 +335,3 @@ struct WorkspaceSplitShell<Sidebar: View, Detail: View>: View {
         .background(Color(NSColor.windowBackgroundColor))
     }
 }
-
-typealias SkillLibraryBrowser<Sidebar: View, Detail: View> = WorkspaceSplitShell<Sidebar, Detail>

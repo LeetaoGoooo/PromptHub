@@ -264,16 +264,16 @@ struct InstalledSkillDetailPane: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            headerSection
-            quickActionsSection
-            overviewSection
-            diagnosticsSection
-            coverageSection
-            footerSection
+        SkillLibraryInspectorCard {
+            VStack(alignment: .leading, spacing: 22) {
+                headerSection
+                quickActionsSection
+                overviewSection
+                diagnosticsSection
+                footerSection
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(SkillStoreInspectorChrome())
         .sheet(isPresented: $showingUpdateDiff) {
             SkillUpdateDiffSheet(skill: skill) { showingUpdateDiff = false }
         }
@@ -524,8 +524,8 @@ struct InstalledSkillDetailPane: View {
         }
     }
 
-    private var coverageSection: some View {
-        detailSectionCard {
+    private var coverageDiagnosticsBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
             PHSectionHead(systemImage: "checklist", label: "CLI Visibility")
 
             VStack(spacing: 0) {
@@ -629,16 +629,10 @@ struct InstalledSkillDetailPane: View {
         detailSectionCard {
             PHSectionHead(systemImage: "waveform.path.ecg", label: "Diagnostics")
 
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 32) {
-                    auditDiagnosticsBlock
-                    integrityDiagnosticsBlock
-                }
-
-                VStack(alignment: .leading, spacing: 18) {
-                    auditDiagnosticsBlock
-                    integrityDiagnosticsBlock
-                }
+            VStack(alignment: .leading, spacing: 18) {
+                integrityDiagnosticsBlock
+                auditDiagnosticsBlock
+                coverageDiagnosticsBlock
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

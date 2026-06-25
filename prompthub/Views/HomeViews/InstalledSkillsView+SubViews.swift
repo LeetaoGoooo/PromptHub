@@ -112,7 +112,7 @@ extension InstalledSkillsView {
     }
 
     var skillBrowser: some View {
-        SkillLibraryBrowser {
+        WorkspaceSplitShell {
             skillListPane
         } detail: {
             skillDetailPane
