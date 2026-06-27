@@ -27,12 +27,12 @@ private func readFile(_ relative: String) throws -> String {
 
 // MARK: - Formula
 
-@Test func formulaPointsAtDoSomeForFunOrg() throws {
+@Test func formulaPointsAtLeetaoGooooOrg() throws {
     let formula = try readFile("Formula/ph.rb")
-    #expect(formula.contains("homepage \"https://github.com/DoSomeForFun/PromptHub\""))
-    #expect(formula.contains("https://github.com/DoSomeForFun/PromptHub.git"))
+    #expect(formula.contains("homepage \"https://github.com/LeetaoGoooo/PromptHub\""))
+    #expect(formula.contains("https://github.com/LeetaoGoooo/PromptHub.git"))
     // Old org must not leak back in via a copy/paste.
-    #expect(!formula.contains("LeetaoGoooo"))
+    #expect(!formula.contains("DoSomeForFun"))
 }
 
 @Test func formulaDeclaresStableVersionAndArchive() throws {
@@ -58,7 +58,7 @@ private func readFile(_ relative: String) throws -> String {
     let formula = try readFile("Formula/ph.rb")
     // HEAD path must still build from source, otherwise Intel mac users
     // lose their only supported install path in v1.
-    #expect(formula.contains("head \"https://github.com/DoSomeForFun/PromptHub.git\""))
+    #expect(formula.contains("head \"https://github.com/LeetaoGoooo/PromptHub.git\""))
     #expect(formula.contains("swift"))
     #expect(formula.contains("PromptHubCLI"))
     #expect(formula.contains("--product"))
@@ -141,9 +141,9 @@ private func readFile(_ relative: String) throws -> String {
     let docs = try readFile("docs/cli-release.md")
     #expect(docs.contains("Apple Silicon"))
     #expect(docs.contains("Intel"))
-    #expect(docs.contains("brew tap dosomeforfun/prompthub"))
-    #expect(docs.contains("brew install dosomeforfun/prompthub/ph"))
-    #expect(docs.contains("brew install --HEAD dosomeforfun/prompthub/ph"))
+    #expect(docs.contains("brew tap leetaogoooo/prompthub"))
+    #expect(docs.contains("brew install leetaogoooo/prompthub/ph"))
+    #expect(docs.contains("brew install --HEAD leetaogoooo/prompthub/ph"))
     #expect(docs.contains("ph-macos-arm64.tar.gz"))
     #expect(docs.contains("ph-macos-arm64.sha256"))
     #expect(docs.contains("tools/homebrew/verify-formula.sh"))

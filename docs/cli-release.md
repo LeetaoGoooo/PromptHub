@@ -41,8 +41,8 @@ locally with the user's Swift toolchain.
 ### Stable Homebrew (recommended after a tagged release exists)
 
 ```bash
-brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git
-brew install dosomeforfun/prompthub/ph
+brew tap leetaogoooo/prompthub https://github.com/LeetaoGoooo/PromptHub.git
+brew install leetaogoooo/prompthub/ph
 ph --help
 ```
 
@@ -52,8 +52,8 @@ matching [`Formula/ph.rb`](../Formula/ph.rb)'s `STABLE_VERSION`.
 ### HEAD Homebrew (always available; builds from source)
 
 ```bash
-brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git
-brew install --HEAD dosomeforfun/prompthub/ph
+brew tap leetaogoooo/prompthub https://github.com/LeetaoGoooo/PromptHub.git
+brew install --HEAD leetaogoooo/prompthub/ph
 ph --help
 ```
 
@@ -65,9 +65,9 @@ ph --help
 ```bash
 VERSION=0.1.0
 curl -L -o ph.tar.gz \
-  "https://github.com/DoSomeForFun/PromptHub/releases/download/ph-v$VERSION/ph-macos-arm64.tar.gz"
+  "https://github.com/LeetaoGoooo/PromptHub/releases/download/ph-v$VERSION/ph-macos-arm64.tar.gz"
 shasum -a 256 -c <(curl -sL \
-  "https://github.com/DoSomeForFun/PromptHub/releases/download/ph-v$VERSION/ph-macos-arm64.sha256" \
+  "https://github.com/LeetaoGoooo/PromptHub/releases/download/ph-v$VERSION/ph-macos-arm64.sha256" \
   | awk '{print $1"  ph.tar.gz"}')
 tar -xzf ph.tar.gz
 install -m 755 ph ~/.local/bin/ph

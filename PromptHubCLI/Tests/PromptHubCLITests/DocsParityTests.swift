@@ -60,7 +60,7 @@ private let parityCopyPaths: [String] = [
     for path in parityCopyPaths {
         let body = try readFile(path)
         #expect(
-            !body.contains("LeetaoGoooo"),
+            !body.contains("DoSomeForFun"),
             "old org reference still present in \(path)"
         )
     }
@@ -80,13 +80,13 @@ private let parityCopyPaths: [String] = [
     for path in surfaces {
         let body = try readFile(path)
         #expect(
-            body.contains("dosomeforfun/prompthub/ph"),
+            body.contains("leetaogoooo/prompthub/ph"),
             "missing canonical brew install command in \(path)"
         )
     }
 }
 
-@Test func brewTapDocsCallOutDoSomeForFunOrg() throws {
+@Test func brewTapDocsCallOutLeetaoGooooOrg() throws {
     // The full tap command (with the git URL) must appear in every long-form
     // doc so a user landing on any of them can copy-paste a working install.
     let longFormDocs = [
@@ -94,7 +94,7 @@ private let parityCopyPaths: [String] = [
         "PromptHubCLI/README.md",
         "docs/cli-release.md",
     ]
-    let tapCommand = "brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git"
+    let tapCommand = "brew tap leetaogoooo/prompthub https://github.com/LeetaoGoooo/PromptHub.git"
     for path in longFormDocs {
         let body = try readFile(path)
         #expect(
