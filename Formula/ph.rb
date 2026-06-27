@@ -70,7 +70,7 @@ class Ph < Formula
 
   test do
     assert_match "USAGE: ph <subcommand>", shell_output("#{bin}/ph --help")
-    assert_match "ph prompt", shell_output("#{bin}/ph --help")
-    assert_match "ph skill", shell_output("#{bin}/ph --help")
+    assert_match "prompt                  Read and write prompts exported by the PromptHub", shell_output("#{bin}/ph --help")
+    assert_match "skill                   Inspect exported skills and install them into", shell_output("#{bin}/ph --help")
   end
 end
