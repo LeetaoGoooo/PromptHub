@@ -19,7 +19,7 @@ let package = Package(
     dependencies: [
         .package(path: "../PromptHubSkillKit"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.7.1"),
-        .package(url: "https://github.com/swiftlang/swift-testing", from: "0.6.0")
+        .package(url: "https://github.com/swiftlang/swift-testing", exact: "0.99.0")
     ],
     targets: [
         .target(
