@@ -17,7 +17,7 @@ class Ph < Formula
   STABLE_VERSION = "0.1.0".freeze
   STABLE_ARM64_URL =
     "https://github.com/DoSomeForFun/PromptHub/releases/download/ph-v#{STABLE_VERSION}/ph-macos-arm64.tar.gz".freeze
-  STABLE_ARM64_SHA = "0000000000000000000000000000000000000000000000000000000000000000".freeze
+  STABLE_ARM64_SHA = "3cbe4473e8c62667798429e52bf0e84aabf3c8e5838a3f5c52bb29feb56675e3".freeze
 
   # ----------------------------------------------------------------------
   # CI / local smoke override.
