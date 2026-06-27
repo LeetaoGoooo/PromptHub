@@ -18,6 +18,37 @@ PromptHub helps you better organize your prompts with comprehensive features inc
 </div>
 
 
+## 📦 Installation
+
+### macOS App
+
+<a href="https://apps.apple.com/app/promptbox/id6742745674">
+<img src="screens/macos_badge_noborder.png" width="175" alt="Download for macOS"/>
+</a>
+
+### `ph` CLI (Homebrew)
+
+Apple Silicon (prebuilt binary):
+
+```bash
+brew tap leetaogoooo/prompthub https://github.com/LeetaoGoooo/PromptHub.git
+brew install leetaogoooo/prompthub/ph
+```
+
+Intel, or to build from source with the Swift toolchain:
+
+```bash
+brew install --HEAD leetaogoooo/prompthub/ph
+```
+
+Verify the install:
+
+```bash
+ph --help
+```
+
+See the [PromptHub CLI Package](#prompthub-cli-package) section below for usage and [`docs/cli-release.md`](docs/cli-release.md) for the full release & install reference.
+
 ## ✨ Features
 
 - ✅ **Create Prompt** - Add new prompts with ease
