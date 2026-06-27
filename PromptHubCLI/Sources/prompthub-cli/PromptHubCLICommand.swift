@@ -471,6 +471,7 @@ struct SkillCommand: AsyncParsableCommand {
             SkillInspectCommand.self,
             SkillWhereCommand.self,
             SkillSearchCommand.self,
+            SkillCreateCommand.self,
             SkillInstallCommand.self,
             SkillUninstallCommand.self,
             SkillUpdateCommand.self,
@@ -549,6 +550,65 @@ struct SkillSearchCommand: AsyncParsableCommand {
     private func truncate(_ text: String, max: Int) -> String {
         guard text.count > max else { return text }
         return String(text.prefix(max - 1)) + "…"
+    }
+}
+
+struct SkillCreateCommand: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "create",
+        abstract: "Create a new exported skill package under ~/.prompthub/skills.",
+        discussion: """
+        Body input: pass --body \"literal text\", --body @path/to/file.md to read a file,
+        or --body-stdin to consume the entire standard input.
+        This only creates the exported skill package. Run `ph skill install <slug>` to
+        install it into agent directories.
+        """
+    )
+
+    @OptionGroup var common: CommonOptions
+
+    @Option(name: .long, help: "Display name. Installation name is derived from this value.")
+    var name: String
+
+    @Option(name: .long, help: "Optional description / summary line.")
+    var description: String?
+
+    @Option(name: .long, help: "Optional category. Defaults to General.")
+    var category: String = "General"
+
+    @Option(name: .long, parsing: .upToNextOption, help: "Repeatable tag.")
+    var tag: [String] = []
+
+    @Option(name: .long, help: "Instructions markdown, or @path/to/file.md to read from a file.")
+    var body: String?
+
+    @Flag(name: .long, help: "Read the skill body from standard input instead of --body.")
+    var bodyStdin = false
+
+    @Option(name: .long, help: "Optional caller-supplied UUID. When omitted, a fresh UUIDv4 is generated.")
+    var id: String?
+
+    @Flag(name: .long, help: "Emit the created skill as JSON instead of printing the resulting path.")
+    var json = false
+
+    mutating func run() async throws {
+        let service = PromptHubCLIService(environment: common.makeEnvironment())
+        let bodyValue = (try resolveBodySource(raw: body, readFromStdin: bodyStdin)) ?? ""
+        let asset = try service.createSkill(
+            name: name,
+            description: description,
+            body: bodyValue,
+            category: category,
+            tags: tag,
+            id: id
+        )
+
+        if json {
+            printJSON(asset)
+            return
+        }
+        print("Created skill '\(asset.name)' (install as: \(asset.installationName ?? "-"), id: \(asset.id))")
+        print("Path: \(asset.path)")
     }
 }
 

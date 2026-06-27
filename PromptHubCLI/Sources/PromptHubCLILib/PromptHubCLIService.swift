@@ -124,6 +124,11 @@ public enum PromptHubCLIError: LocalizedError, Equatable {
     case promptBodyFileNotFound(String)
     case promptWriteFailed(path: String, underlying: String)
     case promptDeleteRefused(identifier: String)
+    case invalidSkillName(String)
+    case invalidSkillID(String)
+    case skillIDCollision(id: String, existingName: String)
+    case skillSlugCollision(slug: String, existingID: String)
+    case skillWriteFailed(path: String, underlying: String)
     // Remote catalog (CLI-16).
     case remoteCatalogUnavailable(description: String)
 
@@ -162,6 +167,16 @@ public enum PromptHubCLIError: LocalizedError, Equatable {
             return "Failed to write prompt to '\(path)': \(underlying)"
         case .promptDeleteRefused(let identifier):
             return "Refusing to delete '\(identifier)' from an interactive shell without confirmation. Re-run with --yes."
+        case .invalidSkillName(let value):
+            return "Invalid skill name '\(value)'; --name must contain at least one non-whitespace character"
+        case .invalidSkillID(let value):
+            return "Invalid skill id '\(value)'; --id must be a UUID (e.g. 11111111-2222-3333-4444-555555555555)"
+        case .skillIDCollision(let id, let existingName):
+            return "Cannot create skill: id '\(id)' is already in use by '\(existingName)'. Use a different --id or omit it to auto-generate one."
+        case .skillSlugCollision(let slug, let existingID):
+            return "Cannot write skill: installation name '\(slug)' is already used by skill '\(existingID)'. Choose a different --name."
+        case .skillWriteFailed(let path, let underlying):
+            return "Failed to write skill to '\(path)': \(underlying)"
         case .remoteCatalogUnavailable(let detail):
             return "Remote skill catalog unavailable: \(detail). Local 'ph skill exports' and already-installed 'ph skill list' still work; check network connectivity or set PROMPTHUB_GITHUB_TOKEN if rate-limited."
         }
