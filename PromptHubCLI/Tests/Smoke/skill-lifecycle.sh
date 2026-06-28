@@ -30,24 +30,33 @@ fail() {
   exit 1
 }
 
-skill_id="A1B2C3D4-E5F6-4A7B-8C9D-0123456789AB"
+# --- ph skill create seeds the exported package ---------------------------
+echo "==> ph skill create --json"
+"$ph" skill create \
+  --home "$tmp" \
+  --name "Lifecycle Reviewer" \
+  --description "Lifecycle smoke fixture." \
+  --category "QA" \
+  --tag smoke \
+  --tag lifecycle \
+  --body "Body content for lifecycle smoke." \
+  --json \
+  >"$tmp/create.json" 2>"$tmp/create.err"
+
+[[ ! -s "$tmp/create.err" ]] || fail "create stderr should be empty: $(cat "$tmp/create.err")"
+skill_id=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['id'])" "$tmp/create.json")
 pkg_dir="$tmp/.prompthub/skills/$skill_id"
+[[ -f "$pkg_dir/SKILL.md" ]] || fail "create did not write SKILL.md into the export package"
+python3 -c "
+import json,sys
+doc=json.load(open(sys.argv[1]))
+assert doc['name']=='Lifecycle Reviewer', doc
+assert doc['slug']=='lifecycle-reviewer', doc
+assert doc['installationName']=='lifecycle-reviewer', doc
+assert doc['kind']=='skill', doc
+" "$tmp/create.json" || fail "create JSON did not match"
+
 mkdir -p "$pkg_dir/scripts"
-
-cat >"$pkg_dir/SKILL.md" <<'SKILL'
----
-id: A1B2C3D4-E5F6-4A7B-8C9D-0123456789AB
-name: Lifecycle Reviewer
-slug: lifecycle-reviewer
-description: Lifecycle smoke fixture.
-category: QA
-tags:
-  - smoke
-  - lifecycle
----
-
-Body content for lifecycle smoke.
-SKILL
 
 cat >"$pkg_dir/scripts/run.sh" <<'RUN'
 #!/bin/sh
@@ -144,7 +153,12 @@ echo "==> ph skill uninstall --scope global"
 python3 -c "
 import json,sys
 docs=json.load(open(sys.argv[1]))
-assert all(d['package']!='lifecycle-reviewer' for d in docs), docs
+assert not any(
+    d['package']=='lifecycle-reviewer'
+    and d['scope']=='global'
+    and any('.codex/skills/lifecycle-reviewer' in path for path in d.get('installedPaths', []))
+    for d in docs
+), docs
 " "$tmp/list-after.json" || fail "list still reports uninstalled skill"
 
 echo "OK"

@@ -34,7 +34,8 @@ processes share state without IPC or a shared database.
 | `ph prompt create --name … [--description …] [--body @file.md | --body-stdin] [--id <uuid>]` | **stable v1** | writes `~/.prompthub/prompts/<uuid>.md` |
 | `ph prompt update <id|slug> [--name …] [--description …] [--body @file.md | --body-stdin]` | **stable v1** | rewrites `~/.prompthub/prompts/<uuid>.md` |
 | `ph prompt delete <id|slug> [--yes]`                | **stable v1** | removes `~/.prompthub/prompts/<uuid>.md`            |
-| `ph skill create / update / delete`                  | **deferred to v2** | skill drafts span multiple SwiftData rows + lock files; single-file writes are not safe |
+| `ph skill create`                                    | shipped in v1      | exported-package writer for `~/.prompthub/skills/<uuid>/SKILL.md`; intentionally separate from in-app draft editing |
+| `ph skill update / delete`                           | deferred to v2     | in-app skill drafts still span multiple rows + lock files; destructive draft mutation stays app-owned for now |
 | `ph skill install / uninstall / update / reinstall` | already shipped | per-agent install directories (not `~/.prompthub/`) |
 | `ph sync`                                            | **deferred** | the app drives sync on launch; CLI is intentionally not given a way to drive the app |
 
@@ -147,10 +148,11 @@ scripts do not need to fake a TTY.
 These are intentionally NOT shipped in v1. They MUST NOT leak into
 CLI-14 or any contemporary task without a follow-up contract bump.
 
-1. **`ph skill create/update/delete`.** Skill drafts span multiple
-   SwiftData rows plus a `SkillDraftPackageStore` package directory.
-   Single-file writes lose half the state. Treat this as a v2 design
-   problem.
+1. **`ph skill update/delete` for app-owned drafts.** `ph skill create`
+   only writes exported packages under `~/.prompthub/skills/`. Draft
+   mutation inside the app still spans multiple SwiftData rows plus a
+   `SkillDraftPackageStore` package directory, so destructive edits stay
+   deferred to v2.
 2. **CloudKit conflict resolution from the CLI.** The app already
    reconciles CloudKit, and the CLI has no signed-in user context.
 3. **Live in-app refresh** when the CLI writes. The app reloads on

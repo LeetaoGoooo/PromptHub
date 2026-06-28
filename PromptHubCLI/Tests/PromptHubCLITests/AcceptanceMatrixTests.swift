@@ -35,6 +35,7 @@ private let publicCommands: [String] = [
     "ph prompt update",
     "ph prompt delete",
     "ph skill exports",
+    "ph skill create",
     "ph skill show",
     "ph skill list",
     "ph skill inspect",
