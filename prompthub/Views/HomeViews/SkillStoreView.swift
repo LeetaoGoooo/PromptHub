@@ -23,6 +23,7 @@ struct SkillStoreView: View {
     @State var errorMessage: String?
     @State var selectedSkillID: String?
     @State var isInstallingLocalSkill = false
+    @State var searchTask: Task<Void, Never>?
     @ObservedObject var cliAccessManager = CLIDirectoryAccessManager.shared
     @State var showingCLIAccessManager = false
     @State var showingPrivateSourceInstall = false
@@ -38,15 +39,15 @@ struct SkillStoreView: View {
     var filteredAvailableSkills: [CatalogSkill] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return availableSkills }
-        return availableSkills.filter { skill in
-            skill.displayName.localizedCaseInsensitiveContains(query) ||
-            skill.package.rawValue.localizedCaseInsensitiveContains(query) ||
-            skill.summary.localizedCaseInsensitiveContains(query) ||
-            (skill.displaySource?.localizedCaseInsensitiveContains(query) ?? false)
-        }
+        guard query.count >= 2 else { return [] }
+        return availableSkills
     }
     var installedSkills: [InstalledSkillSnapshot]  { workspaceSnapshot.installedSkills }
     var installationRegistry: [String: CatalogSkillInstallationState] { workspaceSnapshot.installationRegistry }
+    var activeCatalogQuery: String {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.count >= 2 ? query : ""
+    }
 
     var selectedSkill: CatalogSkill? {
         if let selectedSkillID, let matched = filteredAvailableSkills.first(where: { $0.id == selectedSkillID }) {
@@ -85,8 +86,9 @@ struct SkillStoreView: View {
             syncSelection()
         }
         .onChange(of: searchText) { _, _ in
-            syncSelection()
+            handleSearchTextChange()
         }
+        .onDisappear { searchTask?.cancel() }
         .alert("Skill Store", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }

@@ -530,34 +530,22 @@ public actor SkillCatalogService {
 
     public func findSkills(query: String = "") async throws -> [SkillInfo] {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        let pageSize = 100
-        let maxPages = trimmedQuery.isEmpty ? 5 : 3
 
         var skills: [SkillInfo] = []
         var lastError: Error?
 
         do {
-            for page in 1...maxPages {
-                var queryItems: [URLQueryItem] = [
-                    URLQueryItem(name: "sortBy", value: "installs"),
-                    URLQueryItem(name: "sortOrder", value: "desc"),
-                    URLQueryItem(name: "page", value: "\(page)"),
-                    URLQueryItem(name: "pageSize", value: "\(pageSize)")
-                ]
-                if !trimmedQuery.isEmpty {
-                    queryItems.insert(URLQueryItem(name: "query", value: trimmedQuery), at: 0)
-                }
-
+            if trimmedQuery.count >= 2 {
                 let json = try await requestJSON(
-                    paths: ["/api/skills", "/skills"],
-                    queryItems: queryItems
+                    paths: ["/api/search"],
+                    queryItems: [
+                        URLQueryItem(name: "q", value: trimmedQuery),
+                        URLQueryItem(name: "limit", value: "100")
+                    ]
                 )
-                let pageSkills = parseFindAPIResponse(json)
-                mergeUniqueSkills(from: pageSkills, into: &skills)
-
-                if pageSkills.count < pageSize {
-                    break
-                }
+                skills = parseFindAPIResponse(json)
+            } else {
+                skills = try await findSkillsFromCrawlerSnapshot(query: trimmedQuery)
             }
         } catch {
             lastError = error
@@ -1710,6 +1698,9 @@ public actor SkillCatalogService {
         }
         if let additional {
             candidates.append(contentsOf: additional)
+        }
+        if let production = URL(string: "https://www.skills.sh") {
+            candidates.append(production)
         }
 
         var seen = Set<String>()

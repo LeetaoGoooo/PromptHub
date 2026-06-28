@@ -104,7 +104,7 @@ struct prompthubApp: App {
         }
         .modelContainer(sharedModelContainer)
 #if os(macOS)
-        .defaultSize(width: 1120, height: 760)
+        .defaultSize(width: 1280, height: 800)
 #endif
         
         MenuBarExtra {

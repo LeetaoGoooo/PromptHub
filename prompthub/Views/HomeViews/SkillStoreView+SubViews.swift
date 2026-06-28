@@ -87,11 +87,17 @@ extension SkillStoreView {
                 systemImage: "shippingbox",
                 description: "The current catalog did not return any skills. Refresh to try again."
             )
+        } else if searchText.trimmingCharacters(in: .whitespacesAndNewlines).count == 1 {
+            SkillLibraryEmptyState(
+                title: "Keep Typing",
+                systemImage: "magnifyingglass",
+                description: "Skill search starts after 2 characters."
+            )
         } else if !isLoading && filteredAvailableSkills.isEmpty && !searchText.isEmpty {
             SkillLibraryEmptyState(
                 title: "No Skills Found",
                 systemImage: "magnifyingglass",
-                description: "No skills match \"\(searchText)\" in the loaded catalog. Try a different search term."
+                description: "No skills match \"\(searchText)\" in the remote catalog."
             )
         } else {
             skillBrowser
@@ -121,7 +127,7 @@ extension SkillStoreView {
 
             List {
                 if !filteredAvailableSkills.isEmpty {
-                    Section("Catalog (\(filteredAvailableSkills.count))") {
+                    Section(activeCatalogQuery.isEmpty ? "Catalog (\(filteredAvailableSkills.count))" : "Results (\(filteredAvailableSkills.count))") {
                         ForEach(filteredAvailableSkills) { skill in
                             let info = workspaceService.installationState(for: skill, registry: installationRegistry)
                             Button { selectedSkillID = skill.id } label: {
