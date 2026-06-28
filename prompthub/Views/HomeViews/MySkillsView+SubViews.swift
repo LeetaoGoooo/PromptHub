@@ -34,16 +34,6 @@ extension MySkillsView {
         }
     }
 
-    var headerMetrics: [SkillLibraryMetric] {
-        let visibleDraftCount = searchText.isEmpty ? skillDrafts.count : filteredSkills.count
-
-        return [
-            SkillLibraryMetric(value: "\(visibleDraftCount)", title: searchText.isEmpty ? "Drafts" : "Visible", systemImage: "wand.and.stars"),
-            SkillLibraryMetric(value: "\(skillDrafts.filter { $0.lastInstalledAt != nil }.count)", title: "Installed", systemImage: "arrow.down.circle"),
-            SkillLibraryMetric(value: "\(skillDrafts.reduce(0) { $0 + $1.sortedVersions.count })", title: "Versions", systemImage: "square.stack")
-        ]
-    }
-
     var filteredSkills: [Skill] {
         skillDrafts.filter { skill in
             let matchesSearch = searchText.isEmpty || skill.displayName.localizedCaseInsensitiveContains(searchText) ||
@@ -61,15 +51,13 @@ extension MySkillsView {
     }
 
     var selectedSkill: Skill? {
-        if let selectedSkillID, let matched = filteredSkills.first(where: { $0.id == selectedSkillID }) { return matched }
-        return filteredSkills.first
+        if let selectedSkillID, let matched = skillDrafts.first(where: { $0.id == selectedSkillID }) { return matched }
+        return filteredSkills.first ?? skillDrafts.first
     }
 
     @ViewBuilder
     var mainContentView: some View {
-        if filteredSkills.isEmpty && !searchText.isEmpty {
-            SkillLibraryEmptyState(title: "No Matching Skills", systemImage: "magnifyingglass", description: "Try a different name, tag, or identifier.")
-        } else if filteredSkills.isEmpty {
+        if skillDrafts.isEmpty {
             mySkillsOnboarding
         } else {
             skillBrowser
@@ -139,64 +127,94 @@ extension MySkillsView {
     }
 
     var skillBrowser: some View {
-        WorkspaceSplitShell { skillListPane } detail: { skillDetailPane }
+        WorkspaceSplitShell(
+            sidebarMinWidth: 240,
+            sidebarIdealWidth: 300,
+            sidebarMaxWidth: 380,
+            detailMinWidth: 280
+        ) { skillListPane } detail: { skillDetailPane }
     }
 
     var skillListPane: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text("Drafts (\(filteredSkills.count))")
-                    .font(PH.Font.sectionHead)
-                    .foregroundStyle(PH.Color.secondary)
-                    .textCase(.uppercase)
-                    .tracking(0.6)
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-
-            List {
-                ForEach(filteredSkills) { skill in
-                    Button { selectedSkillID = skill.id } label: {
+            if filteredSkills.isEmpty {
+                SkillLibraryEmptyState(
+                    title: "No Matching Skills",
+                    systemImage: "magnifyingglass",
+                    description: "Try a different name, tag, or identifier."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(filteredSkills) { skill in
                         SkillDraftListRow(
                             skill: skill,
                             installations: linkedInstallations(for: skill),
-                            isSelected: selectedSkillID == skill.id
+                            isSelected: selectedSkillID == skill.id,
+                            onSelect: {
+                                selectedSkillID = skill.id
+                            }
                         )
+                        .contextMenu {
+                            Button("Edit Draft") { navigationState.selectSkillDraft(skill.id) }
+                            Button("Copy SKILL.md") { copySkillMarkdown(for: skill) }
+                            Button("Delete Draft", role: .destructive) { skillPendingDeletion = skill }
+                        }
+                        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
-                    .buttonStyle(.plain)
-                    .contextMenu {
-                        Button("Open Draft") { onSelectSkill(skill) }
-                        Button("Delete Draft", role: .destructive) { skillPendingDeletion = skill }
-                    }
-                    .listRowInsets(EdgeInsets(top: 2, leading: 12, bottom: 2, trailing: 12))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+                }
+                .listStyle(.inset(alternatesRowBackgrounds: false))
+                .scrollContentBackground(.hidden)
+                .contentMargins(.bottom, PH.Spacing.detailB, for: .scrollContent)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .onChange(of: selectedSkillID) { _, newValue in
+                    guard let newValue, navigationState.selectedSkillDraftID != newValue else { return }
+                    navigationState.selectSkillDraft(newValue)
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
         }
-        .background(PH.Color.detailBg)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     @ViewBuilder
     var skillDetailPane: some View {
         if let selectedSkill {
-            ScrollView {
-                SkillDraftSummaryPane(
+            if editingSkillID == selectedSkill.id {
+                SkillDraftDetailView(skill: selectedSkill, onCloseWorkspace: {
+                    editingSkillID = nil
+                })
+                .id("workspace-\(selectedSkill.id.uuidString)")
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .background(Color(NSColor.windowBackgroundColor))
+            } else {
+                SkillDraftPreviewPane(
                     skill: selectedSkill,
                     installations: linkedInstallations(for: selectedSkill),
-                    exportedMarkdown: draftService.exportMarkdown(for: selectedSkill),
-                    onOpenDraft: { onSelectSkill(selectedSkill) },
-                    onCopyMarkdown: { copySkillMarkdown(for: selectedSkill) },
-                    onCopyName: {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(selectedSkill.displayName, forType: .string)
+                    onEditWorkspace: {
+                        editingSkillID = selectedSkill.id
                     },
-                    onDeleteDraft: { skillPendingDeletion = selectedSkill }
+                    onCopyMarkdown: {
+                        copySkillMarkdown(for: selectedSkill)
+                    },
+                    onCreateVersion: {
+                        do {
+                            let instructions = selectedSkill.latestVersion?.instructions ?? ""
+                            _ = try draftService.snapshotVersion(for: selectedSkill, using: instructions, in: modelContext)
+                        } catch {
+                            errorMessage = error.localizedDescription
+                        }
+                    },
+                    onRevealInFinder: {
+                        do {
+                            try draftService.revealPackageItem(relativePath: "SKILL.md", for: selectedSkill)
+                        } catch {
+                            errorMessage = error.localizedDescription
+                        }
+                    }
                 )
-                .padding(PH.Spacing.detailH)
+                .id("preview-\(selectedSkill.id.uuidString)")
             }
         } else {
             SkillLibraryEmptyState(title: "No Draft Selected", systemImage: "wand.and.rays", description: "Choose a skill draft to inspect its metadata, version history, and exported SKILL.md.")
@@ -208,7 +226,7 @@ extension MySkillsView {
     func createSkillDraft() {
         do {
             let draft = try draftService.createDraft(in: modelContext)
-            onCreateSkill(draft)
+            navigationState.selectSkillDraft(draft.id)
         } catch { errorMessage = error.localizedDescription }
     }
 
@@ -228,8 +246,27 @@ extension MySkillsView {
     }
 
     func syncSelection() {
-        if !filteredSkills.contains(where: { $0.id == selectedSkillID }) {
-            selectedSkillID = filteredSkills.first?.id
+        if let skillID = navigationState.selectedSkillDraftID {
+            selectedSkillID = skillID
+            if skillDrafts.contains(where: { $0.id == skillID }) {
+                return
+            }
+            return
+        }
+
+        if let selectedSkillID,
+           skillDrafts.contains(where: { $0.id == selectedSkillID }) {
+            return
+        }
+
+        if let nextSkillID = filteredSkills.first?.id ?? skillDrafts.first?.id {
+            selectedSkillID = nextSkillID
+            editingSkillID = nil
+            navigationState.selectSkillDraft(nextSkillID)
+        } else {
+            selectedSkillID = nil
+            editingSkillID = nil
+            navigationState.clearSkillDraftSelection()
         }
     }
 }

@@ -15,19 +15,19 @@ struct SkillStoreListRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(skill.displayName).font(.headline).lineLimit(1)
+                Text(skill.displayName)
+                    .font(PH.Font.rowName)
+                    .foregroundStyle(PH.Color.primary)
+                    .lineLimit(1)
                 if isInstalling {
                     ProgressView().controlSize(.small)
-                } else if justInstalled || installationState.isInstalled {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.caption).foregroundStyle(.green)
                 }
                 Spacer()
             }
             if let source = skill.displaySource {
-                Text(source).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Text(source).font(PH.Font.rowSub).foregroundStyle(PH.Color.tertiary).lineLimit(1)
             }
-            Text(skill.summary).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
+            Text(skill.summary).font(PH.Font.rowSub).foregroundStyle(PH.Color.secondary).lineLimit(2)
             SkillInstallationBadges(
                 installationState: installationState,
                 isInstalling: isInstalling,
@@ -57,14 +57,13 @@ struct SkillInstallationBadges: View {
         } else {
             HStack(spacing: 6) {
                 if justInstalled || installationState.isInstalled {
-                    skillBadge(title: "Installed", icon: "checkmark.circle.fill", foreground: .green, background: .green.opacity(0.14))
+                    skillBadge(title: "Installed", foreground: .green, background: .green.opacity(0.14))
                 } else {
-                    skillBadge(title: "Available", icon: "sparkles", foreground: .secondary, background: Color.secondary.opacity(0.12))
+                    skillBadge(title: "Available", foreground: .secondary, background: Color.secondary.opacity(0.12))
                 }
                 ForEach(sortedScopes, id: \.rawValue) { scope in
                     skillBadge(
                         title: scope.displayName,
-                        icon: scope == .global ? "globe" : "folder",
                         foreground: scope == .global ? .blue : .mint,
                         background: (scope == .global ? Color.blue : Color.mint).opacity(0.14)
                     )
@@ -83,8 +82,8 @@ struct SkillInstallationBadges: View {
         }
     }
 
-    private func skillBadge(title: String, icon: String, foreground: Color, background: Color) -> some View {
-        Label(title, systemImage: icon)
+    private func skillBadge(title: String, foreground: Color, background: Color) -> some View {
+        Text(title)
             .font(.caption2.weight(.semibold))
             .foregroundStyle(foreground)
             .padding(.horizontal, 8).padding(.vertical, 4)

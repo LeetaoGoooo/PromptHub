@@ -7,6 +7,7 @@ import SwiftUI
 struct SkillDraftDetailView: View {
     @Bindable var skill: Skill
     @Environment(\.modelContext) var modelContext
+    let onCloseWorkspace: (() -> Void)?
 
     let draftService = SkillDraftService.shared
 
@@ -29,25 +30,43 @@ struct SkillDraftDetailView: View {
     @State var newItemName = ""
     @State var expandedDirectories: Set<String> = []
     @State var pendingDeletionItem: SkillDraftPackageItem?
+    @State var isShowingInspectorDrawer = false
+
+    init(skill: Skill, onCloseWorkspace: (() -> Void)? = nil) {
+        self.skill = skill
+        self.onCloseWorkspace = onCloseWorkspace
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             workspaceHeader
-            Divider()
-            HSplitView {
-                packageSidebar
-                    .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
+            GeometryReader { proxy in
+                ZStack(alignment: .topTrailing) {
+                    HSplitView {
+                        packageSidebar
+                            .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
 
-                editorPane
-                    .frame(minWidth: 300, maxWidth: .infinity)
+                        editorPane
+                            .frame(minWidth: 300, maxWidth: .infinity)
+                    }
 
-                inspectorPane
-                    .frame(minWidth: 240, idealWidth: 280, maxWidth: 340)
+                    if isShowingInspectorDrawer {
+                        inspectorDrawer(maxHeight: proxy.size.height - 24)
+                            .padding(.top, 12)
+                            .padding(.trailing, 12)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                            .zIndex(1)
+                    }
+                }
             }
         }
         .background(Color(NSColor.windowBackgroundColor))
+        .animation(.easeInOut(duration: 0.18), value: isShowingInspectorDrawer)
         .task(id: skill.id) {
             loadPackageWorkspace(resetSelection: true)
+        }
+        .onChange(of: packageItems.map(\.relativePath)) { _, _ in
+            ensureValidSelection()
         }
         .onDeleteCommand {
             requestDeleteSelectedItem()

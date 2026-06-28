@@ -17,7 +17,7 @@ struct SkillStoreView: View {
         let preferredScope: SkillInstallScope
     }
 
-    let searchText: String
+    @Binding var searchText: String
     @State var isLoading = false
     @State var workspaceSnapshot = SkillStoreWorkspaceSnapshot.empty
     @State var errorMessage: String?
@@ -64,13 +64,7 @@ struct SkillStoreView: View {
     }
 
     var body: some View {
-        SkillLibraryScreen(
-            title: "Skill Store",
-            subtitle: "Discover reusable skills, inspect installation coverage, and bring local SKILL.md packages into your workspace without leaving PromptHub.",
-            metrics: headerMetrics
-        ) {
-            accessoryBar
-        } content: {
+        SkillLibraryScreen {
             mainContent
         }
         .sheet(isPresented: $showingCLIAccessManager, onDismiss: { fetchSkills() }) {

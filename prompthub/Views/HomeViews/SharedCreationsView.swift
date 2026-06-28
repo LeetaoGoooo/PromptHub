@@ -114,29 +114,10 @@ struct SharedCreationsView: View {
     var body: some View {
         let categorized = categorizedSharedCreations
         let visibleCount = categorized.userCreations.count + categorized.otherCreations.count
-        let communityMetrics = [
-            PromptCollectionMetric(title: "mine", value: "\(categorized.userCreations.count)", systemImage: "person"),
-            PromptCollectionMetric(title: "community", value: "\(categorized.otherCreations.count)", systemImage: "person.3"),
-            PromptCollectionMetric(title: "visible", value: "\(visibleCount)", systemImage: "square.grid.2x2")
-        ]
 
-        PromptBrowserScreen(
-            title: "Shared Library",
-            subtitle: summary,
-            systemImage: "person.3",
-            metrics: communityMetrics,
+        return PromptBrowserScreen(
             sections: browserSections,
             selectedItemID: $selectedItemID,
-            actions: {
-                Button {
-                    Task {
-                        await loadPublicSharedCreations()
-                    }
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                }
-                .buttonStyle(.bordered)
-            },
             emptyState: {
                 if isLoading && visibleCount == 0 {
                     VStack(spacing: 12) {
@@ -160,6 +141,9 @@ struct SharedCreationsView: View {
                         subtitle: "Share your prompts or explore public creations from the community."
                     )
                 }
+            },
+            toolbarContent: {
+                ToolbarItemGroup(placement: .primaryAction) {}
             }
         )
         .task {

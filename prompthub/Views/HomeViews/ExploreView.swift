@@ -104,18 +104,8 @@ struct ExploreView: View {
             .background(Color(NSColor.windowBackgroundColor))
         } else {
             PromptBrowserScreen(
-                title: "Explore Gallery",
-                subtitle: summary,
-                systemImage: "sparkles",
-                metrics: metrics,
                 sections: browserSections,
                 selectedItemID: $selectedItemID,
-                actions: {
-                    Button(action: onRefreshGallery) {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                    }
-                    .buttonStyle(.bordered)
-                },
                 emptyState: {
                     if filteredGalleryPrompts.isEmpty && !searchText.isEmpty {
                         PromptViewHelpers.emptyStateView(
@@ -130,6 +120,9 @@ struct ExploreView: View {
                             subtitle: "Gallery prompts will appear here after a refresh."
                         )
                     }
+                },
+                toolbarContent: {
+                    ToolbarItemGroup(placement: .primaryAction) {}
                 }
             )
         }

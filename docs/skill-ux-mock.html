@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptHub · Skills</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --sidebar: #f2f2f4;
+    --sep: #e6e6e8;
+    --sep-soft: #efeff1;
+    --text: #1d1d1f;
+    --text-2: #86868b;
+    --text-3: #aeaeb2;
+    --accent: #0a6cff;
+    --sel: #e8e8ea;
+    --hover: #00000008;
+    --radius: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#1e1e1e; --sidebar:#262628; --sep:#3a3a3c; --sep-soft:#323234;
+      --text:#f5f5f7; --text-2:#98989d; --text-3:#636366; --sel:#3a3a3c; --hover:#ffffff0d;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", "PingFang SC", sans-serif;
+    background: #d9d9dc;
+    color: var(--text);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    display: flex; align-items: center; justify-content: center;
+    height: 100vh;
+  }
+  .window {
+    width: 1100px; height: 720px; background: var(--bg);
+    border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.28); border: 0.5px solid rgba(0,0,0,0.18);
+  }
+
+  /* Toolbar */
+  .toolbar {
+    height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 16px;
+    background: var(--sidebar); border-bottom: 0.5px solid var(--sep); flex-shrink: 0;
+  }
+  .traffic { display: flex; gap: 8px; }
+  .traffic span { width: 12px; height: 12px; border-radius: 50%; }
+  .t1{background:#ff5f57}.t2{background:#febc2e}.t3{background:#28c840}
+  .tb-title { font-weight: 600; font-size: 14px; margin-left: 6px; }
+  .spacer { flex: 1; }
+  .search {
+    width: 190px; height: 28px; border-radius: 7px; border: none;
+    background: rgba(0,0,0,0.06); padding: 0 10px 0 28px; font-size: 13px; color: var(--text);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23aeaeb2' stroke-width='2'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.5' y2='16.5'/></svg>");
+    background-repeat: no-repeat; background-position: 9px center;
+  }
+  .search::placeholder { color: var(--text-3); }
+  .icon-btn {
+    width: 30px; height: 28px; border-radius: 7px; border: none; background: transparent;
+    color: var(--text); font-size: 16px; cursor: pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover { background: rgba(0,0,0,0.06); }
+
+  .body { flex: 1; display: flex; min-height: 0; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 210px; background: var(--sidebar); border-right: 0.5px solid var(--sep);
+    padding: 8px 8px; overflow-y: auto; flex-shrink: 0;
+  }
+  .grp { margin-bottom: 16px; }
+  .grp-title {
+    font-size: 11px; font-weight: 600; color: var(--text-3);
+    padding: 4px 8px 4px; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .item {
+    display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px;
+    border-radius: var(--radius); cursor: pointer; color: var(--text); user-select: none;
+  }
+  .item:hover { background: var(--hover); }
+  .item.on { background: var(--sel); }
+  .item svg { width: 15px; height: 15px; stroke: var(--text-2); flex-shrink: 0; }
+  .item.on svg { stroke: var(--accent); }
+  .item .lbl { flex: 1; font-size: 13px; }
+  .item .cnt { color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .item.sub { padding-left: 16px; height: 26px; }
+
+  /* List */
+  .list { width: 290px; border-right: 0.5px solid var(--sep); display: flex; flex-direction: column; flex-shrink: 0; background: var(--bg); }
+  .list-bar {
+    height: 36px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 14px; border-bottom: 0.5px solid var(--sep-soft); flex-shrink: 0;
+    color: var(--text-2); font-size: 12px;
+  }
+  .list-bar .filter { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+  .scroll { flex: 1; overflow-y: auto; padding: 4px 0; }
+  .row {
+    display: flex; align-items: center; gap: 10px; padding: 7px 14px; margin: 0 6px;
+    border-radius: var(--radius); cursor: pointer;
+  }
+  .row:hover { background: var(--hover); }
+  .row.on { background: var(--accent); }
+  .row.on .r-name, .row.on .r-desc, .row.on .r-meta { color: #fff; }
+  .row.on .r-meta { opacity: 0.82; }
+  .row.on svg { stroke: #fff; }
+  .r-glyph svg { width: 17px; height: 17px; stroke: var(--text-2); flex-shrink: 0; }
+  .r-body { flex: 1; min-width: 0; }
+  .r-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .r-desc { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .r-meta { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+  .r-status { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .st-on { background: #34c759; }
+  .st-update { background: #ff9f0a; }
+  .st-draft { background: var(--text-3); }
+
+  /* Detail */
+  .detail { flex: 1; background: var(--bg); overflow-y: auto; }
+  .d-inner { padding: 24px 28px 48px; max-width: 560px; }
+  .d-top { display: flex; align-items: flex-start; gap: 14px; }
+  .d-glyph { width: 40px; height: 40px; flex-shrink: 0; display:flex; align-items:center; justify-content:center; }
+  .d-glyph svg { width: 30px; height: 30px; stroke: var(--text); stroke-width: 1.4; }
+  .d-h h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.2px; }
+  .d-h .sub { color: var(--text-2); font-size: 13px; margin-top: 3px; line-height: 1.45; }
+  .d-h .src { color: var(--text-3); font-size: 11.5px; margin-top: 6px; font-family: ui-monospace,"SF Mono",monospace; }
+  .d-actions { margin-top: 18px; display: flex; gap: 8px; }
+  .btn {
+    height: 28px; padding: 0 14px; border-radius: 7px; border: 0.5px solid var(--sep);
+    background: var(--bg); font-size: 13px; cursor: pointer; color: var(--text);
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); color:#fff; border-color: transparent; }
+  .btn.primary:hover { background: #0a60e0; }
+
+  .sec { margin-top: 30px; }
+  .sec-h {
+    font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase;
+    letter-spacing: 0.3px; margin-bottom: 9px; display:flex; align-items:center;
+  }
+  .sec-h .r { margin-left:auto; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text-3); }
+
+  /* grouped inset list (macOS settings style) */
+  .group { border: 0.5px solid var(--sep); border-radius: 8px; overflow: hidden; }
+  .grow { display:flex; align-items:center; gap:10px; padding: 9px 14px; border-bottom: 0.5px solid var(--sep-soft); }
+  .grow:last-child { border-bottom: 0; }
+  .grow .k { flex:1; font-size: 13px; }
+  .grow .k small { display:block; color: var(--text-2); font-size:11.5px; margin-top:1px; }
+  .grow .v { color: var(--text-2); font-size: 12.5px; }
+
+  .toggle { width: 32px; height: 19px; border-radius: 19px; background: rgba(0,0,0,0.16); position: relative; cursor: pointer; transition:.15s; flex-shrink:0; }
+  .toggle.on { background: #34c759; }
+  .toggle::after { content:""; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:#fff; transition:.15s; box-shadow:0 1px 2px rgba(0,0,0,0.2); }
+  .toggle.on::after { left:15px; }
+  .scope-tabs { display:flex; gap:14px; }
+  .scope-tabs .st-col { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .scope-tabs .st-col span { font-size:10.5px; color:var(--text-3); }
+
+  .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; border:0.5px solid var(--sep); border-radius:8px; overflow:hidden; }
+  .mcell { padding:12px 14px; border-right:0.5px solid var(--sep-soft); border-bottom:0.5px solid var(--sep-soft); }
+  .mcell:nth-child(2n){ border-right:0; }
+  .mcell:nth-last-child(-n+2){ border-bottom:0; }
+  .mcell .ck { font-size:11.5px; color:var(--text-2); }
+  .mcell .cv { font-size:15px; font-weight:600; margin-top:4px; display:flex; align-items:baseline; gap:6px; }
+  .mcell .cv small { font-size:11.5px; font-weight:400; color:var(--text-2); }
+  .ok { color:#1f8a3b; }
+
+  .preview {
+    border:0.5px solid var(--sep); border-radius:8px; padding:14px 16px; background: var(--sidebar);
+    font-family: ui-monospace,"SF Mono",monospace; font-size:12px; color:var(--text-2); line-height:1.65; white-space:pre-wrap;
+  }
+  .preview .fm { color: var(--text-3); }
+  .preview .h { color: var(--text); font-weight:600; font-family:-apple-system,sans-serif; }
+
+  .note { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.72); color:#fff; padding:7px 15px; border-radius:18px; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="toolbar">
+    <div class="traffic"><span class="t1"></span><span class="t2"></span><span class="t3"></span></div>
+    <span class="tb-title">Skills</span>
+    <div class="spacer"></div>
+    <input class="search" placeholder="搜索">
+    <button class="icon-btn" title="从商店安装">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="icon-btn" title="新建技能">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+
+  <div class="body">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- 顶层区 1: Prompts -->
+      <div class="grp">
+        <div class="grp-title">Prompts</div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          <span class="lbl">全部</span><span class="cnt">48</span>
+        </div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="lbl">我的</span><span class="cnt">31</span></div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg><span class="lbl">共享</span><span class="cnt">9</span></div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="lbl">探索</span></div>
+      </div>
+
+      <!-- 顶层区 2: Skills (当前) -->
+      <div class="grp">
+        <div class="grp-title">Skills · 来源</div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <span class="lbl">全部技能</span><span class="cnt">24</span>
+        </div>
+        <div class="item on">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <span class="lbl">已安装</span><span class="cnt">11</span>
+        </div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <span class="lbl">我的草稿</span><span class="cnt">6</span>
+        </div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span class="lbl">商店目录</span><span class="cnt">320+</span>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-title">Skills · 作用域</div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7"><circle cx="12" cy="12" r="9"/></svg><span class="lbl">全部</span><span class="cnt">11</span></div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="lbl">全局</span><span class="cnt">7</span></div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span class="lbl">项目 · prompthub</span><span class="cnt">4</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-title">Skills · Agent</div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span class="lbl">Codex</span><span class="cnt">9</span></div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span class="lbl">Claude Code</span><span class="cnt">8</span></div>
+        <div class="item sub"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3Z"/></svg><span class="lbl">Cursor</span><span class="cnt">6</span></div>
+        <div class="item sub" style="color:var(--text-3)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span class="lbl">其他 5 个</span></div>
+      </div>
+
+      <!-- 顶层区 3: Agents -->
+      <div class="grp">
+        <div class="grp-title">Agents</div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          <span class="lbl">Workspaces</span><span class="cnt">5</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="list">
+      <div class="list-bar">
+        <span>11 项</span>
+        <span class="filter">最近更新 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </div>
+      <div class="scroll">
+        <div class="row on">
+          <span class="r-status st-on"></span>
+          <div class="r-body"><div class="r-name">code-reviewer</div><div class="r-desc">资深代码审查,聚焦 bug 与回归</div><div class="r-meta">全局 · Codex, Claude, Cursor</div></div>
+        </div>
+        <div class="row">
+          <span class="r-status st-on"></span>
+          <div class="r-body"><div class="r-name">commit-helper</div><div class="r-desc">生成 Conventional Commits 信息</div><div class="r-meta">项目 · Codex, Claude</div></div>
+        </div>
+        <div class="row">
+          <span class="r-status st-draft"></span>
+          <div class="r-body"><div class="r-name">ui-reviewer</div><div class="r-desc">SwiftUI 界面评审,检查 HIG</div><div class="r-meta">草稿 · v1.2.0</div></div>
+        </div>
+        <div class="row">
+          <span class="r-status st-on"></span>
+          <div class="r-body"><div class="r-name">test-writer</div><div class="r-desc">为改动生成单元/集成测试</div><div class="r-meta">全局 · Codex</div></div>
+        </div>
+        <div class="row">
+          <span class="r-status st-update"></span>
+          <div class="r-body"><div class="r-name">db-migrator</div><div class="r-desc">规划并执行 schema 迁移</div><div class="r-meta">全局 · 有更新 v2.1 → v2.3</div></div>
+        </div>
+        <div class="row">
+          <span class="r-status st-on"></span>
+          <div class="r-body"><div class="r-name">api-designer</div><div class="r-desc">设计 REST/GraphQL 契约</div><div class="r-meta">项目 · Claude, Cursor</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail -->
+    <div class="detail">
+      <div class="d-inner">
+        <div class="d-top">
+          <div class="d-glyph">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div class="d-h">
+            <h1>code-reviewer</h1>
+            <div class="sub">资深代码审查,聚焦 bug、回归与架构风险</div>
+            <div class="src">shpigford/skills @ code-reviewer · v1.4.0</div>
+          </div>
+        </div>
+
+        <div class="d-actions">
+          <button class="btn primary">编辑</button>
+          <button class="btn">在 Finder 中显示</button>
+          <button class="btn">检查更新</button>
+        </div>
+
+        <!-- 安装矩阵 -->
+        <div class="sec">
+          <div class="sec-h">安装到 Agent</div>
+          <div class="group">
+            <div class="grow">
+              <div class="k">Codex</div>
+              <div class="scope-tabs">
+                <div class="st-col"><span>全局</span><div class="toggle on"></div></div>
+                <div class="st-col"><span>项目</span><div class="toggle on"></div></div>
+              </div>
+            </div>
+            <div class="grow">
+              <div class="k">Claude Code</div>
+              <div class="scope-tabs">
+                <div class="st-col"><span>全局</span><div class="toggle on"></div></div>
+                <div class="st-col"><span>项目</span><div class="toggle"></div></div>
+              </div>
+            </div>
+            <div class="grow">
+              <div class="k">Cursor</div>
+              <div class="scope-tabs">
+                <div class="st-col"><span>全局</span><div class="toggle on"></div></div>
+                <div class="st-col"><span>项目</span><div class="toggle"></div></div>
+              </div>
+            </div>
+            <div class="grow">
+              <div class="k" style="color:var(--text-2)">Gemini CLI</div>
+              <div class="scope-tabs">
+                <div class="st-col"><span>全局</span><div class="toggle"></div></div>
+                <div class="st-col"><span>项目</span><div class="toggle"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 健康度 -->
+        <div class="sec">
+          <div class="sec-h">健康度</div>
+          <div class="meta-grid">
+            <div class="mcell"><div class="ck">结构质量</div><div class="cv">86<small>/ 100</small></div></div>
+            <div class="mcell"><div class="ck">远端更新</div><div class="cv ok">最新</div></div>
+            <div class="mcell"><div class="ck">Agent 可见性</div><div class="cv">3<small>/ 3 正常</small></div></div>
+            <div class="mcell"><div class="ck">来源完整性</div><div class="cv ok">已校验</div></div>
+          </div>
+        </div>
+
+        <!-- 审查发现 -->
+        <div class="sec">
+          <div class="sec-h">审查发现 <span class="r">1 项建议</span></div>
+          <div class="group">
+            <div class="grow"><div class="k">缺少示例代码块 <small>添加至少一个 fenced code block 示例可提升可靠性</small></div></div>
+          </div>
+        </div>
+
+        <!-- 预览 -->
+        <div class="sec">
+          <div class="sec-h">SKILL.md</div>
+          <div class="preview"><span class="fm">---
+name: code-reviewer
+description: 资深代码审查,聚焦 bug、回归与架构风险
+version: 1.4.0
+---</span>
+
+<span class="h"># Code Reviewer</span>
+
+审查代码改动,先理解意图,再核对实现。
+重点关注边界条件、错误处理与并发安全。
+
+<span class="h">## When to Use</span>
+- 提交前自检
+- PR 审查…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">极简版 · 单色 SF Symbol 图标 · 仅选中/主操作用强调色 · 详情全部行内分组(无弹窗)</div>
+
+<script>
+  document.querySelectorAll('.sidebar .item').forEach(f=>f.addEventListener('click',()=>{
+    if(f.classList.contains('sub'))return;
+    document.querySelectorAll('.sidebar .item').forEach(x=>!x.classList.contains('sub')&&x.classList.remove('on'));
+    f.classList.add('on');
+  }));
+  document.querySelectorAll('.row').forEach(r=>r.addEventListener('click',()=>{
+    document.querySelectorAll('.row').forEach(x=>x.classList.remove('on'));
+    r.classList.add('on');
+  }));
+  document.querySelectorAll('.toggle').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+</script>
+</body>
+</html>

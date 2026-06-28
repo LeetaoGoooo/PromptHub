@@ -12,6 +12,7 @@ struct NoScrollBarTextEditor: NSViewRepresentable {
     @Binding var text: String
     var font: NSFont? = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
     var isEditable: Bool = true
+    var becomeFirstResponder: Bool = false
     var autoScroll: Bool = true
 
     final class IntrinsicFreeScrollView: NSScrollView {
@@ -78,6 +79,15 @@ struct NoScrollBarTextEditor: NSViewRepresentable {
         textView.backgroundColor = NSColor.textBackgroundColor
         textView.textColor = NSColor.textColor
 
+        if becomeFirstResponder, context.coordinator.didRequestFirstResponder == false {
+            context.coordinator.didRequestFirstResponder = true
+            DispatchQueue.main.async {
+                textView.window?.makeFirstResponder(textView)
+            }
+        } else if becomeFirstResponder == false {
+            context.coordinator.didRequestFirstResponder = false
+        }
+
         // Adjust text container to match scroll view width
         if let textContainer = textView.textContainer {
             textContainer.containerSize = NSSize(
@@ -93,6 +103,7 @@ struct NoScrollBarTextEditor: NSViewRepresentable {
 
     class Coordinator: NSObject, NSTextViewDelegate {
         var parent: NoScrollBarTextEditor
+        var didRequestFirstResponder = false
 
         init(_ parent: NoScrollBarTextEditor) {
             self.parent = parent

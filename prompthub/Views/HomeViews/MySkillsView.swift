@@ -12,49 +12,19 @@ struct MySkillsView: View {
 
     let draftService = SkillDraftService.shared
 
-    let searchText: String
-    let onSelectSkill: (Skill) -> Void
-    let onCreateSkill: (Skill) -> Void
+    @Binding var searchText: String
 
     @State var errorMessage: String?
     @State var selectedSkillID: UUID?
     @State var skillPendingDeletion: Skill?
+    @State var editingSkillID: UUID?
 
     var body: some View {
-        SkillLibraryScreen(
-                title: "My Skills",
-                subtitle: "Write, version, and install first-class skill drafts. Prompts can graduate into reusable skills without leaving the authoring flow.",
-                metrics: headerMetrics,
-                accessory: {
-                    HStack(spacing: 6) {
-                    SkillsWorkspacePicker(navigationState: $navigationState)
-
-                    Divider().frame(height: 14)
-
-                    if !skillDrafts.isEmpty {
-                        Button(action: createSkillDraft) {
-                            Label("New Draft", systemImage: "plus")
-                        }
-                        .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
-                    }
-
-                    Button {
-                        if let selectedSkill {
-                            copySkillMarkdown(for: selectedSkill)
-                        }
-                    } label: {
-                        Image(systemName: "doc.on.doc")
-                    }
-                    .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
-                    .disabled(selectedSkill == nil)
-                    .accessibilityLabel("Copy SKILL.md")
-                    .help("Copy SKILL.md")
-                }
-            }
-        ) {
+        SkillLibraryScreen {
             mainContentView
         }
         .onAppear { syncSelection() }
+        .onChange(of: navigationState.selectedSkillDraftID) { _, _ in syncSelection() }
         .onChange(of: searchText) { _, _ in syncSelection() }
         .onChange(of: skillDrafts.map(\.id)) { _, _ in syncSelection() }
         .alert("Skill Error", isPresented: Binding(

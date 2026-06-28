@@ -200,6 +200,12 @@ extension PH {
 
         /// Detail subtitle (below title in dh) — 12pt, regular
         static let detailSub: SwiftUI.Font = .system(size: 12, weight: .regular)
+
+        /// Prompt detail headline
+        static let heroTitle: SwiftUI.Font = .system(size: 28, weight: .bold)
+
+        /// Drawer title used by prompt history panels
+        static let drawerTitle: SwiftUI.Font = .system(size: 16, weight: .semibold)
     }
 }
 
@@ -251,6 +257,16 @@ extension PH {
         static let btnHeight: CGFloat  = 30  // button standard height
         static let btnSqSize: CGFloat  = 30  // square button width = height
         static let btnCorner: CGFloat  = 8   // button border-radius
+
+        static let promptInset: CGFloat = 24
+        static let promptHeaderGap: CGFloat = 8
+        static let promptDrawerGap: CGFloat = 16
+        static let promptDrawerCardGap: CGFloat = 10
+        static let promptDrawerItemGap: CGFloat = 12
+        static let promptPanelCorner: CGFloat = 12
+        static let promptToolbarCapsuleH: CGFloat = 16
+        static let promptToolbarCapsuleV: CGFloat = 10
+        static let promptBodyLineSpacing: CGFloat = 4
     }
 }
 
@@ -274,6 +290,9 @@ extension PH {
         static let iconSizeSm: CGFloat     = 13   // section head icon
         static let iconStroke: CGFloat     = 1.5  // SF-style stroke width
         static let statusDotSize: CGFloat  = 6    // inline status indicator dot
+        static let promptHistoryDrawerWidth: CGFloat = 360
+        static let promptBrowserHistoryDrawerWidth: CGFloat = 320
+        static let promptEditorIdealHeight: CGFloat = 320
     }
 }
 

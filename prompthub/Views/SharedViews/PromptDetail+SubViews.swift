@@ -8,13 +8,20 @@ extension PromptDetail {
     @ViewBuilder
     var promptHeader: some View {
         SkillLibraryInspectorCard {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: PH.Spacing.promptHeaderGap) {
                 HStack(alignment: .firstTextBaseline) {
-                    TextField("Prompt Name", text: $prompt.name)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 28, weight: .bold))
-                        .focused($focusedField, equals: .name)
-                        .padding(.horizontal, -4)
+                    Group {
+                        if isEditing {
+                            TextField("Prompt Name", text: $prompt.name)
+                                .textFieldStyle(.plain)
+                                .focused($focusedField, equals: .name)
+                                .padding(.horizontal, -4)
+                        } else {
+                            Text(prompt.name)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .font(PH.Font.heroTitle)
                     Spacer()
                     if let latestHistory = history.first {
                         Text("v\(max(latestHistory.version, 1))")
@@ -23,72 +30,104 @@ extension PromptDetail {
                     }
                 }
 
-                TextField("Add a description...", text: Binding(
-                    get: { prompt.desc ?? "" },
-                    set: { prompt.desc = $0.isEmpty ? nil : $0 }
-                ))
-                .textFieldStyle(.plain)
+                Group {
+                    if isEditing {
+                        TextField("Add a description...", text: Binding(
+                            get: { prompt.desc ?? "" },
+                            set: { prompt.desc = $0.isEmpty ? nil : $0 }
+                        ))
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, -4)
+                    } else if let desc = prompt.desc, !desc.isEmpty {
+                        Text(desc)
+                    } else {
+                        Text("No description")
+                            .foregroundStyle(.tertiary)
+                    }
+                }
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-                .padding(.horizontal, -4)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 24)
+        .padding(.horizontal, PH.Spacing.promptInset)
+        .padding(.top, PH.Spacing.promptInset)
     }
 
-    @ViewBuilder
-    var promptActionCard: some View {
-        SkillLibraryInspectorCard(title: "Actions") {
-            HStack(spacing: 8) {
-                headerActions
-                Spacer()
+    @ToolbarContentBuilder
+    var promptDetailToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
+            Menu {
+                Button {
+                    isShowingDiff.toggle()
+                } label: {
+                    Label("Diff", systemImage: "clock.arrow.circlepath")
+                }
+
+                Button {
+                    promotePromptToSkill()
+                } label: {
+                    Label("Promote to Skill", systemImage: "wand.and.stars.inverse")
+                }
+
+                Button {
+                    _ = copyPromptToClipboard(prompt.getLatestPromptContent())
+                } label: {
+                    Label("Copy Content", systemImage: "doc.on.doc")
+                }
+
+                Divider()
+
+                Button(role: .destructive) {
+                    showingDeletePromptConfirmation = true
+                } label: {
+                    Label(isEphemeralDraft ? "Discard" : "Delete", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
             }
-        }
-        .padding(.horizontal, 24)
-    }
 
-    @ViewBuilder
-    var headerActions: some View {
-        HStack(spacing: 8) {
-            Button { isShowingSingleTestView.toggle() } label: { Label("Test", systemImage: "play.fill") }
-                .buttonStyle(.bordered).controlSize(.small).help("Test this prompt")
-
-            Button { isShowingDiff.toggle() } label: { Label("Diff", systemImage: "clock.arrow.circlepath") }
-                .buttonStyle(.bordered).controlSize(.small).help("Toggle Diff View")
-
-            Button(action: promotePromptToSkill) {
-                Label("Promote to Skill", systemImage: "wand.and.stars.inverse")
+            Button {
+                isEditing.toggle()
+            } label: {
+                Image(systemName: isEditing ? "checkmark.circle.fill" : "pencil")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .help("Promote this prompt into a skill draft")
+            .help(isEditing ? "Done editing" : "Edit prompt")
+
+            Button {
+                isShowingSingleTestView.toggle()
+            } label: {
+                Image(systemName: "play.fill")
+            }
+            .help("Test prompt")
+
+            Button {
+                optimizeRequestID += 1
+            } label: {
+                Image(systemName: "wand.and.stars")
+            }
+            .help("Optimize with AI")
+
+            Button {
+                isShowingHistoryDrawer.toggle()
+            } label: {
+                Image(systemName: "clock.arrow.circlepath")
+            }
+            .help(isShowingHistoryDrawer ? "Hide history" : "Show history")
 
             Button {
                 Task { await shareCreation() }
             } label: {
-                Label(existingSharedCreation == nil ? "Share" : "Copy Share Link", systemImage: "square.and.arrow.up")
+                Image(systemName: "square.and.arrow.up")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
             .disabled(isCreateShareLink)
-            .help("Share")
-
-            Button(role: .destructive) {
-                showingDeletePromptConfirmation = true
-            } label: {
-                Label(isEphemeralDraft ? "Discard" : "Delete", systemImage: "trash")
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .help(isEphemeralDraft ? "Discard this empty prompt draft" : "Delete this prompt")
+            .help("Share prompt")
         }
     }
 
     @ViewBuilder
     func promptInfoCard(latestHistory: PromptHistory) -> some View {
         SkillLibraryInspectorCard(title: "Information") {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: PH.Spacing.promptDrawerCardGap) {
                 LabeledContent("Version", value: "v\(max(latestHistory.version, 1))")
                 LabeledContent("Created", value: latestHistory.createdAt, format: .dateTime)
                 LabeledContent("Updated", value: latestHistory.updatedAt, format: .dateTime)
@@ -96,14 +135,13 @@ extension PromptDetail {
                 LabeledContent("External Sources", value: (prompt.externalSources?.isEmpty ?? true) ? "None" : "Attached")
             }
         }
-        .padding(.horizontal, 24)
     }
 
     @ViewBuilder
     var promptSharingCard: some View {
         SkillLibraryInspectorCard(title: "Sharing") {
             if let shared = existingSharedCreation {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: PH.Spacing.promptDrawerItemGap) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(shared.isPublic ? "Visible to community" : "Private link only")
@@ -122,7 +160,7 @@ extension PromptDetail {
                         .disabled(isTogglingPublic)
                     }
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: PH.Spacing.rowItemGap) {
                         Button {
                             Task { await shareCreation() }
                         } label: {
@@ -138,7 +176,7 @@ extension PromptDetail {
                     }
                 }
             } else {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: PH.Spacing.promptDrawerCardGap) {
                     Text("Not shared yet")
                         .font(.headline)
                     Text("Create a share link for this prompt without leaving the editor.")
@@ -154,123 +192,118 @@ extension PromptDetail {
                 }
             }
         }
-        .padding(.horizontal, 24)
     }
 
     @ViewBuilder
-    var promptHistoryCard: some View {
-        SkillLibraryInspectorCard(title: "History") {
-            if history.isEmpty {
-                Text("No history yet")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(history) { item in
-                        HStack(alignment: .top, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Version \(item.version)")
-                                    .font(.headline)
-                                Text(item.updatedAt, formatter: dateFormatter)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Button {
-                                selectedHistoryVersion = item
-                            } label: {
-                                Label("Preview", systemImage: "eye")
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-
-                            Button {
-                                let copied = copyPromptToClipboard(item.promptText)
-                                showToastMsg(
-                                    msg: copied ? "Copied version \(item.version)" : "Failed to copy version \(item.version)",
-                                    alertType: copied ? .complete(Color.green) : .error(Color.red)
-                                )
-                            } label: {
-                                Label("Copy", systemImage: "doc.on.doc")
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                        .padding(12)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 24)
-    }
-
-    func versionDetailSheet(_ version: PromptHistory) -> some View {
-        let isCurrentVersion = history.first?.id == version.id
-
-        return VStack(alignment: .leading, spacing: 20) {
-            HStack {
+    func promptHistoryDrawer(latestHistory: PromptHistory) -> some View {
+        VStack(alignment: .leading, spacing: PH.Spacing.promptDrawerGap) {
+            HStack(alignment: .top, spacing: PH.Spacing.promptDrawerItemGap) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Version \(version.version)")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    Text(isCurrentVersion ? "Current editor version" : "Read-only history preview")
+                    Text("History")
+                        .font(PH.Font.drawerTitle)
+                    Text("Restore an earlier version without leaving the editor.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+
                 Spacer()
-                Button("Dismiss") { selectedHistoryVersion = nil }
-                    .buttonStyle(.bordered)
+
+                Button {
+                    isShowingHistoryDrawer = false
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.plain)
+                .help("Close history")
             }
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Created: \(version.createdAt, formatter: dateFormatter)").font(.subheadline)
-                Text("Updated: \(version.updatedAt, formatter: dateFormatter)").font(.subheadline)
+
+            if latestHistory.promptText.isEmpty == false {
+                promptInfoCard(latestHistory: latestHistory)
             }
-            Text("Prompt Content").font(.headline)
-            ScrollView {
-                Text(version.promptText)
-                    .font(.system(.body, design: .monospaced))
-                    .padding()
-                    .background(Color(NSColor.textBackgroundColor))
-                    .cornerRadius(8)
+
+            promptSharingCard
+
+            SkillLibraryInspectorCard(title: "Versions") {
+                if history.isEmpty {
+                    Text("No history yet")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: PH.Spacing.promptDrawerCardGap) {
+                            ForEach(history) { item in
+                                historyDrawerRow(item, latestHistory: latestHistory)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: .infinity)
+                }
             }
+        }
+        .frame(width: PH.Layout.promptHistoryDrawerWidth, alignment: .topLeading)
+        .frame(maxHeight: .infinity, alignment: .topLeading)
+        .padding(PH.Spacing.promptDrawerGap)
+        .background(PH.Color.detailBg)
+        .overlay(alignment: .leading) {
+            Divider()
+        }
+        .shadow(color: .black.opacity(0.12), radius: 18, x: -4, y: 0)
+    }
+
+    @ViewBuilder
+    private func historyDrawerRow(_ item: PromptHistory, latestHistory: PromptHistory) -> some View {
+        let isCurrentVersion = item.id == latestHistory.id
+
+        VStack(alignment: .leading, spacing: PH.Spacing.promptDrawerCardGap) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("v\(item.version)")
+                    .font(.headline)
+
+                if isCurrentVersion {
+                    Text("Current")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(item.updatedAt, formatter: dateFormatter)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(historySummary(for: item.promptText))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
             HStack {
                 Spacer()
+
                 Button {
-                    let copied = copyPromptToClipboard(version.promptText)
-                    showToastMsg(
-                        msg: copied ? "Copied version \(version.version)" : "Failed to copy version \(version.version)",
-                        alertType: copied ? .complete(Color.green) : .error(Color.red)
-                    )
+                    applyHistoryVersionToEditor(item)
                 } label: {
-                    Label("Copy Content", systemImage: "doc.on.doc")
+                    Label(isCurrentVersion ? "Current" : "Restore", systemImage: "arrow.uturn.backward")
                 }
                 .buttonStyle(.bordered)
-                Button {
-                    applyHistoryVersionToEditor(version)
-                } label: {
-                    Label(isCurrentVersion ? "Already Current" : "Apply to Editor", systemImage: isCurrentVersion ? "checkmark.circle" : "arrow.down.doc")
-                }
+                .controlSize(.small)
                 .disabled(isCurrentVersion)
-                .modifier(HistoryApplyButtonStyle(isCurrentVersion: isCurrentVersion))
-                .help(isCurrentVersion ? "This version is already current" : "Create a new current version from this history entry")
-                Spacer()
             }
         }
-        .padding()
-        .frame(width: 600, height: 500)
+        .padding(PH.Spacing.promptDrawerItemGap)
+        .background(PH.Color.buttonBg)
+        .clipShape(RoundedRectangle(cornerRadius: PH.Spacing.promptPanelCorner, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: PH.Spacing.promptPanelCorner, style: .continuous)
+                .stroke(PH.Color.buttonBorder, lineWidth: 1)
+        )
     }
-}
 
-private struct HistoryApplyButtonStyle: ViewModifier {
-    let isCurrentVersion: Bool
-
-    func body(content: Content) -> some View {
-        if isCurrentVersion {
-            content.buttonStyle(.bordered)
-        } else {
-            content.buttonStyle(.borderedProminent)
-        }
+    private func historySummary(for text: String) -> String {
+        let normalized = text
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return normalized.isEmpty ? "No content" : normalized
     }
 }

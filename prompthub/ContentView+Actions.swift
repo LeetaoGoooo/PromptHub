@@ -55,7 +55,7 @@ extension ContentView {
     func createNewSkillDraft() {
         do {
             let draft = try skillDraftService.createDraft(in: modelContext)
-            navigationState.selectSkillDetail(draft.id)
+            navigationState.showSkillDraftWorkspace(select: draft.id)
         } catch {
             showToastMessage("Failed to create new skill draft", .error(.red))
         }
@@ -73,8 +73,9 @@ extension ContentView {
         case .skill(let skillID):
             searchText = ""
             if let skill = skillDrafts.first(where: { $0.id == skillID }) {
-                navigationState.selectSkillDetail(skill.id)
+                navigationState.showSkillDraftWorkspace(select: skill.id)
             } else {
+                navigationState.clearSkillDraftSelection()
                 navigationState.showSkills(.drafts)
             }
         case .selection(let route, let query):
@@ -84,8 +85,8 @@ extension ContentView {
                 navigationState.showPrompts(lens)
             case .skills(let lens):
                 navigationState.showSkills(lens)
-            case .agents(let lens):
-                navigationState.showAgents(lens)
+            case .agents:
+                navigationState.showSpecial(.settings)
             case .special(let page):
                 navigationState.showSpecial(page)
             }

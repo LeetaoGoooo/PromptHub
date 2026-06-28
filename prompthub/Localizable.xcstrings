@@ -55,6 +55,26 @@
         }
       }
     },
+    "%@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%@: %@ ⌄" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@ ⌄"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -68,7 +88,7 @@
     "%lld added" : {
 
     },
-    "%lld catalog skills" : {
+    "%lld connected" : {
 
     },
     "%lld of %lld checks passed" : {
@@ -110,25 +130,12 @@
         }
       }
     },
-    "%lld skills" : {
-
-    },
     "%lld/%lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld/%2$lld"
-          }
-        }
-      }
-    },
-    "%lld/%lld Authorized" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld Authorized"
           }
         }
       }
@@ -140,9 +147,6 @@
 
     },
     "+%lld" : {
-
-    },
-    "+%lld more" : {
 
     },
     "~/%@/" : {
@@ -159,28 +163,19 @@
         }
       }
     },
-    "Absolute path to the shared skills directory (e.g. an NFS mount)." : {
-
-    },
     "Active" : {
 
     },
     "Add" : {
 
     },
-    "Add %@" : {
-
-    },
     "Add a description..." : {
 
     },
-    "Add a private GitHub repo or team-shared directory to install skills that aren't in the public registry." : {
+    "Add a private GitHub repo or shared directory to install skills that are not in the public catalog." : {
 
     },
     "Add All Missing CLIs" : {
-
-    },
-    "Add CLI" : {
 
     },
     "Add context, notes, and personal insights directly to your prompts for better organization." : {
@@ -200,13 +195,16 @@
     "Add Private Source" : {
 
     },
-    "Add Private Source…" : {
-
-    },
     "Add private sources in Settings → Private Sources." : {
 
     },
     "Add Project…" : {
+
+    },
+    "Add Source" : {
+
+    },
+    "Add to %@" : {
 
     },
     "Agent" : {
@@ -218,7 +216,7 @@
     "Agents" : {
 
     },
-    "Aggregate view is read-only for project-scoped installs. Switch back to Active Project to remove skills or change CLI targets." : {
+    "Agents Workspace" : {
 
     },
     "AI" : {
@@ -263,9 +261,6 @@
     "All supported CLIs already have this skill in %@ scope." : {
 
     },
-    "Already Current" : {
-
-    },
     "Already installed in %@: %@." : {
       "localizations" : {
         "en" : {
@@ -302,9 +297,6 @@
           }
         }
       }
-    },
-    "Apply to Editor" : {
-
     },
     "Apply Update" : {
 
@@ -427,19 +419,19 @@
         }
       }
     },
-    "Audit" : {
-
-    },
     "Audit all installed skills" : {
-
-    },
-    "Audit Installed Skills" : {
 
     },
     "Auditing %@…" : {
 
     },
     "Authorize All" : {
+
+    },
+    "Available" : {
+
+    },
+    "Back to skill preview" : {
 
     },
     "Base URL (OpenAI API)" : {
@@ -504,16 +496,16 @@
     "Change Project Folder" : {
 
     },
+    "Change…" : {
+
+    },
+    "Changes apply to new tests immediately." : {
+
+    },
     "Check all skills for available updates" : {
 
     },
-    "Check Updates" : {
-
-    },
     "Checking source…" : {
-
-    },
-    "Checking Updates…" : {
 
     },
     "Choose one or more models to test" : {
@@ -525,6 +517,9 @@
           }
         }
       }
+    },
+    "Choose Project Folder…" : {
+
     },
     "Choose where and for which agents this skill will be installed." : {
 
@@ -551,13 +546,13 @@
         }
       }
     },
+    "Clear Project Folder" : {
+
+    },
     "CLI" : {
 
     },
-    "CLI Agents" : {
-
-    },
-    "CLI File Access" : {
+    "CLI Integrations" : {
 
     },
     "CLI ready — no agents connected" : {
@@ -610,6 +605,9 @@
           }
         }
       }
+    },
+    "Close history" : {
+
     },
     "Community Shared Prompts" : {
       "extractionState" : "stale",
@@ -677,9 +675,6 @@
     "Comparing with local installation" : {
 
     },
-    "Configuration" : {
-
-    },
     "Configure" : {
       "localizations" : {
         "zh-Hans" : {
@@ -706,7 +701,7 @@
         }
       }
     },
-    "Connect a **private GitHub repo** (e.g. `owner/repo` → `SKILL.md` files inside) to install your team's internal skills." : {
+    "Connected" : {
 
     },
     "Copied to clipboard" : {
@@ -876,9 +871,6 @@
     "Create" : {
 
     },
-    "Create a new current version from this history entry" : {
-
-    },
     "Create a new prompt (Cmd+N)" : {
 
     },
@@ -886,6 +878,9 @@
 
     },
     "Create a package file or folder" : {
+
+    },
+    "Create a share link for this prompt without leaving the editor." : {
 
     },
     "Create Share Link Failed" : {
@@ -927,7 +922,7 @@
         }
       }
     },
-    "Current editor version" : {
+    "Current" : {
 
     },
     "Default" : {
@@ -1000,9 +995,6 @@
     "Delete Skill Draft" : {
 
     },
-    "Delete this prompt" : {
-
-    },
     "Description" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1021,9 +1013,6 @@
 
     },
     "Discard" : {
-
-    },
-    "Discard this empty prompt draft" : {
 
     },
     "Disconnected" : {
@@ -1050,7 +1039,7 @@
         }
       }
     },
-    "Drafts (%lld)" : {
+    "Done editing" : {
 
     },
     "Dropped file is not an image type. Detected type: %@" : {
@@ -1098,11 +1087,16 @@
         }
       }
     },
+    "Edit Draft" : {
+
+    },
     "Edit Private Source" : {
 
     },
+    "Edit prompt" : {
+
+    },
     "Edit Prompt" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1113,6 +1107,9 @@
       }
     },
     "Edit System Prompt" : {
+
+    },
+    "Edit workspace" : {
 
     },
     "Edit…" : {
@@ -1139,9 +1136,6 @@
           }
         }
       }
-    },
-    "Enter value…" : {
-
     },
     "Enter your Base URL" : {
       "extractionState" : "stale",
@@ -1340,6 +1334,9 @@
         }
       }
     },
+    "External Sources" : {
+
+    },
     "Failed to delete prompt" : {
       "comment" : "Error message for prompt deletion",
       "extractionState" : "stale",
@@ -1380,13 +1377,13 @@
     "Files" : {
 
     },
-    "Fill in variables and copy the rendered output" : {
+    "Filter: %@" : {
 
     },
     "Forget this saved project" : {
 
     },
-    "Format: owner/repo — no https:// prefix required." : {
+    "Format: owner/repo. Do not include the https:// prefix." : {
 
     },
     "Fully operational" : {
@@ -1441,19 +1438,13 @@
         }
       }
     },
-    "GitHub Personal Access Token" : {
+    "GitHub repos and local folders use the same data model." : {
 
     },
-    "GitHub Private repos require a **Personal Access Token** with `repo` (read) scope. Tokens are stored in the macOS Keychain." : {
-
-    },
-    "global" : {
+    "GitHub tokens stay in the macOS Keychain." : {
 
     },
     "Global" : {
-
-    },
-    "global scope" : {
 
     },
     "Global Scope" : {
@@ -1482,7 +1473,7 @@
     "Grant Agent Access" : {
 
     },
-    "Grant folder access to connect" : {
+    "Grant Agent Access…" : {
 
     },
     "Grant folder access to install skills into this agent." : {
@@ -1497,6 +1488,12 @@
           }
         }
       }
+    },
+    "Hide history" : {
+
+    },
+    "Hide inspector" : {
+
     },
     "Hide token" : {
 
@@ -1515,6 +1512,7 @@
       }
     },
     "Host" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1547,12 +1545,6 @@
     "Identifier" : {
 
     },
-    "Identifier:" : {
-
-    },
-    "Idle" : {
-
-    },
     "Image Viewer" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1579,16 +1571,19 @@
         }
       }
     },
-    "Information" : {
+    "Input Schema" : {
 
     },
-    "Input Schema" : {
+    "Inspector" : {
 
     },
     "Install" : {
 
     },
     "Install \"%@\"" : {
+
+    },
+    "Install `ph` via Homebrew: `brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git && brew install dosomeforfun/prompthub/ph` (Apple Silicon). Intel users can run `brew install --HEAD dosomeforfun/prompthub/ph` to build from source. The `ph` binary reads the same `~/.prompthub/` exports this dashboard writes, so prompt and skill state stays in sync. Use the app to author and edit; use `ph` to script, automate, and install agent skills from CI. Run `ph doctor` if anything looks wrong on the CLI side." : {
 
     },
     "Install a skill from a private GitHub repo or local directory (Settings → Sources to configure)" : {
@@ -1612,6 +1607,9 @@
     "Install from Private Source…" : {
 
     },
+    "Install from these sources through Skill Store." : {
+
+    },
     "Install Local Skill" : {
 
     },
@@ -1628,6 +1626,9 @@
 
     },
     "Installation Scope" : {
+
+    },
+    "Installed" : {
 
     },
     "Installing…" : {
@@ -1660,12 +1661,6 @@
           }
         }
       }
-    },
-    "Join Telegram" : {
-
-    },
-    "Join WeChat" : {
-
     },
     "Join:" : {
       "extractionState" : "manual",
@@ -1720,16 +1715,10 @@
     "Kind" : {
 
     },
-    "Label" : {
-
-    },
     "Last installed %@" : {
 
     },
     "Last run %@" : {
-
-    },
-    "Latest Instructions" : {
 
     },
     "Launch:" : {
@@ -1755,6 +1744,9 @@
           }
         }
       }
+    },
+    "Link" : {
+
     },
     "Link available" : {
 
@@ -1789,6 +1781,9 @@
         }
       }
     },
+    "Loading SKILL.md…" : {
+
+    },
     "Loading skills catalog…" : {
 
     },
@@ -1801,9 +1796,6 @@
           }
         }
       }
-    },
-    "Local Path" : {
-
     },
     "Make Private" : {
       "extractionState" : "stale",
@@ -1830,9 +1822,6 @@
     "Manage CLI directories from Grant Agent Access, and select the active project folder here in the dashboard." : {
 
     },
-    "Manage CLIs" : {
-
-    },
     "Mine" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1848,6 +1837,7 @@
 
     },
     "Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1856,9 +1846,6 @@
           }
         }
       }
-    },
-    "Model: GPT-4o" : {
-
     },
     "Models" : {
       "extractionState" : "stale",
@@ -1881,6 +1868,9 @@
           }
         }
       }
+    },
+    "More actions" : {
+
     },
     "My Private Skills" : {
 
@@ -1935,9 +1925,6 @@
     "New %@" : {
 
     },
-    "New Draft" : {
-
-    },
     "New File" : {
 
     },
@@ -1985,9 +1972,6 @@
         }
       }
     },
-    "No Content" : {
-
-    },
     "No custom prompts yet" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1998,9 +1982,6 @@
           }
         }
       }
-    },
-    "No data available" : {
-
     },
     "No data received for bookmark." : {
       "extractionState" : "manual",
@@ -2013,7 +1994,10 @@
         }
       }
     },
-    "No global skills installed." : {
+    "No description" : {
+
+    },
+    "No files resolved." : {
 
     },
     "No history available for this prompt except the latest version." : {
@@ -2040,9 +2024,6 @@
         }
       }
     },
-    "No installed skills in this scope yet." : {
-
-    },
     "No matching prompts found" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2063,7 +2044,7 @@
     "No project selected. Skills will be installed relative to the project root." : {
 
     },
-    "No project-scoped skills installed." : {
+    "No prompt content." : {
 
     },
     "No prompts available" : {
@@ -2166,9 +2147,6 @@
         }
       }
     },
-    "Notes (optional)" : {
-
-    },
     "Nothing to Add" : {
 
     },
@@ -2183,9 +2161,6 @@
         }
       }
     },
-    "Once added, install skills from private sources via **Skill Store → ↓ → Install from Private Source…**" : {
-
-    },
     "Open Draft" : {
 
     },
@@ -2196,6 +2171,9 @@
 
     },
     "Open Settings" : {
+
+    },
+    "Open Skill Access" : {
 
     },
     "Open Source Page" : {
@@ -2218,12 +2196,6 @@
     "Optimize with AI" : {
 
     },
-    "Optimizing…" : {
-
-    },
-    "Or point to a **local directory** on disk that contains `SKILL.md` files — great for monorepos." : {
-
-    },
     "Origin" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2235,9 +2207,6 @@
       }
     },
     "Output Schema" : {
-
-    },
-    "Package-first authoring workspace for SKILL.md, scripts, assets, and support files." : {
 
     },
     "Paste a GitHub URL or enter owner/repo/skill-name." : {
@@ -2304,13 +2273,10 @@
     "Private link only" : {
 
     },
-    "Private Skill Sources" : {
-
-    },
     "Private Sources" : {
 
     },
-    "project" : {
+    "Private sources let PromptHub load internal skills from a private GitHub repository or a shared folder." : {
 
     },
     "Project" : {
@@ -2319,25 +2285,22 @@
     "Project Folder" : {
 
     },
-    "project scope" : {
-
-    },
     "Project Scope" : {
 
     },
     "Project skill" : {
 
     },
-    "Project View" : {
+    "Project-scoped installs use the active project below. Save multiple roots, switch quickly, or forget old workspaces." : {
 
     },
-    "Project-scoped installs use the active project below. Save multiple roots, switch quickly, or forget old workspaces." : {
+    "Project-scoped skill install management lives in Skills > Installed." : {
 
     },
     "Projects" : {
 
     },
-    "Promote this prompt into a skill draft" : {
+    "Promote to Skill" : {
 
     },
     "Prompt" : {
@@ -2454,10 +2417,7 @@
         }
       }
     },
-    "PromptHub CLI release status" : {
-      "extractionState" : "stale"
-    },
-    "PromptHub needs permission to read and write each agent's config directory. Press **Cmd+Shift+.** in the Finder panel to show hidden folders." : {
+    "PromptHub CLI" : {
 
     },
     "PromptHub writes SKILL.md files into each agent's config directory. Next time you open Cursor, Claude Code, or Codex, those skills are already loaded and ready to use." : {
@@ -2488,9 +2448,6 @@
         }
       }
     },
-    "Public Status" : {
-
-    },
     "Publish" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2506,9 +2463,6 @@
 
     },
     "Quality analysis not available." : {
-
-    },
-    "Quick Actions" : {
 
     },
     "Quick Search:" : {
@@ -2548,9 +2502,6 @@
     "Re-run" : {
 
     },
-    "Read-only history preview" : {
-
-    },
     "Received image data directly. Implement loading from Data." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2572,9 +2523,6 @@
         }
       }
     },
-    "Refresh" : {
-
-    },
     "Refresh catalog" : {
 
     },
@@ -2590,9 +2538,6 @@
     "Refreshing installations…" : {
 
     },
-    "Refreshing…" : {
-
-    },
     "Reload package files" : {
 
     },
@@ -2606,21 +2551,6 @@
 
     },
     "Remove Skill" : {
-
-    },
-    "Removing…" : {
-
-    },
-    "Render a prompt with variable substitution" : {
-
-    },
-    "Render Prompt" : {
-
-    },
-    "Render Prompt…" : {
-
-    },
-    "Repository (owner/repo)" : {
 
     },
     "Repository / Skill Path" : {
@@ -2639,10 +2569,10 @@
     "Reset to Default" : {
 
     },
-    "Results" : {
+    "Restore" : {
 
     },
-    "Results are fetched from the current skills catalog, not just filtered locally." : {
+    "Restore an earlier version without leaving the editor." : {
 
     },
     "Retry" : {
@@ -2659,10 +2589,13 @@
         }
       }
     },
+    "Reuse the current share record or switch its visibility." : {
+
+    },
     "Reveal in Finder" : {
 
     },
-    "Reveal Installed Files" : {
+    "Reveal root in Finder" : {
 
     },
     "Reveal the selected package item in Finder" : {
@@ -2736,7 +2669,7 @@
         }
       }
     },
-    "Save File" : {
+    "Save file" : {
 
     },
     "Save the current draft as a new version snapshot" : {
@@ -2745,7 +2678,7 @@
     "Save to My Prompts" : {
 
     },
-    "Save Version" : {
+    "Save version snapshot" : {
 
     },
     "Save Version Snapshot" : {
@@ -2782,19 +2715,7 @@
         }
       }
     },
-    "Search prompts…" : {
-
-    },
-    "Search Remote Skills" : {
-
-    },
-    "Search the remote catalog…" : {
-
-    },
     "Select a configured private source and choose which skills to install." : {
-
-    },
-    "Select a prompt to render" : {
 
     },
     "Select All" : {
@@ -2824,6 +2745,7 @@
 
     },
     "Service" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2832,9 +2754,6 @@
           }
         }
       }
-    },
-    "Set Up CLI" : {
-
     },
     "Settings" : {
       "localizations" : {
@@ -2852,10 +2771,8 @@
     "Setup required" : {
 
     },
-    "SHA-256  %@…" : {
-
-    },
     "Share" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2886,6 +2803,9 @@
           }
         }
       }
+    },
+    "Share prompt" : {
+
     },
     "Share to Community" : {
 
@@ -2943,9 +2863,6 @@
         }
       }
     },
-    "Sharing" : {
-
-    },
     "Show" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2955,6 +2872,15 @@
           }
         }
       }
+    },
+    "Show description" : {
+
+    },
+    "Show history" : {
+
+    },
+    "Show inspector" : {
+
     },
     "Show token" : {
 
@@ -2996,9 +2922,6 @@
     "SKILL.md not found — cannot analyze quality." : {
 
     },
-    "SKILL.md Preview" : {
-
-    },
     "Skills are reusable, versioned instruction sets that extend AI agents. Create one from scratch or promote an existing prompt." : {
 
     },
@@ -3009,6 +2932,9 @@
 
     },
     "Slug" : {
+
+    },
+    "Sort: %@" : {
 
     },
     "Source" : {
@@ -3025,7 +2951,7 @@
     "Source Integrity" : {
 
     },
-    "Source Type" : {
+    "Stored in the macOS Keychain. Needs repo scope for private repositories." : {
 
     },
     "Streaming..." : {
@@ -3038,9 +2964,6 @@
         }
       }
     },
-    "Summary" : {
-
-    },
     "Supports: full GitHub URL, owner/repo/skill-name, or owner/repo (installs all skills in that repo)." : {
 
     },
@@ -3050,7 +2973,7 @@
     "Target Agents" : {
 
     },
-    "Temperature: 0.7" : {
+    "Telegram" : {
 
     },
     "Template" : {
@@ -3064,6 +2987,7 @@
       }
     },
     "Test" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3093,6 +3017,9 @@
           }
         }
       }
+    },
+    "Test prompt" : {
+
     },
     "Test Prompt" : {
       "extractionState" : "stale",
@@ -3127,9 +3054,6 @@
         }
       }
     },
-    "Test this prompt" : {
-
-    },
     "Test your prompt across multiple models" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3139,9 +3063,6 @@
           }
         }
       }
-    },
-    "The app-side directory integration is implemented, but the public PromptHub CLI installer has not shipped yet. Until the CLI package, tests, and release pipeline are published, Homebrew install and `ph` command examples should not be treated as available to users." : {
-      "extractionState" : "stale"
     },
     "The local SKILL.md matches the remote version." : {
 
@@ -3162,16 +3083,8 @@
     "This folder is part of the skill package. Add files here for scripts, assets, tests, or docs, then open them inline or in Finder." : {
 
     },
-    "This version is already current" : {
-
-    },
-    "Toggle Diff View" : {
-
-    },
-    "Toggle Inspector" : {
-
-    },
     "Token" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3180,9 +3093,6 @@
           }
         }
       }
-    },
-    "Token is stored in the macOS Keychain. Needs repo scope to read private repos." : {
-
     },
     "Token set" : {
 
@@ -3267,13 +3177,10 @@
     "Update %@" : {
 
     },
-    "Update Share" : {
+    "Update all visible" : {
 
     },
     "Updated" : {
-
-    },
-    "Updated %@" : {
 
     },
     "Updated: %@" : {
@@ -3287,7 +3194,13 @@
         }
       }
     },
-    "Updating CLIs…" : {
+    "Use `owner/repo` for GitHub sources." : {
+
+    },
+    "Use an absolute filesystem path for shared folders." : {
+
+    },
+    "Use an absolute path to the shared skills directory." : {
 
     },
     "v%@" : {
@@ -3342,6 +3255,9 @@
         }
       }
     },
+    "Version context and restore live here, not in the main reading area." : {
+
+    },
     "View in full screen" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3351,9 +3267,6 @@
           }
         }
       }
-    },
-    "View version" : {
-
     },
     "Visibility scan not available." : {
 
@@ -3378,6 +3291,9 @@
     "Website" : {
 
     },
+    "WeChat" : {
+
+    },
     "Welcome to PromptBox Version %@!" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3392,7 +3308,7 @@
     "Welcome to PromptHub" : {
 
     },
-    "What are Private Sources?" : {
+    "Workspaces" : {
 
     },
     "Your AI prompt and skills workspace. Let's get you set up in 4 steps — it only takes a few minutes." : {

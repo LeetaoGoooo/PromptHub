@@ -10,11 +10,10 @@ struct InstalledSkillsView: View {
     @Query(sort: \Skill.updatedAt, order: .reverse) var skillDrafts: [Skill]
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
     @Binding var navigationState: WorkspaceNavigationState
-    let searchText: String
+    @Binding var searchText: String
     @Binding var scopeFilter: SkillsSidebarScopeFilter
     @Binding var sourceFilter: SkillsSidebarSourceFilter
     @Binding var agentFilter: AgentWorkflow?
-    let onSelectSkillDraft: (Skill) -> Void
 
     struct PendingRemoval: Identifiable {
         let id = UUID()
@@ -32,15 +31,22 @@ struct InstalledSkillsView: View {
     @State var isLoadingIntegrity = false
     @State var structuralQuality: SkillStructuralQualityReport?
     @State var isLoadingStructuralQuality = false
+    @State var installedMarkdown: String = ""
+    @State var isLoadingMarkdown = false
     @ObservedObject var cliAccessManager = CLIDirectoryAccessManager.shared
     @State var showingCLIAccessManager = false
     @State var showingAuditReport = false
     @State var skillsWithUpdates: Set<String> = []
     @State var isCheckingUpdates = false
     @State var updatingSkill: InstalledSkillSnapshot?
+    @State var selectedUpdateSkillIDs: Set<String> = []
+    @State var updatingSkillIDs: Set<String> = []
+    @State var isApplyingBulkUpdates = false
     @State var listFilter: ListFilter = .all
-    @State var installedSkillsLens: InstalledSkillsLens = .activeProject
     @State var skillsSortOrder: SkillsSortOrder = .nameAsc
+    @State var editingDraftSheet: Skill?
+    @State var editingInstalledSkillID: String?
+    @State var openingDraftForSkillID: String?
 
     // MARK: - List filter
     enum ListFilter: String, CaseIterable {
@@ -112,15 +118,26 @@ struct InstalledSkillsView: View {
         }
     }
 
-    var projectSkills: [InstalledSkillSnapshot] { filteredSkills.filter { !$0.isGlobal } }
-    var globalSkills:  [InstalledSkillSnapshot] { filteredSkills.filter { $0.isGlobal } }
-
     var selectedSkill: InstalledSkillSnapshot? {
+        // First try to find the skill in the filtered list
         if let selectedSkillID,
            let matched = filteredSkills.first(where: { $0.id == selectedSkillID }) {
             return matched
         }
-        return filteredSkills.first
+        
+        // If not in filtered list, try to return the first filtered skill
+        if let firstFiltered = filteredSkills.first {
+            return firstFiltered
+        }
+        
+        // If filtered list is empty but we had a selectedSkillID, try to find it in all skills
+        // This prevents the details pane from disappearing when a filter hides the current selection
+        if let selectedSkillID,
+           let matched = installedSkills.first(where: { $0.id == selectedSkillID }) {
+            return matched
+        }
+        
+        return nil
     }
 
     private var auditLoadKey: String {
@@ -137,27 +154,7 @@ struct InstalledSkillsView: View {
     }
 
     var body: some View {
-        SkillLibraryScreen(
-            title: "Installed Skills",
-            subtitle: "Audit what is live in each CLI environment, remove it cleanly by scope, and keep project and global installations explicit.",
-            metrics: headerMetrics
-        ) {
-            HStack(spacing: 6) {
-                SkillsWorkspacePicker(navigationState: $navigationState)
-
-                Divider().frame(height: 14)
-
-                SkillProjectPickerPopover(workspaceService: workspaceService) {
-                    chooseProjectRoot()
-                }
-
-                Divider().frame(height: 14)
-
-                CLIStatusIndicator(manager: cliAccessManager) {
-                    showingCLIAccessManager = true
-                }
-            }
-        } content: {
+        SkillLibraryScreen {
             VStack(spacing: 0) {
                 mainContentView
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -166,8 +163,18 @@ struct InstalledSkillsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .onAppear { syncSelection() }
+        .onChange(of: selectedSkillID) { _, newValue in
+            guard editingInstalledSkillID != newValue else { return }
+            openingDraftForSkillID = nil
+        }
         .sheet(isPresented: $showingAuditReport) {
             SkillAuditReportView(skills: installedSkills) { showingAuditReport = false }
+        }
+        .sheet(item: $editingDraftSheet, onDismiss: {
+            editingInstalledSkillID = nil
+        }) { draft in
+            SkillDraftDetailView(skill: draft)
+                .frame(minWidth: 960, minHeight: 640)
         }
         .sheet(item: $updatingSkill) { skill in
             SkillUpdateDiffSheet(skill: skill) { updatingSkill = nil }
@@ -179,6 +186,7 @@ struct InstalledSkillsView: View {
         .onChange(of: searchText) { _, _ in syncSelection() }
         .onChange(of: listFilter) { _, _ in syncSelection() }
         .onChange(of: skillsSortOrder) { _, _ in syncSelection() }
+        .toolbar { installedToolbarContent }
         .task(id: auditLoadKey) {
             guard let skill = selectedSkill else {
                 agentVisibility = []
@@ -187,14 +195,18 @@ struct InstalledSkillsView: View {
                 isLoadingVisibility = false
                 isLoadingIntegrity = false
                 isLoadingStructuralQuality = false
+                installedMarkdown = ""
+                isLoadingMarkdown = false
                 return
             }
 
             isLoadingVisibility = true
             isLoadingIntegrity = true
             isLoadingStructuralQuality = true
+            isLoadingMarkdown = true
 
             let auditState = await installedWorkspaceStore.loadAuditState(for: skill)
+            let markdown = try? await workspaceService.loadInstalledMarkdown(for: skill)
             guard !Task.isCancelled else { return }
             agentVisibility = auditState.agentVisibility
             sourceIntegrity = auditState.sourceIntegrity
@@ -202,6 +214,8 @@ struct InstalledSkillsView: View {
             isLoadingVisibility = false
             isLoadingIntegrity = false
             isLoadingStructuralQuality = false
+            installedMarkdown = markdown ?? ""
+            isLoadingMarkdown = false
         }
         .alert("Remove Skill", isPresented: Binding(
             get: { pendingRemoval != nil },

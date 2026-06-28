@@ -4,14 +4,36 @@ import SwiftUI
 
 extension SkillDraftDetailView {
 
+    private var displayHeaderName: String {
+        let raw = skill.displayName
+        let cleaned = raw
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !cleaned.isEmpty else { return raw }
+        return cleaned
+            .split(separator: " ")
+            .map { token in
+                let word = String(token)
+                guard let first = word.first else { return word }
+                return first.uppercased() + word.dropFirst()
+            }
+            .joined(separator: " ")
+    }
+
     var workspaceHeader: some View {
-        SkillLibraryHeaderCard(
-            title: skill.displayName,
-            subtitle: "Package-first authoring workspace for SKILL.md, scripts, assets, and support files.",
-            metrics: workspaceMetrics
+        SkillDetailHeader(
+            timestamp: skill.updatedAt.formatted(date: .omitted, time: .shortened),
+            title: displayHeaderName,
+            summary: skill.desc?.isEmpty == false ? skill.desc! : "Package-first authoring workspace for SKILL.md, scripts, assets, and support files.",
+            metrics: workspaceMetrics,
+            controlSize: .small
         ) {
             workspaceAccessoryActions
         }
+        .padding(.horizontal, PH.Spacing.promptInset)
+        .padding(.top, PH.Spacing.promptInset)
     }
 
     var workspaceMetrics: [SkillLibraryMetric] {
@@ -29,6 +51,15 @@ extension SkillDraftDetailView {
     @ViewBuilder
     var workspaceAccessoryActions: some View {
         HStack(spacing: 6) {
+            if let onCloseWorkspace {
+                Button(action: onCloseWorkspace) {
+                    Image(systemName: "doc.text")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Back to skill preview")
+            }
+
             if hasUnsavedChanges {
                 Text("Unsaved Changes")
                     .font(.caption.weight(.semibold))
@@ -39,33 +70,43 @@ extension SkillDraftDetailView {
             }
 
             Button(action: saveSelectedFile) {
-                Label("Save File", systemImage: "square.and.arrow.down")
+                Image(systemName: "square.and.arrow.down")
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
             .keyboardShortcut("s", modifiers: .command)
             .disabled(!hasUnsavedChanges || !selectedItemIsEditableText)
+            .help("Save file")
 
             Button(action: createVersionSnapshot) {
-                Label("Save Version", systemImage: "square.stack.3d.up.fill")
+                Image(systemName: "square.stack.3d.up.fill")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
             .help("Save the current draft as a new version snapshot")
 
             Button(action: copySkillMarkdown) {
-                Label("Copy SKILL.md", systemImage: "doc.on.doc")
+                Image(systemName: "doc.on.doc")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
             .help("Copy the exported SKILL.md to the clipboard")
 
             Button(action: revealSelectedItemInFinder) {
-                Label("Reveal in Finder", systemImage: "finder")
+                Image(systemName: "finder")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
             .help("Reveal the selected package item in Finder")
+
+            Button {
+                isShowingInspectorDrawer.toggle()
+            } label: {
+                Image(systemName: "sidebar.right")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help(isShowingInspectorDrawer ? "Hide inspector" : "Show inspector")
         }
     }
 
@@ -335,11 +376,29 @@ extension SkillDraftDetailView {
         .padding(24)
     }
 
-    var inspectorPane: some View {
+    func inspectorDrawer(maxHeight: CGFloat) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
+                HStack(spacing: 12) {
+                    Text("Inspector")
+                        .font(PH.Font.sectionHead)
+                        .foregroundStyle(PH.Color.secondary)
+                        .textCase(.uppercase)
+                        .tracking(0.6)
+                    Spacer(minLength: 0)
+                    Button {
+                        isShowingInspectorDrawer = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(PH.Color.secondary)
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Hide inspector")
+                }
+
                 SkillLibraryInspectorCard {
-                    PHSectionHead(systemImage: "slider.horizontal.3", label: "Inspector")
                     SkillLibraryMetadataBlock(title: "Draft", rows: [
                         ("Name", skill.displayName),
                         ("Category", skill.category),
@@ -457,7 +516,14 @@ extension SkillDraftDetailView {
             }
             .padding(20)
         }
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.55))
+        .frame(width: 320, alignment: .topLeading)
+        .frame(maxHeight: maxHeight, alignment: .top)
+        .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(PH.Color.strokeSoft, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 18, x: 0, y: 12)
     }
 
     var newItemSheet: some View {
@@ -561,6 +627,14 @@ extension SkillDraftDetailView {
             isLoadingPackage = false
             showToastMsg("Failed to load draft package: \(error.localizedDescription)")
         }
+    }
+
+    func ensureValidSelection() {
+        guard !packageItems.isEmpty else { return }
+        guard selectedPackageItem == nil else { return }
+        selectedRelativePath = preferredSelectionPath(from: packageItems) ?? packageItems.first?.relativePath ?? "SKILL.md"
+        expandHierarchy(for: selectedRelativePath)
+        loadSelectedItemContents()
     }
 
     func selectPackageItem(_ item: SkillDraftPackageItem) {

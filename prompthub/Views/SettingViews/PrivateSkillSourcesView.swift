@@ -8,7 +8,7 @@ struct PrivateSkillSourcesView: View {
     @State private var editingSource: PrivateSkillSource?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 18) {
             privateSourcesCallout
             if store.sources.isEmpty { emptyState } else { sourcesList }
         }
@@ -26,85 +26,72 @@ struct PrivateSkillSourcesView: View {
         }
     }
 
-    // MARK: - Onboarding Callout
-
     private var privateSourcesCallout: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "lock.shield.fill")
-                    .foregroundStyle(Color.purple)
-                    .font(.callout)
-                Text("What are Private Sources?")
-                    .font(.subheadline.weight(.semibold))
-            }
+        SettingsInfoBanner(icon: "lock.shield.fill", tint: PH.Color.accent) {
+            Text("Private sources let PromptHub load internal skills from a private GitHub repository or a shared folder.")
+                .font(PH.Font.rowName)
+                .foregroundStyle(PH.Color.primary)
 
             VStack(alignment: .leading, spacing: 6) {
-                PrivateSourceTip(
-                    icon: "building.2",
-                    text: "Connect a **private GitHub repo** (e.g. `owner/repo` → `SKILL.md` files inside) to install your team's internal skills."
-                )
-                PrivateSourceTip(
-                    icon: "folder.badge.person.crop",
-                    text: "Or point to a **local directory** on disk that contains `SKILL.md` files — great for monorepos."
-                )
-                PrivateSourceTip(
-                    icon: "key",
-                    text: "GitHub Private repos require a **Personal Access Token** with `repo` (read) scope. Tokens are stored in the macOS Keychain."
-                )
-                PrivateSourceTip(
-                    icon: "square.and.arrow.down",
-                    text: "Once added, install skills from private sources via **Skill Store → ↓ → Install from Private Source…**"
-                )
+                PrivateSourceTip(icon: "building.2", text: "Use `owner/repo` for GitHub sources.")
+                PrivateSourceTip(icon: "folder.badge.person.crop", text: "Use an absolute filesystem path for shared folders.")
+                PrivateSourceTip(icon: "key", text: "GitHub tokens stay in the macOS Keychain.")
+                PrivateSourceTip(icon: "square.and.arrow.down", text: "Install from these sources through Skill Store.")
             }
         }
-        .padding(12)
-        .background(Color.purple.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.purple.opacity(0.15), lineWidth: 1))
     }
-
-    // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "lock.rectangle.stack").font(.system(size: 32)).foregroundStyle(.secondary)
-            Text("No Private Sources").font(.headline)
-            Text("Add a private GitHub repo or team-shared directory to install skills that aren't in the public registry.")
-                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 360)
-            Button("Add Private Source…") { showingAddSheet = true }.buttonStyle(.borderedProminent)
+        SettingsCard(title: "Sources", icon: "lock.rectangle.stack") {
+            VStack(spacing: 12) {
+                Image(systemName: "lock.rectangle.stack")
+                    .font(.system(size: 30))
+                    .foregroundStyle(PH.Color.tertiary)
+                Text("No Private Sources")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(PH.Color.primary)
+                Text("Add a private GitHub repo or shared directory to install skills that are not in the public catalog.")
+                    .font(PH.Font.body)
+                    .foregroundStyle(PH.Color.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+                Button("Add Private Source") { showingAddSheet = true }
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 28)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 24)
     }
 
-    // MARK: - Sources List
-
     private var sourcesList: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Private Skill Sources").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                Spacer()
-                Button { showingAddSheet = true } label: { Label("Add", systemImage: "plus") }
-                    .buttonStyle(.borderedProminent).controlSize(.small)
-            }
-            VStack(spacing: 0) {
-                ForEach(store.sources) { source in
-                    PrivateSkillSourceRow(source: source, hasToken: store.hasToken(for: source.id))
-                        .contextMenu {
-                            Button("Edit…") { editingSource = source }
-                            Divider()
-                            Button("Delete", role: .destructive) { store.remove(id: source.id) }
-                        }
-                        .onTapGesture(count: 2) { editingSource = source }
-                    if source.id != store.sources.last?.id { Divider() }
+        SettingsCard(title: "Private Skill Sources", icon: "externaldrive.connected.to.line.below") {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Text("\(store.sources.count) connected")
+                        .font(PH.Font.rowSub)
+                        .foregroundStyle(PH.Color.secondary)
+
+                    Spacer()
+
+                    Button("Add Source") { showingAddSheet = true }
+                        .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
+                }
+
+                VStack(spacing: 10) {
+                    ForEach(store.sources) { source in
+                        PrivateSkillSourceRow(source: source, hasToken: store.hasToken(for: source.id))
+                            .contextMenu {
+                                Button("Edit…") { editingSource = source }
+                                Divider()
+                                Button("Delete", role: .destructive) { store.remove(id: source.id) }
+                            }
+                            .onTapGesture(count: 2) { editingSource = source }
+                    }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor), lineWidth: 0.5))
         }
     }
 }
-
-// MARK: - Tip Row
 
 private struct PrivateSourceTip: View {
     let icon: String
@@ -114,14 +101,13 @@ private struct PrivateSourceTip: View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: icon)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(PH.Color.secondary)
                 .frame(width: 14, alignment: .center)
                 .padding(.top, 2)
             Text(text)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(PH.Font.rowSub)
+                .foregroundStyle(PH.Color.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
-

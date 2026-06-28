@@ -99,7 +99,12 @@ extension SkillStoreView {
     }
 
     var skillBrowser: some View {
-        WorkspaceSplitShell { skillListPane } detail: { skillDetailPane }
+        WorkspaceSplitShell(
+            sidebarMinWidth: 240,
+            sidebarIdealWidth: 300,
+            sidebarMaxWidth: 380,
+            detailMinWidth: 280
+        ) { skillListPane } detail: { skillDetailPane }
     }
 
     var skillListPane: some View {
@@ -111,41 +116,8 @@ extension SkillStoreView {
                     Spacer()
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(Color(NSColor.controlBackgroundColor))
+                .background(PH.Color.sidebarBg)
             }
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Loaded Catalog")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-
-                Text(searchText.isEmpty
-                     ? "Toolbar search filters the currently loaded catalog locally. Refresh only reloads catalog data."
-                     : "Showing local matches for \"\(searchText)\" inside the current catalog snapshot.")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color(NSColor.windowBackgroundColor).opacity(0.9))
-
-            HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Results")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                    Text(searchText.isEmpty
-                         ? "\(filteredAvailableSkills.count) catalog skills"
-                         : "\(filteredAvailableSkills.count) of \(availableSkills.count) catalog skills")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color(NSColor.windowBackgroundColor).opacity(0.82))
 
             List {
                 if !filteredAvailableSkills.isEmpty {
@@ -177,7 +149,6 @@ extension SkillStoreView {
                 showingPrivateSourceInstall = true
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "lock.shield.fill").foregroundStyle(Color.purple).font(.caption)
                     Text("Install from a private source…")
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
@@ -186,11 +157,10 @@ extension SkillStoreView {
                 .padding(.horizontal, 14).padding(.vertical, 9)
             }
             .buttonStyle(.plain)
-            .background(Color(NSColor.controlBackgroundColor))
+            .background(PH.Color.sidebarBg)
             .overlay(Divider(), alignment: .top)
             .help("Install a skill from a private GitHub repo or local directory (Settings → Sources to configure)")
         }
-        .background(Color(NSColor.controlBackgroundColor))
     }
 
     @ViewBuilder

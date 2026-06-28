@@ -22,11 +22,12 @@ struct ServicePicker: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Service")
-                .font(.subheadline.bold())
-                .foregroundColor(.secondary)
-            
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsFieldLabel(
+                "Active Service",
+                caption: "Switch the provider whose endpoint, token, and preferred model you're editing."
+            )
+
             Picker("", selection: selectedServiceIDBinding) {
                 Text("None").tag(String?.none)
                 ForEach(manager.services) { service in

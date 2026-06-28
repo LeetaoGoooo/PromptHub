@@ -18,11 +18,8 @@ struct ServiceForm: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Host
             VStack(alignment: .leading, spacing: 4) {
-                Text("Host")
-                    .font(.subheadline.bold())
-                    .foregroundColor(.secondary)
+                SettingsFieldLabel("Host", caption: "The base API URL used for this provider.")
                 TextField("https://api.openai.com/v1", text: $service.host)
                     .autocorrectionDisabled()
                     .textContentType(.URL)
@@ -32,11 +29,8 @@ struct ServiceForm: View {
                     }
             }
 
-            // Token
             VStack(alignment: .leading, spacing: 4) {
-                Text("Token")
-                    .font(.subheadline.bold())
-                    .foregroundColor(.secondary)
+                SettingsFieldLabel("Token", caption: "Stored locally. Leave it visible only when you need to inspect or paste it.")
                 HStack(spacing: 6) {
                     if showToken {
                         TextField("sk-...", text: $service.token)
@@ -60,12 +54,9 @@ struct ServiceForm: View {
                 }
             }
 
-            // Models
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("Model")
-                        .font(.subheadline.bold())
-                        .foregroundColor(.secondary)
+                    SettingsFieldLabel("Preferred Model")
                     Spacer()
                     if isLoadingModels {
                         ProgressView()
@@ -86,6 +77,12 @@ struct ServiceForm: View {
                 })
             }
         }
+        .padding(16)
+        .background(PH.Color.buttonBg, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(PH.Color.buttonBorder, lineWidth: 1)
+        )
         .onAppear(perform: handleLoadModels)
     }
 

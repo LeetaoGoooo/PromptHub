@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptHub · Prompts</title>
+<style>
+  :root {
+    --bg:#fff; --sidebar:#f2f2f4; --sep:#e6e6e8; --sep-soft:#efeff1;
+    --text:#1d1d1f; --text-2:#86868b; --text-3:#aeaeb2;
+    --accent:#0a6cff; --sel:#e8e8ea; --hover:#00000008; --radius:6px;
+    --var:#8a5cf6; --var-bg:rgba(138,92,246,0.12);
+  }
+  @media (prefers-color-scheme: dark){:root{--bg:#1e1e1e;--sidebar:#262628;--sep:#3a3a3c;--sep-soft:#323234;--text:#f5f5f7;--text-2:#98989d;--text-3:#636366;--sel:#3a3a3c;--hover:#ffffff0d;--var-bg:rgba(138,92,246,0.22);}}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,"SF Pro Text","PingFang SC",sans-serif;background:#d9d9dc;color:var(--text);font-size:13px;-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;height:100vh}
+  .window{width:1100px;height:720px;background:var(--bg);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.28);border:.5px solid rgba(0,0,0,.18)}
+  .toolbar{height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--sidebar);border-bottom:.5px solid var(--sep);flex-shrink:0}
+  .traffic{display:flex;gap:8px}.traffic span{width:12px;height:12px;border-radius:50%}.t1{background:#ff5f57}.t2{background:#febc2e}.t3{background:#28c840}
+  .tb-title{font-weight:600;font-size:14px;margin-left:6px}
+  .spacer{flex:1}
+  .search{width:190px;height:28px;border-radius:7px;border:none;background:rgba(0,0,0,.06);padding:0 10px 0 28px;font-size:13px;color:var(--text);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23aeaeb2' stroke-width='2'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.5' y2='16.5'/></svg>");background-repeat:no-repeat;background-position:9px center}
+  .search::placeholder{color:var(--text-3)}
+  .icon-btn{width:30px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .icon-btn:hover{background:rgba(0,0,0,.06)}
+  .body{flex:1;display:flex;min-height:0}
+
+  /* Sidebar */
+  .sidebar{width:210px;background:var(--sidebar);border-right:.5px solid var(--sep);padding:8px;overflow-y:auto;flex-shrink:0}
+  .grp{margin-bottom:16px}
+  .grp-title{font-size:11px;font-weight:600;color:var(--text-3);padding:4px 8px;text-transform:uppercase;letter-spacing:.3px}
+  .item{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px;border-radius:var(--radius);cursor:pointer;color:var(--text);user-select:none}
+  .item:hover{background:var(--hover)}
+  .item.on{background:var(--sel)}
+  .item svg{width:15px;height:15px;stroke:var(--text-2);flex-shrink:0}
+  .item.on svg{stroke:var(--accent)}
+  .item .lbl{flex:1;font-size:13px}
+  .item .cnt{color:var(--text-3);font-size:12px;font-variant-numeric:tabular-nums}
+  .item.sub{padding-left:16px;height:26px}
+
+  /* List */
+  .list{width:290px;border-right:.5px solid var(--sep);display:flex;flex-direction:column;flex-shrink:0;background:var(--bg)}
+  .list-bar{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:.5px solid var(--sep-soft);flex-shrink:0;color:var(--text-2);font-size:12px}
+  .list-bar .filter{cursor:pointer;display:flex;align-items:center;gap:4px}
+  .scroll{flex:1;overflow-y:auto;padding:4px 0}
+  .row{display:flex;flex-direction:column;padding:8px 14px;margin:0 6px;border-radius:var(--radius);cursor:pointer;gap:2px}
+  .row:hover{background:var(--hover)}
+  .row.on{background:var(--accent)}
+  .row.on .r-name,.row.on .r-desc,.row.on .r-meta{color:#fff}
+  .row.on .r-meta{opacity:.82}
+  .r-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .r-desc{font-size:12px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .r-meta{font-size:11px;color:var(--text-3);margin-top:3px}
+
+  /* Detail = editor + inspector sections */
+  .detail{flex:1;background:var(--bg);overflow-y:auto}
+  .d-inner{padding:22px 26px 48px;max-width:600px}
+  .d-top{display:flex;align-items:flex-start;gap:12px}
+  .d-h{flex:1;min-width:0}
+  .d-h h1{font-size:19px;font-weight:600;letter-spacing:-.2px}
+  .d-h .sub{color:var(--text-2);font-size:13px;margin-top:3px}
+  .d-actions{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+  .btn{height:28px;padding:0 14px;border-radius:7px;border:.5px solid var(--sep);background:var(--bg);font-size:13px;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{background:var(--hover)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+  .btn.primary:hover{background:#0a60e0}
+  .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+  .sec{margin-top:26px}
+  .sec-h{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:9px;display:flex;align-items:center}
+  .sec-h .r{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text-3)}
+
+  /* editor */
+  .editor{border:.5px solid var(--sep);border-radius:8px;padding:16px 18px;background:var(--sidebar);font-size:13.5px;line-height:1.7;color:var(--text);min-height:140px}
+  .v{background:var(--var-bg);color:var(--var);border-radius:4px;padding:1px 5px;font-weight:500;font-family:ui-monospace,"SF Mono",monospace;font-size:12.5px}
+
+  /* grouped inset list */
+  .group{border:.5px solid var(--sep);border-radius:8px;overflow:hidden}
+  .grow{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:.5px solid var(--sep-soft)}
+  .grow:last-child{border-bottom:0}
+  .grow .k{flex:1;font-size:13px}
+  .grow .k small{display:block;color:var(--text-2);font-size:11.5px;margin-top:1px}
+  .grow .v2{color:var(--text-2);font-size:12.5px;font-variant-numeric:tabular-nums}
+  .vinput{height:26px;border:.5px solid var(--sep);border-radius:6px;padding:0 9px;font-size:12.5px;width:160px;background:var(--bg);color:var(--text)}
+  .vtag{font-family:ui-monospace,"SF Mono",monospace;font-size:12px;color:var(--var);background:var(--var-bg);border-radius:4px;padding:1px 6px}
+
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;border:.5px solid var(--sep);border-radius:8px;overflow:hidden}
+  .mcell{padding:11px 14px;border-right:.5px solid var(--sep-soft);border-bottom:.5px solid var(--sep-soft)}
+  .mcell:nth-child(2n){border-right:0}.mcell:nth-last-child(-n+2){border-bottom:0}
+  .mcell .ck{font-size:11.5px;color:var(--text-2)}
+  .mcell .cv{font-size:14px;font-weight:500;margin-top:3px}
+
+  .hist .grow .badge{font-family:ui-monospace,"SF Mono",monospace;font-size:11.5px;color:var(--text-2);background:var(--sidebar);border:.5px solid var(--sep);border-radius:5px;padding:1px 7px}
+  .note{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:#fff;padding:7px 15px;border-radius:18px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="toolbar">
+    <div class="traffic"><span class="t1"></span><span class="t2"></span><span class="t3"></span></div>
+    <span class="tb-title">Prompts</span>
+    <div class="spacer"></div>
+    <input class="search" placeholder="搜索">
+    <button class="icon-btn" title="新建 Prompt"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+  </div>
+
+  <div class="body">
+    <!-- Sidebar (同一套三区,当前在 Prompts·我的) -->
+    <div class="sidebar">
+      <div class="grp">
+        <div class="grp-title">Prompts</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span class="lbl">全部</span><span class="cnt">48</span></div>
+        <div class="item on"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="lbl">我的</span><span class="cnt">31</span></div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg><span class="lbl">共享</span><span class="cnt">9</span></div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="lbl">探索</span></div>
+      </div>
+      <div class="grp">
+        <div class="grp-title">Skills</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span class="lbl">已安装</span><span class="cnt">11</span></div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="lbl">我的草稿</span><span class="cnt">6</span></div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span class="lbl">商店目录</span></div>
+      </div>
+      <div class="grp">
+        <div class="grp-title">Agents</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span class="lbl">Workspaces</span><span class="cnt">5</span></div>
+      </div>
+    </div>
+
+    <!-- List: prompts -->
+    <div class="list">
+      <div class="list-bar"><span>31 项</span><span class="filter">最近更新 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="scroll">
+        <div class="row on"><div class="r-name">Landing Page Review</div><div class="r-desc">评审落地页文案,给出改进建议</div><div class="r-meta">v3 · 2 天前 · 已共享</div></div>
+        <div class="row"><div class="r-name">Cold Email Writer</div><div class="r-desc">根据目标客户生成冷启动邮件</div><div class="r-meta">v5 · 昨天</div></div>
+        <div class="row"><div class="r-name">PRD 摘要器</div><div class="r-desc">把长 PRD 压缩成要点清单</div><div class="r-meta">v2 · 上周</div></div>
+        <div class="row"><div class="r-name">Bug 复现步骤生成</div><div class="r-desc">从描述整理可复现步骤</div><div class="r-meta">v1 · 上周</div></div>
+        <div class="row"><div class="r-name">周报助手</div><div class="r-desc">把零散记录整理成结构化周报</div><div class="r-meta">v4 · 2 周前</div></div>
+      </div>
+    </div>
+
+    <!-- Detail: editor + inspector 区块 -->
+    <div class="detail">
+      <div class="d-inner">
+        <div class="d-top">
+          <div class="d-h">
+            <h1>Landing Page Review</h1>
+            <div class="sub">评审落地页文案,给出可执行的改进建议</div>
+          </div>
+        </div>
+
+        <div class="d-actions">
+          <button class="btn primary"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>多模型测试</button>
+          <button class="btn"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>渲染变量</button>
+          <button class="btn"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.8H20l-4.9 3.6L17 18l-5-3.6L7 18l1.9-5.6L4 8.8h6.1Z"/></svg>优化</button>
+          <button class="btn"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>共享</button>
+        </div>
+
+        <!-- 编辑器 -->
+        <div class="sec">
+          <div class="sec-h">正文 <span class="r">v3 · 可编辑</span></div>
+          <div class="editor">你是资深转化文案专家。请评审品牌 <span class="v">{{brand}}</span> 面向 <span class="v">{{audience}}</span> 的落地页文案。
+
+按以下维度打分(1–5)并给出修改建议:
+价值主张清晰度 · 行动号召强度 · 信任背书 · 可读性。
+
+最后给出一段重写后的首屏文案。</div>
+        </div>
+
+        <!-- 变量 -->
+        <div class="sec">
+          <div class="sec-h">变量 <span class="r">检测到 2 个</span></div>
+          <div class="group">
+            <div class="grow"><div class="k"><span class="vtag">{{brand}}</span></div><input class="vinput" value="Acme" placeholder="brand"></div>
+            <div class="grow"><div class="k"><span class="vtag">{{audience}}</span></div><input class="vinput" value="设计师" placeholder="audience"></div>
+          </div>
+        </div>
+
+        <!-- 信息 (Inspector) -->
+        <div class="sec">
+          <div class="sec-h">信息</div>
+          <div class="meta-grid">
+            <div class="mcell"><div class="ck">版本</div><div class="cv">v3</div></div>
+            <div class="mcell"><div class="ck">标签</div><div class="cv">营销 · 文案</div></div>
+            <div class="mcell"><div class="ck">创建</div><div class="cv">3 周前</div></div>
+            <div class="mcell"><div class="ck">更新</div><div class="cv">2 天前</div></div>
+          </div>
+        </div>
+
+        <!-- 配置 -->
+        <div class="sec">
+          <div class="sec-h">默认配置</div>
+          <div class="group">
+            <div class="grow"><div class="k">模型</div><div class="v2">GPT-4o</div></div>
+            <div class="grow"><div class="k">Temperature</div><div class="v2">0.7</div></div>
+          </div>
+        </div>
+
+        <!-- 共享 -->
+        <div class="sec">
+          <div class="sec-h">共享</div>
+          <div class="group">
+            <div class="grow"><div class="k">社区可见性 <small>community.prompthub · 公开</small></div><div class="v2">已公开</div></div>
+          </div>
+        </div>
+
+        <!-- 历史 -->
+        <div class="sec hist">
+          <div class="sec-h">历史 <span class="r">3 个版本</span></div>
+          <div class="group">
+            <div class="grow"><span class="badge">v3</span><div class="k">加入信任背书维度 <small>2 天前</small></div></div>
+            <div class="grow"><span class="badge">v2</span><div class="k">补充重写首屏要求 <small>上周</small></div></div>
+            <div class="grow"><span class="badge">v1</span><div class="k">初始版本 <small>3 周前</small></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">Prompts 选中态 · 编辑器 + 变量 + Inspector(信息/配置/共享/历史)行内分组 · 「多模型测试」为主操作</div>
+
+<script>
+  document.querySelectorAll('.sidebar .item').forEach(f=>f.addEventListener('click',()=>{document.querySelectorAll('.sidebar .item').forEach(x=>x.classList.remove('on'));f.classList.add('on');}));
+  document.querySelectorAll('.row').forEach(r=>r.addEventListener('click',()=>{document.querySelectorAll('.row').forEach(x=>x.classList.remove('on'));r.classList.add('on');}));
+</script>
+</body>
+</html>

@@ -10,84 +10,54 @@ struct CLIAccessManagerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // ── Header ───────────────────────────────────────────────────
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Label("CLI File Access", systemImage: "lock.shield")
-                        .font(.title2.bold())
-                    Spacer()
-                    // Overall status badge
-                    HStack(spacing: 5) {
-                        Circle()
-                            .fill(grantedCount > 0 ? Color.green : Color.secondary)
-                            .frame(width: 8, height: 8)
-                        Text("\(grantedCount)/\(totalCount) Authorized")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .clipShape(Capsule())
-                }
+            SettingsScreenContainer {
+                SettingsHero(
+                    eyebrow: "Permissions",
+                    title: "CLI File Access",
+                    description: "PromptHub needs directory access for each agent config location. In the Finder picker, press Cmd+Shift+. to reveal hidden folders.",
+                    actions: AnyView(SettingsTag(text: "\(grantedCount)/\(totalCount) Authorized", tint: allGranted ? PH.Color.statusOK : PH.Color.statusWarn))
+                )
 
-                Text("PromptHub needs permission to read and write each agent's config directory. Press **Cmd+Shift+.** in the Finder panel to show hidden folders.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 14)
-
-            Divider()
-
-            // ── Agent list ───────────────────────────────────────────────
-            ScrollView {
-                VStack(spacing: 1) {
-                    ForEach(CLIDirectory.allCases) { directory in
-                        CLIAccessRow(
-                            directory: directory,
-                            isGranted: accessManager.grantedDirectories.contains(directory),
-                            onGrant: { accessManager.requestAccess(for: directory) },
-                            onRevoke: { accessManager.revokeAccess(for: directory) }
-                        )
-                        if directory != CLIDirectory.allCases.last {
-                            Divider().padding(.leading, 60)
+                SettingsCard(title: "Directories", icon: "folder.badge.gearshape") {
+                    VStack(spacing: 10) {
+                        ForEach(CLIDirectory.allCases) { directory in
+                            CLIAccessRow(
+                                directory: directory,
+                                isGranted: accessManager.grantedDirectories.contains(directory),
+                                onGrant: { accessManager.requestAccess(for: directory) },
+                                onRevoke: { accessManager.revokeAccess(for: directory) }
+                            )
                         }
                     }
                 }
             }
-            .frame(minHeight: 300)
 
             Divider()
 
-            // ── Footer ───────────────────────────────────────────────────
             HStack {
                 if !allGranted {
-                    Button {
+                    Button("Authorize All") {
                         for dir in CLIDirectory.allCases where !accessManager.grantedDirectories.contains(dir) {
                             accessManager.requestAccess(for: dir)
                         }
-                    } label: {
-                        Label("Authorize All", systemImage: "lock.open")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
                 }
+
                 Spacer()
+
                 Button("Done") { dismiss() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(PHChromeButtonStyle(emphasis: .accent))
                     .keyboardShortcut(.defaultAction)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
+            .background(PH.Color.windowBg)
         }
-        .frame(width: 520, height: 480)
-        .background(Color(NSColor.windowBackgroundColor))
+        .frame(width: 620, height: 560)
+        .background(PH.Color.windowBg)
     }
 }
-
-// MARK: - Row
 
 private struct CLIAccessRow: View {
     let directory: CLIDirectory
@@ -97,43 +67,37 @@ private struct CLIAccessRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            // Status circle
             ZStack {
                 Circle()
-                    .fill(isGranted ? Color.green.opacity(0.12) : Color(NSColor.separatorColor).opacity(0.25))
+                    .fill((isGranted ? PH.Color.statusOK : PH.Color.tertiary).opacity(0.12))
                     .frame(width: 38, height: 38)
                 Image(systemName: isGranted ? "checkmark.lock.fill" : "lock.fill")
                     .font(.system(size: 14))
-                    .foregroundStyle(isGranted ? .green : .secondary)
+                    .foregroundStyle(isGranted ? PH.Color.statusOK : PH.Color.secondary)
             }
 
-            // Name + path
             VStack(alignment: .leading, spacing: 2) {
                 Text(directory.displayName)
-                    .font(.callout.weight(.medium))
+                    .font(PH.Font.rowName)
+                    .foregroundStyle(PH.Color.primary)
                 Text("~/\(directory.rawValue)/")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
+                    .font(PH.Font.mono)
+                    .foregroundStyle(PH.Color.secondary)
             }
 
             Spacer()
 
-            // Action button
-            if isGranted {
-                Button("Revoke") { onRevoke() }
-                    .buttonStyle(.bordered)
-                    .tint(.red)
-                    .controlSize(.small)
-            } else {
-                Button("Grant Access") { onGrant() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
+            Button(isGranted ? "Revoke" : "Grant Access") {
+                isGranted ? onRevoke() : onGrant()
             }
+            .buttonStyle(PHChromeButtonStyle(emphasis: isGranted ? .standard : .accent))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color(NSColor.windowBackgroundColor))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(PH.Color.buttonBg, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(PH.Color.buttonBorder, lineWidth: 1)
+        )
     }
 }
-

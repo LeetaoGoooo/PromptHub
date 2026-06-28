@@ -61,10 +61,10 @@ struct OnboardingView: View {
                         )
                         OnboardingStepTile(
                             number: 3,
-                            title: "Set Up CLI Integration",
-                            description: "This is what makes PromptHub different. Connect your agent folders here, then install the `ph` CLI with `brew install dosomeforfun/prompthub/ph` to read the same exports, install skills, and run `ph doctor` from your terminal or CI.",
+                            title: "Set Up Skill Access",
+                            description: "Grant access to your agent folders and choose a project folder when you need project-scoped installs. You can also install the `ph` CLI with `brew install dosomeforfun/prompthub/ph` to script prompt exports and skill installs from your terminal or CI.",
                             isDone: cliConnected,
-                            ctaText: cliConnected ? "CLI connected" : "Set up now",
+                            ctaText: cliConnected ? "Access configured" : "Open settings",
                             isHighlighted: true,
                             ctaAction: goToCLI
                         )
@@ -86,7 +86,7 @@ struct OnboardingView: View {
                         .controlSize(.large)
 
                         Button(action: goToCLI) {
-                            Label("Set Up CLI", systemImage: "terminal")
+                            Label("Open Skill Access", systemImage: "terminal")
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.large)

@@ -17,7 +17,7 @@ struct ServicesView: View {
     var body: some View {
         @Bindable var manager = manager
 
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 16) {
             ServicePicker()
 
             Group {
@@ -30,6 +30,8 @@ struct ServicesView: View {
                         systemImage: "square.stack.3d.up.slash",
                         description: Text("Please select a service from the list above.")
                     )
+                    .frame(maxWidth: .infinity, minHeight: 180)
+                    .background(PH.Color.buttonBg, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
         }

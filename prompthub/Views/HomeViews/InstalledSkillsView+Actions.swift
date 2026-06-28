@@ -15,8 +15,7 @@ extension InstalledSkillsView {
         isLoadingStructuralQuality = true
         installedWorkspaceStore.refresh(
             authoredDraftCount: skillDrafts.count,
-            hasCLIAccess: cliAccessManager.anyAccessGranted,
-            lens: installedSkillsLens
+            hasCLIAccess: cliAccessManager.anyAccessGranted
         )
     }
 
@@ -85,14 +84,12 @@ extension InstalledSkillsView {
     }
 
     func allowsMutation(for skill: InstalledSkillSnapshot) -> Bool {
-        if installedSkillsLens == .allSavedProjects && !skill.isGlobal {
-            return false
-        }
         return true
     }
 
     func openDraft(for installedSkill: InstalledSkillSnapshot) {
         installedWorkspaceStore.setError(nil)
+        openingDraftForSkillID = installedSkill.id
         Task {
             do {
                 let draft = try await draftService.openOrCreateDraft(
@@ -101,14 +98,25 @@ extension InstalledSkillsView {
                     in: modelContext,
                     projectRootURL: installedSkill.isGlobal ? nil : workspaceService.selectedProjectRootURL
                 )
-                onSelectSkillDraft(draft)
+                await MainActor.run {
+                    editingInstalledSkillID = installedSkill.id
+                    editingDraftSheet = draft
+                    openingDraftForSkillID = nil
+                }
             } catch {
-                installedWorkspaceStore.setError(draftServiceErrorMessage(for: error, skill: installedSkill))
+                await MainActor.run {
+                    openingDraftForSkillID = nil
+                    installedWorkspaceStore.setError(draftServiceErrorMessage(for: error, skill: installedSkill))
+                }
             }
         }
     }
 
     func syncSelection() {
+        guard !filteredSkills.isEmpty else {
+            return
+        }
+
         if !filteredSkills.contains(where: { $0.id == selectedSkillID }) {
             selectedSkillID = filteredSkills.first?.id
         }
@@ -149,6 +157,7 @@ extension InstalledSkillsView {
         let remoteSkills = installedSkills.filter { $0.package.remoteInstallDescriptor != nil }
         guard !remoteSkills.isEmpty else { return }
         isCheckingUpdates = true
+        selectedUpdateSkillIDs.removeAll()
         Task {
             await withTaskGroup(of: (String, Bool).self) { group in
                 for skill in remoteSkills {
@@ -164,6 +173,82 @@ extension InstalledSkillsView {
                 skillsWithUpdates = updates
             }
             isCheckingUpdates = false
+        }
+    }
+
+    var updateEligibleSkills: [InstalledSkillSnapshot] {
+        filteredSkills.filter { skillsWithUpdates.contains($0.id) }
+    }
+
+    var updateSelectionActive: Bool {
+        !skillsWithUpdates.isEmpty
+    }
+
+    func toggleUpdateSelection(for skill: InstalledSkillSnapshot) {
+        guard skillsWithUpdates.contains(skill.id) else { return }
+        if selectedUpdateSkillIDs.contains(skill.id) {
+            selectedUpdateSkillIDs.remove(skill.id)
+        } else {
+            selectedUpdateSkillIDs.insert(skill.id)
+        }
+    }
+
+    func clearUpdateSelection() {
+        selectedUpdateSkillIDs.removeAll()
+    }
+
+    func selectAllVisibleUpdates() {
+        selectedUpdateSkillIDs = Set(updateEligibleSkills.map(\.id))
+    }
+
+    func applyUpdates(for skills: [InstalledSkillSnapshot]) {
+        let queuedSkills = skills.filter { skillsWithUpdates.contains($0.id) }
+        guard !queuedSkills.isEmpty else { return }
+
+        isApplyingBulkUpdates = true
+        installedWorkspaceStore.setError(nil)
+
+        Task {
+            var failedNames: [String] = []
+
+            for skill in queuedSkills {
+                _ = await MainActor.run { updatingSkillIDs.insert(skill.id) }
+                let preview = await workspaceService.previewUpdate(for: skill)
+
+                guard preview.status == .updateAvailable else {
+                    await MainActor.run {
+                        updatingSkillIDs.remove(skill.id)
+                        skillsWithUpdates.remove(skill.id)
+                        selectedUpdateSkillIDs.remove(skill.id)
+                    }
+                    continue
+                }
+
+                do {
+                    try await workspaceService.applyUpdate(preview: preview)
+                    NotificationCenter.default.post(name: .skillInstallationsDidChange, object: nil)
+                    await MainActor.run {
+                        updatingSkillIDs.remove(skill.id)
+                        skillsWithUpdates.remove(skill.id)
+                        selectedUpdateSkillIDs.remove(skill.id)
+                    }
+                } catch {
+                    failedNames.append(skill.displayName)
+                    _ = await MainActor.run {
+                        updatingSkillIDs.remove(skill.id)
+                    }
+                }
+            }
+
+            await MainActor.run {
+                isApplyingBulkUpdates = false
+                if failedNames.isEmpty {
+                    fetchInstalledSkills()
+                } else {
+                    installedWorkspaceStore.setError("Failed to update \(failedNames.joined(separator: ", ")).")
+                    fetchInstalledSkills()
+                }
+            }
         }
     }
 }

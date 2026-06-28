@@ -14,6 +14,7 @@
 		0E5749462E128445001CB54A /* GenKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E5749452E128445001CB54A /* GenKit */; };
 		0E96EE692E4310DF00F839F9 /* DifferenceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0E96EE682E4310DF00F839F9 /* DifferenceKit */; };
 		8A6F4AFC2F90000100E1A001 /* PromptHubSkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = 8A6F4AFB2F90000100E1A001 /* PromptHubSkillKit */; };
+		9AF000032F90000100E1A001 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 9AF000022F90000100E1A001 /* MarkdownUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +83,7 @@
 				0E96EE692E4310DF00F839F9 /* DifferenceKit in Frameworks */,
 				0E32437A2DEDCFC500581488 /* WhatsNewKit in Frameworks */,
 				0E3387D62E8288C2001A9004 /* KeyboardShortcuts in Frameworks */,
+				9AF000032F90000100E1A001 /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -149,6 +151,7 @@
 				0E96EE682E4310DF00F839F9 /* DifferenceKit */,
 				0E3387D52E8288C2001A9004 /* KeyboardShortcuts */,
 				8A6F4AFB2F90000100E1A001 /* PromptHubSkillKit */,
+				9AF000022F90000100E1A001 /* MarkdownUI */,
 			);
 			productName = prompthub;
 			productReference = 0E6CAD342D72E6CE001FD9B3 /* prompthub.app */;
@@ -240,6 +243,7 @@
 				0E5749442E128445001CB54A /* XCRemoteSwiftPackageReference "swift-gen-kit" */,
 				0E96EE672E4310DF00F839F9 /* XCRemoteSwiftPackageReference "DifferenceKit" */,
 				0E3387D42E8288C2001A9004 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				9AF000012F90000100E1A001 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				8A6F4AFA2F90000100E1A001 /* XCLocalSwiftPackageReference "PromptHubSkillKit" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -674,6 +678,14 @@
 				minimumVersion = 1.3.0;
 			};
 		};
+		9AF000012F90000100E1A001 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -711,6 +723,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 8A6F4AFA2F90000100E1A001 /* XCLocalSwiftPackageReference "PromptHubSkillKit" */;
 			productName = PromptHubSkillKit;
+		};
+		9AF000022F90000100E1A001 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9AF000012F90000100E1A001 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

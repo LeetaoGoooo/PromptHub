@@ -209,7 +209,18 @@ struct SkillLibraryHeaderCard<Accessory: View>: View {
 
 // MARK: - Screen Layout
 
-struct SkillLibraryScreen<Accessory: View, Content: View>: View {
+struct SkillLibraryScreen<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(PH.Color.windowBg.ignoresSafeArea())
+    }
+}
+
+// MARK: - Legacy SkillLibraryScreenWithHeader (for backward compatibility)
+struct SkillLibraryScreenWithHeader<Accessory: View, Content: View>: View {
     let title: String
     let subtitle: String
     let metrics: [SkillLibraryMetric]
@@ -251,6 +262,7 @@ struct WorkspaceSplitShell<Sidebar: View, Detail: View>: View {
     let sidebarIdealWidth: CGFloat
     let sidebarMaxWidth: CGFloat
     let detailMinWidth: CGFloat
+    let allowsSidebarResizing: Bool
     @ViewBuilder let sidebar: () -> Sidebar
     @ViewBuilder let detail: () -> Detail
 
@@ -259,6 +271,7 @@ struct WorkspaceSplitShell<Sidebar: View, Detail: View>: View {
         sidebarIdealWidth: CGFloat = 240,
         sidebarMaxWidth: CGFloat = 360,
         detailMinWidth: CGFloat = 320,
+        allowsSidebarResizing: Bool = false,
         @ViewBuilder sidebar: @escaping () -> Sidebar,
         @ViewBuilder detail: @escaping () -> Detail
     ) {
@@ -266,6 +279,7 @@ struct WorkspaceSplitShell<Sidebar: View, Detail: View>: View {
         self.sidebarIdealWidth = sidebarIdealWidth
         self.sidebarMaxWidth = sidebarMaxWidth
         self.detailMinWidth = detailMinWidth
+        self.allowsSidebarResizing = allowsSidebarResizing
         self.sidebar = sidebar
         self.detail = detail
     }
@@ -273,18 +287,13 @@ struct WorkspaceSplitShell<Sidebar: View, Detail: View>: View {
     var body: some View {
         HSplitView {
             sidebar()
-                .frame(
-                    minWidth: sidebarMinWidth,
-                    idealWidth: sidebarIdealWidth,
-                    maxWidth: sidebarMaxWidth,
-                    maxHeight: .infinity,
-                    alignment: .topLeading
-                )
+                .frame(minWidth: allowsSidebarResizing ? sidebarMinWidth : sidebarIdealWidth)
+                .frame(maxWidth: allowsSidebarResizing ? sidebarMaxWidth : sidebarIdealWidth)
                 .background(PH.Color.sidebarBg)
             detail()
-                .frame(minWidth: detailMinWidth, maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minWidth: detailMinWidth, maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PH.Color.windowBg)
     }
 }

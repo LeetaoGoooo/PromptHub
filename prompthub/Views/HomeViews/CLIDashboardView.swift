@@ -6,13 +6,12 @@ struct CLIDashboardView: View {
     @ObservedObject private var cliAccess = CLIDirectoryAccessManager.shared
     private let workspaceService = SkillWorkspaceService.shared
 
-    @State private var installedSkills: [InstalledSkillSnapshot] = []
-    @State private var loadingSkills = false
-    @State private var loadError: String?
     @State private var selectedDirectory: CLIDirectory?
+    @State private var selectedProjectRootURL: URL?
     @State private var showingAccessManager = false
     @State private var showingCLISettingsHint = false
     @State private var agentFilter: CLIAgentFilter = .all
+    @State private var sortOrder: CLIAgentSortOrder = .statusThenName
 
     private var grantedDirectories: [CLIDirectory] {
         CLIDirectory.allCases.filter { cliAccess.hasAccess(to: $0) }
@@ -29,21 +28,26 @@ struct CLIDashboardView: View {
         }
     }
 
-    private var totalInstalledCount: Int { installedSkills.count }
-
     private var selectedProjectLabel: String {
-        if let url = workspaceService.selectedProjectRootURL {
+        if let url = selectedProjectRootURL {
             return url.lastPathComponent + "/"
         }
         return "No project selected"
     }
 
-    private var projectSkills: [InstalledSkillSnapshot] {
-        installedSkills.filter { !$0.isGlobal }
+    private var connectedAgentCount: Int {
+        grantedDirectories.count
     }
 
-    private var globalSkills: [InstalledSkillSnapshot] {
-        installedSkills.filter { $0.isGlobal }
+    private var disconnectedAgentCount: Int {
+        CLIDirectory.allCases.count - grantedDirectories.count
+    }
+
+    private var selectedProjectMenuLabel: String {
+        if let url = selectedProjectRootURL {
+            return url.lastPathComponent
+        }
+        return "Active Project"
     }
 
     private var cliExecutablePath: String? {
@@ -56,16 +60,25 @@ struct CLIDashboardView: View {
     }
 
     var body: some View {
-        HSplitView {
-            agentListPane
-            agentDetailPane
-            inspectorColumn
+        VStack(spacing: 0) {
+            pageHeader
+            Divider().opacity(0.6)
+            HSplitView {
+                agentListPane
+                agentDetailPane
+                inspectorColumn
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(NSColor.windowBackgroundColor))
-        .task { await loadSkills() }
-        .onReceive(NotificationCenter.default.publisher(for: .skillInstallationsDidChange)) { _ in
-            Task { await loadSkills() }
+        .task {
+            selectedProjectRootURL = workspaceService.selectedProjectRootURL
+            if selectedDirectory == nil {
+                selectedDirectory = grantedDirectories.first ?? sortedDirectories.first
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .skillProjectSelectionDidChange)) { _ in
+            selectedProjectRootURL = workspaceService.selectedProjectRootURL
         }
         .sheet(isPresented: $showingAccessManager) {
             CLIAccessManagerView()
@@ -79,45 +92,75 @@ struct CLIDashboardView: View {
 
     // MARK: - List pane (left)
 
-    private var agentListPane: some View {
-        VStack(spacing: 0) {
-            // Compact header
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Image(systemName: "terminal")
-                        .foregroundStyle(PH.Color.accent)
-                        .font(.system(size: 14, weight: .medium))
-                    Text("CLI Agents")
-                        .font(PH.Font.paneTitle)
-                        .foregroundStyle(PH.Color.primary)
-                    if cliAccess.anyAccessGranted {
-                        StatusCapsule(title: "Active", tint: .green)
-                    }
-                }
-                HStack(spacing: PH.Spacing.rowItemGap) {
-                    HeaderMetric(title: "agents", value: "\(grantedDirectories.count)", systemImage: "cube")
-                    HeaderMetric(title: "skills", value: "\(totalInstalledCount)", systemImage: "wand.and.stars")
-                }
-                .font(.caption)
-            }
-            .padding(.horizontal, PH.Spacing.rowH)
-            .padding(.top, PH.Spacing.toolbarV + 4)
-            .padding(.bottom, PH.Spacing.toolbarV)
+    private var pageHeader: some View {
+        HStack(spacing: PH.Spacing.toolbarGap) {
+            Text("CLI Integrations")
+                .font(PH.Font.paneTitle)
+                .foregroundStyle(PH.Color.primary)
 
-            Divider().opacity(0.5)
+            Spacer(minLength: 24)
 
-            // Filter chips — pinned, no scroll
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: PH.Spacing.toolbarGap) {
-                    ForEach(CLIAgentFilter.allCases, id: \.rawValue) { filter in
-                        PHFilterChip(label: filter.rawValue, isActive: agentFilter == filter) {
-                            agentFilter = filter
+            Menu {
+                ForEach(CLIAgentFilter.allCases, id: \.rawValue) { filter in
+                    Button(action: { agentFilter = filter }) {
+                        if agentFilter == filter {
+                            Label(filter.rawValue, systemImage: "checkmark")
+                        } else {
+                            Text(filter.rawValue)
                         }
                     }
                 }
-                .padding(.horizontal, PH.Spacing.rowH)
-                .padding(.vertical, PH.Spacing.toolbarV)
+            } label: {
+                headerMenuLabel(title: "Filter", value: agentFilter.rawValue)
             }
+            .menuStyle(.borderlessButton)
+
+            Menu {
+                ForEach(CLIAgentSortOrder.allCases, id: \.rawValue) { option in
+                    Button(action: { sortOrder = option }) {
+                        if sortOrder == option {
+                            Label(option.rawValue, systemImage: "checkmark")
+                        } else {
+                            Text(option.rawValue)
+                        }
+                    }
+                }
+            } label: {
+                headerMenuLabel(title: "Sort", value: sortOrder.rawValue)
+            }
+            .menuStyle(.borderlessButton)
+
+            Menu {
+                Button("Choose Project Folder…", action: chooseProjectRoot)
+                if selectedProjectRootURL != nil {
+                    Divider()
+                    Button("Clear Project Folder") {
+                        workspaceService.setSelectedProjectRootURL(nil)
+                        selectedProjectRootURL = nil
+                    }
+                }
+            } label: {
+                headerMenuLabel(title: selectedProjectMenuLabel, value: "")
+            }
+            .menuStyle(.borderlessButton)
+        }
+        .padding(.horizontal, PH.Spacing.toolbarH)
+        .padding(.vertical, PH.Spacing.toolbarV)
+        .background(PH.Color.sidebarBg)
+    }
+
+    private var agentListPane: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: PH.Spacing.rowItemGap) {
+                HeaderMetric(title: "connected", value: "\(connectedAgentCount)", systemImage: "checkmark.circle")
+                HeaderMetric(title: "attention", value: "\(disconnectedAgentCount)", systemImage: "exclamationmark.circle")
+                Spacer(minLength: 0)
+                if cliAccess.anyAccessGranted {
+                    StatusCapsule(title: "Active", tint: .green)
+                }
+            }
+            .padding(.horizontal, PH.Spacing.rowH)
+            .padding(.vertical, PH.Spacing.toolbarV)
             .background(PH.Color.sidebarBg)
             .overlay(alignment: .bottom) { Divider().opacity(0.6) }
 
@@ -138,7 +181,6 @@ struct CLIDashboardView: View {
                             CLIAgentListRow(
                                 directory: directory,
                                 isGranted: cliAccess.hasAccess(to: directory),
-                                skills: skills(for: directory),
                                 isSelected: selectedDirectory == directory,
                                 onTap: { selectedDirectory = directory }
                             )
@@ -161,8 +203,6 @@ struct CLIDashboardView: View {
                 CLIAgentDetailContent(
                     directory: selectedDirectory,
                     isGranted: cliAccess.hasAccess(to: selectedDirectory),
-                    projectSkills: skills(for: selectedDirectory).filter { !$0.isGlobal },
-                    globalSkills: skills(for: selectedDirectory).filter { $0.isGlobal },
                     selectedProjectLabel: selectedProjectLabel
                 )
                 .padding(PH.Spacing.detailH)
@@ -202,65 +242,31 @@ struct CLIDashboardView: View {
     }
 
     private var filteredDirectories: [CLIDirectory] {
-        switch agentFilter {
-        case .all:       return sortedDirectories
-        case .connected: return sortedDirectories.filter { cliAccess.hasAccess(to: $0) }
-        case .attention: return sortedDirectories.filter { !cliAccess.hasAccess(to: $0) || skills(for: $0).isEmpty }
+        let base: [CLIDirectory] = switch agentFilter {
+        case .all:       sortedDirectories
+        case .connected: sortedDirectories.filter { cliAccess.hasAccess(to: $0) }
+        case .attention: sortedDirectories.filter { !cliAccess.hasAccess(to: $0) }
         }
-    }
 
-
-
-    @ViewBuilder
-    private func installedSkillsSection(title: String, subtitle: String, skills: [InstalledSkillSnapshot]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(title)
-                    .font(.headline)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
-            }
-
-            if skills.isEmpty {
-                Text("No installed skills in this scope yet.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            } else {
-                VStack(spacing: 10) {
-                    ForEach(skills) { skill in
-                        CLISkillActivityRow(skill: skill, selectedDirectory: selectedDirectory, selectedProjectName: nil)
-                    }
+        switch sortOrder {
+        case .statusThenName:
+            return base.sorted { lhs, rhs in
+                let lhsGranted = cliAccess.hasAccess(to: lhs)
+                let rhsGranted = cliAccess.hasAccess(to: rhs)
+                if lhsGranted != rhsGranted {
+                    return lhsGranted && !rhsGranted
                 }
+                return lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
+            }
+        case .nameAsc:
+            return base.sorted {
+                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+            }
+        case .nameDesc:
+            return base.sorted {
+                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedDescending
             }
         }
-    }
-
-    private func skills(for directory: CLIDirectory) -> [InstalledSkillSnapshot] {
-        installedSkills.filter { snapshot in
-            snapshot.agents.contains { $0.cliDirectory == directory }
-        }
-    }
-
-    @MainActor
-    private func loadSkills() async {
-        loadingSkills = true
-        loadError = nil
-        do {
-            let snapshot = try await workspaceService.loadInstalledWorkspace()
-            installedSkills = snapshot.installedSkills
-            if selectedDirectory == nil {
-                selectedDirectory = grantedDirectories.first ?? sortedDirectories.first
-            }
-        } catch {
-            loadError = error.localizedDescription
-        }
-        loadingSkills = false
     }
 
     private func chooseProjectRoot() {
@@ -272,6 +278,7 @@ struct CLIDashboardView: View {
         panel.message = "Choose the project folder whose CLI skill roots should be managed."
         guard panel.runModal() == .OK, let selectedURL = panel.url else { return }
         workspaceService.setSelectedProjectRootURL(selectedURL)
+        selectedProjectRootURL = selectedURL
     }
 
 }
@@ -290,6 +297,12 @@ private struct HeaderMetric: View {
         .font(.caption)
         .foregroundStyle(.secondary)
     }
+}
+
+private enum CLIAgentSortOrder: String, CaseIterable {
+    case statusThenName = "Status First"
+    case nameAsc        = "Name A–Z"
+    case nameDesc       = "Name Z–A"
 }
 
 private struct StatusCapsule: View {
@@ -317,17 +330,12 @@ private enum CLIAgentFilter: String, CaseIterable {
 private struct CLIAgentListRow: View {
     let directory: CLIDirectory
     let isGranted: Bool
-    let skills: [InstalledSkillSnapshot]
     let isSelected: Bool
     let onTap: () -> Void
 
-    private var statusDot: Color { isGranted && !skills.isEmpty ? PH.Color.statusOK : (isGranted ? PH.Color.statusWarn : PH.Color.secondary) }
+    private var statusDot: Color { isGranted ? PH.Color.statusOK : PH.Color.secondary }
     private var subText: String {
-        if !isGranted { return "Not connected · Grant folder access" }
-        if skills.isEmpty { return "Connected · No skills installed" }
-        let names = skills.prefix(3).map(\.displayName).joined(separator: ", ")
-        let extra = skills.count > 3 ? " +\(skills.count - 3)" : ""
-        return "\(skills.count) skill\(skills.count == 1 ? "" : "s") · \(names)\(extra)"
+        isGranted ? "Connected · ~/\(directory.rawValue)/" : "Not connected · Grant folder access"
     }
 
     var body: some View {
@@ -339,9 +347,9 @@ private struct CLIAgentListRow: View {
                         .font(PH.Font.rowName)
                         .foregroundStyle(PH.Color.primary)
                     Spacer(minLength: 0)
-                    Text(isGranted ? (skills.isEmpty ? "Idle" : "Active") : "Disconnected")
+                    Text(isGranted ? "Connected" : "Disconnected")
                         .font(PH.Font.statusLabel)
-                        .foregroundStyle(isGranted ? (skills.isEmpty ? PH.Color.statusWarn : PH.Color.statusOK) : PH.Color.secondary)
+                        .foregroundStyle(isGranted ? PH.Color.statusOK : PH.Color.secondary)
                 }
                 // Line 2: dot + sub-text
                 HStack(spacing: 6) {
@@ -374,13 +382,10 @@ private struct CLIAgentListRow: View {
 private struct CLIAgentDetailContent: View {
     let directory: CLIDirectory
     let isGranted: Bool
-    let projectSkills: [InstalledSkillSnapshot]
-    let globalSkills: [InstalledSkillSnapshot]
     let selectedProjectLabel: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Title + status
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(directory.displayName)
@@ -388,8 +393,8 @@ private struct CLIAgentDetailContent: View {
                         .foregroundStyle(PH.Color.primary)
                     Spacer(minLength: 0)
                     StatusCapsule(
-                        title: isGranted ? (projectSkills.isEmpty && globalSkills.isEmpty ? "Idle" : "Active") : "Disconnected",
-                        tint: isGranted ? (projectSkills.isEmpty && globalSkills.isEmpty ? .orange : .green) : .secondary
+                        title: isGranted ? "Connected" : "Disconnected",
+                        tint: isGranted ? .green : .secondary
                     )
                 }
                 Text("~/\(directory.rawValue)/")
@@ -400,7 +405,6 @@ private struct CLIAgentDetailContent: View {
             Divider().opacity(0.6)
 
             if !isGranted {
-                // Not connected state
                 VStack(alignment: .leading, spacing: 12) {
                     PHSectionHead(systemImage: "powerplug.fill", label: "Not Connected")
                     Label("Grant folder access to install skills into this agent.", systemImage: "lock.open")
@@ -408,224 +412,33 @@ private struct CLIAgentDetailContent: View {
                         .foregroundStyle(PH.Color.secondary)
                 }
             } else {
-                // Global skills section
                 VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
-                    PHSectionHead(systemImage: "globe", label: "Global Skills")
-                    if globalSkills.isEmpty {
-                        Text("No global skills installed.")
-                            .font(PH.Font.rowSub)
-                            .foregroundStyle(PH.Color.secondary)
-                            .padding(PH.Spacing.rowH)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
-                    } else {
-                        VStack(spacing: 2) {
-                            ForEach(globalSkills) { skill in
-                                CLISkillActivityRow(skill: skill, selectedDirectory: directory, selectedProjectName: nil)
-                            }
-                        }
-                    }
+                    PHSectionHead(systemImage: "folder.badge.gearshape", label: "Project Folder")
+                    Text(selectedProjectLabel == "No project selected" ? "No project selected" : selectedProjectLabel)
+                        .font(PH.Font.rowName)
+                        .foregroundStyle(PH.Color.primary)
+                    Text("Project-scoped skill install management lives in Skills > Installed.")
+                        .font(PH.Font.rowSub)
+                        .foregroundStyle(PH.Color.secondary)
                 }
-
-                Divider().opacity(0.6)
-
-                // Project skills section
-                VStack(alignment: .leading, spacing: PH.Spacing.sectionHeadMB) {
-                    HStack {
-                        PHSectionHead(systemImage: "folder", label: "Project Skills")
-                        Spacer(minLength: 0)
-                        Text(selectedProjectLabel)
-                            .font(PH.Font.mono)
-                            .foregroundStyle(PH.Color.secondary)
-                    }
-                    if projectSkills.isEmpty {
-                        Text("No project-scoped skills installed.")
-                            .font(PH.Font.rowSub)
-                            .foregroundStyle(PH.Color.secondary)
-                            .padding(PH.Spacing.rowH)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(PH.Color.sidebarBg, in: RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
-                    } else {
-                        VStack(spacing: 2) {
-                            ForEach(projectSkills) { skill in
-                                CLISkillActivityRow(
-                                    skill: skill,
-                                    selectedDirectory: directory,
-                                    selectedProjectName: selectedProjectLabel == "No project selected"
-                                        ? nil
-                                        : selectedProjectLabel.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                                )
-                            }
-                        }
-                    }
-                }
-
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
 
-private struct CLIAgentWorkspaceCard: View {
-    let directory: CLIDirectory
-    let isGranted: Bool
-    let skills: [InstalledSkillSnapshot]
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    private var displayedSkillNames: [String] {
-        Array(skills.map(\.displayName).sorted().prefix(3))
-    }
-
-    private var extraCount: Int {
-        max(skills.count - displayedSkillNames.count, 0)
-    }
-
-    private var badgeText: String {
-        let hasGlobal = skills.contains(where: \.isGlobal)
-        let hasProject = skills.contains(where: { !$0.isGlobal })
-        switch (hasGlobal, hasProject, isGranted) {
-        case (_, _, false): return "Disconnected"
-        case (true, true, true): return "Global + Project"
-        case (true, false, true): return "Global only"
-        case (false, true, true): return "Project only"
-        case (false, false, true): return "Authorized"
+private extension CLIDashboardView {
+    @ViewBuilder
+    func headerMenuLabel(title: String, value: String) -> some View {
+        if value.isEmpty {
+            Text(title + " ⌄")
+                .font(.system(.body, design: .default))
+                .foregroundStyle(PH.Color.primary)
+        } else {
+            Text("\(title): \(value) ⌄")
+                .font(.system(.body, design: .default))
+                .foregroundStyle(PH.Color.primary)
         }
-    }
-
-    private var badgeTint: Color {
-        if !isGranted { return .secondary }
-        if skills.contains(where: \.isGlobal) && skills.contains(where: { !$0.isGlobal }) { return .green }
-        if skills.isEmpty { return .secondary }
-        return skills.contains(where: \.isGlobal) ? .accentColor : .orange
-    }
-
-    private var pathText: String {
-        "~/\(directory.rawValue)/  ·  \(isGranted ? "granted" : "not connected")"
-    }
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(directory.displayName)
-                            .font(.headline)
-                        Text(pathText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
-                    }
-                    Spacer()
-                    StatusCapsule(title: badgeText, tint: badgeTint)
-                }
-
-                HStack(spacing: 12) {
-                    Label("\(skills.count) skills", systemImage: "cube")
-                    Label(skills.contains(where: \.isGlobal) ? "global scope" : "project scope", systemImage: "wand.and.stars")
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-                if isGranted && !displayedSkillNames.isEmpty {
-                    FlexibleChipWrap(items: displayedSkillNames, extraCount: extraCount)
-                } else if !isGranted {
-                    Label("Grant folder access to connect", systemImage: "powerplug")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(NSColor.controlBackgroundColor))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.35) : Color(NSColor.separatorColor).opacity(0.3), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .opacity(isGranted ? 1 : 0.7)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct FlexibleChipWrap: View {
-    let items: [String]
-    let extraCount: Int
-
-    var body: some View {
-        HStack(spacing: 6) {
-            ForEach(items, id: \.self) { item in
-                Text(item)
-                    .font(.caption2)
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color(NSColor.windowBackgroundColor))
-                    .clipShape(Capsule())
-            }
-            if extraCount > 0 {
-                Text("+\(extraCount) more")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color(NSColor.windowBackgroundColor))
-                    .clipShape(Capsule())
-            }
-            Spacer(minLength: 0)
-        }
-    }
-}
-
-private struct CLISkillActivityRow: View {
-    let skill: InstalledSkillSnapshot
-    let selectedDirectory: CLIDirectory?
-    let selectedProjectName: String?
-
-    private var filteredAgents: [AgentWorkflow] {
-        guard let selectedDirectory else { return skill.agents }
-        return skill.agents.filter { $0.cliDirectory == selectedDirectory }
-    }
-
-    private var installationSummary: String {
-        if skill.isGlobal {
-            return "installed globally"
-        }
-
-        if let selectedProjectName, !selectedProjectName.isEmpty {
-            return "installed in \(selectedProjectName)"
-        }
-
-        return "installed in project"
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(skill.displayName)
-                        .font(.callout)
-                        .fontWeight(.semibold)
-                    if let source = skill.displaySource {
-                        Text(source)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Text((filteredAgents.isEmpty ? skill.agents : filteredAgents).map(\.displayName).joined(separator: " · ") + " · " + installationSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            StatusCapsule(title: skill.isGlobal ? "global" : "project", tint: skill.isGlobal ? .green : .accentColor)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(NSColor.controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

@@ -1,3 +1,5 @@
+import MarkdownUI
+import PromptHubSkillKit
 import SwiftUI
 
 struct SkillLibraryRowCardStyle: ViewModifier {
@@ -27,6 +29,131 @@ struct SkillLibraryRowCardStyle: ViewModifier {
         if isSelected { return PH.Color.accent.opacity(0.22) }
         if isHovered  { return PH.Color.stroke }
         return .clear
+    }
+}
+
+struct SkillLibraryCompactRow<Trailing: View>: View {
+    let title: String
+    let metaText: String
+    let dotColor: Color
+    let isSelected: Bool
+    let onSelect: () -> Void
+    @ViewBuilder let trailing: () -> Trailing
+
+    @State private var isHovering = false
+
+    init(
+        title: String,
+        metaText: String,
+        dotColor: Color,
+        isSelected: Bool,
+        onSelect: @escaping () -> Void = {},
+        @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() }
+    ) {
+        self.title = title
+        self.metaText = metaText
+        self.dotColor = dotColor
+        self.isSelected = isSelected
+        self.onSelect = onSelect
+        self.trailing = trailing
+    }
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: PH.Spacing.rowGap) {
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(PH.Font.rowName)
+                        .foregroundStyle(PH.Color.primary)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 0)
+
+                    trailing()
+                }
+
+                HStack(spacing: PH.Spacing.sectionHeadGap) {
+                    Circle()
+                        .fill(dotColor)
+                        .frame(width: PH.Layout.statusDotSize, height: PH.Layout.statusDotSize)
+                    Text(metaText)
+                        .font(PH.Font.rowSub)
+                        .foregroundStyle(PH.Color.tertiary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, PH.Spacing.rowH)
+            .padding(.horizontal, PH.Spacing.rowV)
+            .contentShape(RoundedRectangle(cornerRadius: PH.Spacing.rowCorner))
+        }
+        .buttonStyle(.plain)
+        .modifier(SkillLibraryRowCardStyle(isSelected: isSelected, isHovered: isHovering))
+        .animation(PH.Motion.hover, value: isHovering)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .accessibilityLabel(title)
+        .accessibilityValue(metaText)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+struct SkillPreviewMarkdownView: View {
+    let markdown: String
+    let fallbackText: String
+
+    private var previewText: String {
+        let normalized = unwrapSkillMarkdown(markdown)
+        return normalized.isEmpty ? fallbackText : normalized
+    }
+
+    private func unwrapSkillMarkdown(_ source: String) -> String {
+        var current = source.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !current.isEmpty else { return "" }
+
+        for _ in 0..<4 {
+            guard let parsed = SkillParser.parse(markdown: current) else { break }
+            let next = parsed.instructions.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !next.isEmpty, next != current else { break }
+            current = next
+        }
+
+        return current
+    }
+
+    var body: some View {
+        Markdown(previewText)
+            .markdownSoftBreakMode(.lineBreak)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct InlineSearchField: View {
+    @Binding var text: String
+    let prompt: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(PH.Color.tertiary)
+
+            TextField(prompt, text: $text)
+                .textFieldStyle(.plain)
+
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(PH.Color.tertiary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 30)
+        .background(PH.Color.hoverFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 
@@ -185,6 +312,102 @@ struct SkillLibraryInspectorCard<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 4)
+    }
+}
+
+struct SkillDetailHeader<Actions: View>: View {
+    let timestamp: String
+    let title: String
+    let summary: String?
+    let metrics: [SkillLibraryMetric]
+    let controlSize: ControlSize
+    @ViewBuilder let actions: () -> Actions
+
+    @State private var isShowingSummaryPopover = false
+
+    init(
+        timestamp: String,
+        title: String,
+        summary: String? = nil,
+        metrics: [SkillLibraryMetric] = [],
+        controlSize: ControlSize = .regular,
+        @ViewBuilder actions: @escaping () -> Actions
+    ) {
+        self.timestamp = timestamp
+        self.title = title
+        self.summary = summary
+        self.metrics = metrics
+        self.controlSize = controlSize
+        self.actions = actions
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(timestamp)
+                .font(PH.Font.sectionHead)
+                .foregroundStyle(PH.Color.tertiary)
+                .textCase(.uppercase)
+                .tracking(0.6)
+
+            HStack(alignment: .top, spacing: 12) {
+                Text(title)
+                    .font(PH.Font.heroTitle)
+                    .foregroundStyle(PH.Color.primary)
+                    .frame(maxWidth: 520, alignment: .leading)
+
+                Spacer(minLength: 12)
+
+                HStack(spacing: 8) {
+                    if let summary, !summary.isEmpty {
+                        Button {
+                            isShowingSummaryPopover = true
+                        } label: {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 14, weight: .medium))
+                                .frame(width: 16, height: 16)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(controlSize)
+                        .help("Show description")
+                        .popover(isPresented: $isShowingSummaryPopover, arrowEdge: .bottom) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(title)
+                                    .font(.headline)
+                                Text(summary)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(16)
+                            .frame(width: 320, alignment: .leading)
+                        }
+                    }
+
+                    actions()
+                }
+            }
+
+            if !metrics.isEmpty {
+                HStack(spacing: 10) {
+                    ForEach(metrics) { metric in
+                        HStack(spacing: 4) {
+                            Image(systemName: metric.systemImage)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(PH.Color.tertiary)
+                            Text(metric.value)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(PH.Color.secondary)
+                                .lineLimit(1)
+                            Text(metric.title)
+                                .font(.system(size: 11))
+                                .foregroundStyle(PH.Color.tertiary)
+                        }
+                    }
+                }
+            }
+
+            Divider().opacity(0.55)
+        }
     }
 }
 

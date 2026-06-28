@@ -89,7 +89,6 @@ extension PromptDetail {
     @MainActor
     func applyHistoryVersionToEditor(_ version: PromptHistory) {
         if history.first?.id == version.id {
-            selectedHistoryVersion = nil
             showToastMsg(msg: "Version \(version.version) is already current", alertType: .complete(Color.orange))
             return
         }
@@ -106,7 +105,6 @@ extension PromptDetail {
             isPreviewingOldVersion = true
             editablePrompt = version.promptText
             PromptHubBridge.shared.exportPrompt(prompt)
-            selectedHistoryVersion = nil
             showToastMsg(msg: "Applied version \(version.version) as v\(nextVersion)", alertType: .complete(Color.green))
             Task { @MainActor in
                 isPreviewingOldVersion = false

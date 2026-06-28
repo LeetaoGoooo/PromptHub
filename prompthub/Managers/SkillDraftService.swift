@@ -72,7 +72,14 @@ final class SkillDraftService {
     }
 
     func snapshotVersion(for draft: Skill, using instructions: String, in context: ModelContext) throws -> SkillVersion {
-        let version = draft.createVersion(instructions: instructions)
+        let normalizedInstructions: String
+        if let parsed = SkillParser.parse(markdown: instructions.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            normalizedInstructions = parsed.instructions
+        } else {
+            normalizedInstructions = instructions
+        }
+
+        let version = draft.createVersion(instructions: normalizedInstructions)
         context.insert(version)
         try context.save()
         PromptHubBridge.shared.exportSkill(draft)

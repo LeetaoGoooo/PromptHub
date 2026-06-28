@@ -29,87 +29,100 @@ extension InstalledSkillsView {
                 Button("Retry") { fetchInstalledSkills() }
             }
         } else {
-            VStack(spacing: 0) {
-                skillsPrimaryActionBar
-
-                if filteredSkills.isEmpty {
-                    SkillLibraryEmptyState(
-                        title: "No Matches",
-                        systemImage: "magnifyingglass",
-                        description: "Try a different search term."
-                    )
-                } else {
-                    skillBrowser
-                }
-            }
+            skillBrowser
         }
     }
 
-    private var skillsPrimaryActionBar: some View {
-        HStack(spacing: 10) {
+    @ToolbarContentBuilder
+    var installedToolbarContent: some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
             Button(action: fetchInstalledSkills) {
-                Label(installedWorkspaceStore.isLoading ? "Refreshing…" : "Refresh", systemImage: "arrow.clockwise")
+                toolbarIcon(systemImage: "arrow.clockwise")
             }
-            .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
             .disabled(installedWorkspaceStore.isLoading)
             .help("Refresh installed skills")
 
-            Button(action: checkAllUpdates) {
-                HStack(spacing: 6) {
-                    if isCheckingUpdates {
+            Button(action: {
+                if skillsWithUpdates.isEmpty {
+                    checkAllUpdates()
+                } else {
+                    applyUpdates(for: updateEligibleSkills)
+                }
+            }) {
+                ZStack(alignment: .topTrailing) {
+                    if isCheckingUpdates || isApplyingBulkUpdates {
                         ProgressView()
                             .controlSize(.small)
+                            .frame(width: 18, height: 18)
                     } else {
-                        Image(systemName: "arrow.triangle.2.circlepath")
+                        toolbarIcon(systemImage: "arrow.triangle.2.circlepath")
                     }
-
-                    Text(isCheckingUpdates ? "Checking Updates…" : "Check Updates")
-
                     if !isCheckingUpdates && !skillsWithUpdates.isEmpty {
                         Text("\(skillsWithUpdates.count)")
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(Color.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.black.opacity(0.18))
-                            .clipShape(Capsule())
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(PH.Color.accent, in: Capsule())
+                            .offset(x: 6, y: -5)
                     }
                 }
             }
-            .buttonStyle(PHChromeButtonStyle(emphasis: skillsWithUpdates.isEmpty ? .standard : .accent))
-            .disabled(isCheckingUpdates)
-            .help("Check all skills for available updates")
+            .disabled(isCheckingUpdates || isApplyingBulkUpdates || (!skillsWithUpdates.isEmpty && updateEligibleSkills.isEmpty))
+            .help(skillsWithUpdates.isEmpty ? "Check all skills for available updates" : "Update all visible")
 
             Button(action: { showingAuditReport = true }) {
-                Label("Audit Installed Skills", systemImage: "checklist")
+                toolbarIcon(systemImage: "checklist")
             }
-            .buttonStyle(PHChromeButtonStyle(emphasis: .standard))
             .help("Audit all installed skills")
 
-            Spacer(minLength: 12)
-
-            Picker("Project View", selection: $installedSkillsLens) {
-                ForEach(InstalledSkillsLens.allCases, id: \.rawValue) { lens in
-                    Text(lens.rawValue).tag(lens)
+            Menu {
+                ForEach(ListFilter.allCases, id: \.rawValue) { filter in
+                    Button(action: { listFilter = filter }) {
+                        HStack {
+                            Text(filter.rawValue)
+                            if listFilter == filter {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
                 }
+            } label: {
+                toolbarIcon(systemImage: "line.3.horizontal.decrease.circle")
             }
-            .labelsHidden()
-            .pickerStyle(.segmented)
-            .frame(width: 260)
-            .onChange(of: installedSkillsLens) { _, _ in
-                fetchInstalledSkills()
+            .help("Filter: \(listFilter.rawValue)")
+
+            Menu {
+                ForEach(SkillsSortOrder.allCases, id: \.rawValue) { order in
+                    Button(action: { skillsSortOrder = order }) {
+                        HStack {
+                            Text(order.rawValue)
+                            if skillsSortOrder == order {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                toolbarIcon(systemImage: "arrow.up.arrow.down.circle")
             }
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 10)
-        .background(PH.Color.detailBg)
-        .overlay(alignment: .bottom) {
-            Divider().opacity(0.6)
+            .help("Sort: \(skillsSortOrder.rawValue)")
         }
     }
 
+    private func toolbarIcon(systemImage: String) -> some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 15, weight: .medium))
+            .frame(width: 18, height: 18)
+    }
+
     var skillBrowser: some View {
-        WorkspaceSplitShell {
+        WorkspaceSplitShell(
+            sidebarMinWidth: 240,
+            sidebarIdealWidth: 300,
+            sidebarMaxWidth: 380,
+            detailMinWidth: 280
+        ) {
             skillListPane
         } detail: {
             skillDetailPane
@@ -126,140 +139,94 @@ extension InstalledSkillsView {
                     Spacer()
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(Color(NSColor.controlBackgroundColor))
+                .background(PH.Color.sidebarBg)
             }
+            if filteredSkills.isEmpty {
+                SkillLibraryEmptyState(
+                    title: "No Matches",
+                    systemImage: "magnifyingglass",
+                    description: "Try a different search term or filter."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(filteredSkills) { skill in
+                        InstalledSkillListRow(
+                            skill: skill,
+                            isRemoving: removingSkillIDs.contains(skill.id),
+                            isUpdating: updatingSkillIDs.contains(skill.id),
+                            isSelected: selectedSkillID == skill.id,
+                            projectNames: skill.projectDisplayNames,
+                            hasUpdate: skillsWithUpdates.contains(skill.id),
+                            onSelect: { selectedSkillID = skill.id },
+                            onUpdate: skillsWithUpdates.contains(skill.id) ? {
+                                selectedSkillID = skill.id
+                                updatingSkill = skill
+                            } : nil
+                        )
+                        .contextMenu {
+                            Button("Edit Draft") {
+                                selectedSkillID = skill.id
+                                openDraft(for: skill)
+                            }
 
-            installedListHeaderBar
+                            if skillsWithUpdates.contains(skill.id) {
+                                Button("Update") {
+                                    selectedSkillID = skill.id
+                                    updatingSkill = skill
+                                }
+                            }
 
-            if installedSkillsLens == .allSavedProjects && !workspaceService.savedProjectRootURLs.isEmpty {
-                HStack(spacing: 8) {
-                    Image(systemName: "folder.badge.person.crop")
-                        .foregroundStyle(.secondary)
-                    Text("Aggregate view is read-only for project-scoped installs. Switch back to Active Project to remove skills or change CLI targets.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: 0)
+                            Divider()
+
+                            Button("Remove", role: .destructive) {
+                                selectedSkillID = skill.id
+                                pendingRemoval = PendingRemoval(skill: skill, targetAgents: nil)
+                            }
+                        }
+                        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color(NSColor.controlBackgroundColor).opacity(0.72))
-                .overlay(alignment: .bottom) { Divider().opacity(0.45) }
+                .listStyle(.inset(alternatesRowBackgrounds: false))
+                .scrollContentBackground(.hidden)
+                .contentMargins(.bottom, PH.Spacing.detailB, for: .scrollContent)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-
-            List {
-                ForEach(filteredSkills) { skill in
-                    InstalledSkillListRow(
-                        skill: skill,
-                        isRemoving: removingSkillIDs.contains(skill.id),
-                        isSelected: selectedSkillID == skill.id,
-                        projectNames: skill.projectDisplayNames,
-                        hasUpdate: skillsWithUpdates.contains(skill.id),
-                        onSelect: { selectedSkillID = skill.id },
-                        onUpdate: skillsWithUpdates.contains(skill.id) ? {
-                            selectedSkillID = skill.id
-                            updatingSkill = skill
-                        } : nil
-                    )
-                    .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                }
-            }
-            .listStyle(.inset(alternatesRowBackgrounds: false))
-            .scrollContentBackground(.hidden)
-            .contentMargins(.bottom, PH.Spacing.detailB, for: .scrollContent)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color(NSColor.controlBackgroundColor))
-    }
-
-    private var installedListHeaderBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: PH.Spacing.toolbarGap) {
-                ForEach(ListFilter.allCases, id: \.rawValue) { filter in
-                    PHFilterChip(label: filter.rawValue, isActive: listFilter == filter) {
-                        listFilter = filter
-                    }
-                }
-
-                Divider().frame(height: 14)
-
-                Menu {
-                    ForEach(SkillsSortOrder.allCases, id: \.rawValue) { order in
-                        Button {
-                            skillsSortOrder = order
-                        } label: {
-                            Label(order.rawValue, systemImage: skillsSortOrder == order ? "checkmark" : "")
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.arrow.down")
-                        Text(skillsSortOrder.rawValue)
-                    }
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(PH.Color.secondary)
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-            }
-            .padding(.horizontal, PH.Spacing.toolbarH)
-            .padding(.vertical, PH.Spacing.toolbarV)
-        }
-        .background(PH.Color.sidebarBg)
-        .overlay(alignment: .bottom) {
-            Divider().opacity(0.6)
-        }
-    }
-
-    private func installedFilterButton(title: String, systemImage: String, isActive: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(isActive ? Color.accentColor : .secondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(isActive ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.06))
-                )
-                .overlay(
-                    Capsule(style: .continuous)
-                        .stroke(isActive ? Color.accentColor.opacity(0.45) : Color.clear, lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
     var skillDetailPane: some View {
         if let selectedSkill {
-            ScrollView {
-                InstalledSkillDetailPane(
-                    skill: selectedSkill,
-                    linkedDraft: linkedDraft(for: selectedSkill),
-                    agentVisibility: agentVisibility,
-                    isLoadingVisibility: isLoadingVisibility,
-                    sourceIntegrity: sourceIntegrity,
-                    isLoadingIntegrity: isLoadingIntegrity,
-                    structuralQuality: structuralQuality,
-                    isLoadingStructuralQuality: isLoadingStructuralQuality,
-                    isAdding: addingSkillIDs.contains(selectedSkill.id),
-                    isRemoving: removingSkillIDs.contains(selectedSkill.id),
-                    hasUpdate: skillsWithUpdates.contains(selectedSkill.id),
-                    onEditDraft: { openDraft(for: selectedSkill) },
-                    onAddAgents: { agents in addSkillTargets(selectedSkill, agents: agents) },
-                    onRemoveAll: { pendingRemoval = PendingRemoval(skill: selectedSkill, targetAgents: nil) },
-                    onRemoveAgent: { agent in pendingRemoval = PendingRemoval(skill: selectedSkill, targetAgents: [agent]) },
-                    onOpenSourcePage: {
-                        guard let urlString = selectedSkill.url, let url = URL(string: urlString) else { return }
-                        NSWorkspace.shared.open(url)
-                    }
-                )
-                .padding(24)
-            }
+            InstalledSkillDetailPane(
+                skill: selectedSkill,
+                installedMarkdown: installedMarkdown,
+                isLoadingMarkdown: isLoadingMarkdown,
+                linkedDraft: linkedDraft(for: selectedSkill),
+                agentVisibility: agentVisibility,
+                isLoadingVisibility: isLoadingVisibility,
+                sourceIntegrity: sourceIntegrity,
+                isLoadingIntegrity: isLoadingIntegrity,
+                structuralQuality: structuralQuality,
+                isLoadingStructuralQuality: isLoadingStructuralQuality,
+                isAdding: addingSkillIDs.contains(selectedSkill.id),
+                isRemoving: removingSkillIDs.contains(selectedSkill.id),
+                hasUpdate: skillsWithUpdates.contains(selectedSkill.id),
+                onEditDraft: { openDraft(for: selectedSkill) },
+                onAddAgents: { agents in addSkillTargets(selectedSkill, agents: agents) },
+                onRemoveAll: { pendingRemoval = PendingRemoval(skill: selectedSkill, targetAgents: nil) },
+                onRemoveAgent: { agent in pendingRemoval = PendingRemoval(skill: selectedSkill, targetAgents: [agent]) },
+                onOpenSourcePage: {
+                    guard let urlString = selectedSkill.url, let url = URL(string: urlString) else { return }
+                    NSWorkspace.shared.open(url)
+                }
+            )
+            .padding(24)
             .background(PH.Color.detailBg)
+            .id("installed-snapshot-\(selectedSkill.id)")
         } else {
             SkillLibraryEmptyState(
                 title: "No Skill Selected",

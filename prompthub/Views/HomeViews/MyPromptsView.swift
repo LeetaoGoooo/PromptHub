@@ -10,32 +10,29 @@ import SwiftData
 import SwiftUI
 
 struct MyPromptsView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query private var userPrompts: [Prompt]
     @Query private var sharedCreations: [SharedCreation]
 
     let searchText: String
     let showToastMsg: (String, AlertToast.AlertType) -> Void
     let copyPromptToClipboard: (String) -> Void
-    let onSelectPrompt: (Prompt) -> Void
     let onCreatePrompt: () -> Void
-    let onRenderPrompt: () -> Void
     @State private var selectedItemID: String?
-    @State private var renderingPrompt: Prompt?
     @State private var testingPrompt: Prompt?
     @State private var optimizingPrompt: Prompt?
 
-    private func navigateToPrompt(_ prompt: Prompt) {
-        onSelectPrompt(prompt)
-    }
-    
     private var filteredUserPrompts: [Prompt] {
+        let base: [Prompt]
         if searchText.isEmpty {
-            return userPrompts
-        }
-        return userPrompts.filter { prompt in
+            base = userPrompts
+        } else {
+            base = userPrompts.filter { prompt in
             prompt.name.localizedCaseInsensitiveContains(searchText) ||
             (prompt.desc?.localizedCaseInsensitiveContains(searchText) ?? false)
+            }
         }
+        return prioritizeDraftPrompts(in: base)
     }
 
     private var editedThisWeekCount: Int {
@@ -86,22 +83,15 @@ struct MyPromptsView: View {
                         badges: badges(for: prompt) + [PromptCollectionFooterBadge(title: "v\(max(prompt.latestVersionNumber, 1))", tint: .secondary)],
                         trailingDetail: PromptViewHelpers.relativeDateString(from: prompt.lastEditedAt),
                         metadata: metadataRows(for: prompt),
-                        primaryActionTitle: "Open Prompt",
-                        primaryActionSystemImage: "arrow.right.circle",
+                        historyEntries: historyEntries(for: prompt),
+                        primaryActionTitle: nil,
+                        primaryActionSystemImage: nil,
                         isPrimaryActionDisabled: false,
-                        onPrimaryAction: { navigateToPrompt(prompt) },
+                        onPrimaryAction: nil,
                         secondaryActionTitle: "Copy Content",
                         secondaryActionSystemImage: "doc.on.doc",
                         onSecondaryAction: { copyPromptToClipboard(prompt.getLatestPromptContent()) },
                         quickActions: [
-                            PromptBrowserQuickAction(
-                                id: "render-\(prompt.id.uuidString)",
-                                title: "Render",
-                                systemImage: "play.rectangle",
-                                emphasis: .standard,
-                                isDisabled: false,
-                                onSelect: { renderingPrompt = prompt }
-                            ),
                             PromptBrowserQuickAction(
                                 id: "test-\(prompt.id.uuidString)",
                                 title: "Test",
@@ -119,6 +109,12 @@ struct MyPromptsView: View {
                                 onSelect: { optimizingPrompt = prompt }
                             )
                         ],
+                        isEditable: true,
+                        onSaveEdits: { title, summary, content in
+                            saveEdits(for: prompt, title: title, summary: summary, content: content)
+                        },
+                        onDelete: { deletePrompt(prompt) },
+                        deletionTitle: isEphemeralDraft(prompt) ? "Discard" : "Delete",
                         hasExternalSources: !((prompt.externalSources?.isEmpty) ?? true),
                         isShared: matchingSharedCreation(for: prompt) != nil
                     )
@@ -129,23 +125,8 @@ struct MyPromptsView: View {
     
     var body: some View {
         PromptBrowserScreen(
-            title: "My Prompts",
-            subtitle: headerSummary,
-            systemImage: "person",
-            metrics: metrics,
             sections: browserSections,
             selectedItemID: $selectedItemID,
-            actions: {
-                Button(action: onCreatePrompt) {
-                    Label("New Prompt", systemImage: "wand.and.stars")
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button(action: onRenderPrompt) {
-                    Label("Render Prompt…", systemImage: "play.rectangle")
-                }
-                .buttonStyle(.bordered)
-            },
             emptyState: {
                 if filteredUserPrompts.isEmpty && !searchText.isEmpty {
                     PromptViewHelpers.emptyStateView(
@@ -160,13 +141,11 @@ struct MyPromptsView: View {
                         subtitle: "Create your first prompt to start building a private library."
                     )
                 }
+            },
+            toolbarContent: {
+                ToolbarItemGroup(placement: .primaryAction) {}
             }
         )
-        .sheet(item: $renderingPrompt) { prompt in
-            PromptRenderSheet(initialPromptID: prompt.id) {
-                renderingPrompt = nil
-            }
-        }
         .sheet(item: $testingPrompt) { prompt in
             SinglePromptTestView(prompt: prompt.getLatestPromptContent())
         }
@@ -230,6 +209,91 @@ struct MyPromptsView: View {
 
         return rows
     }
+
+    private func historyEntries(for prompt: Prompt) -> [PromptBrowserHistoryEntry] {
+        let entries = (prompt.history ?? []).sorted { $0.version > $1.version }
+        let currentID = entries.first?.id
+
+        return entries.map { entry in
+            PromptBrowserHistoryEntry(
+                id: entry.id.uuidString,
+                versionLabel: "v\(max(entry.version, 1))",
+                timestamp: PromptViewHelpers.relativeDateString(from: entry.updatedAt),
+                summary: historySummary(for: entry.promptText),
+                isCurrent: entry.id == currentID,
+                onRestore: entry.id == currentID ? nil : { restore(entry, for: prompt) }
+            )
+        }
+    }
+
+    private func historySummary(for text: String) -> String {
+        let trimmed = text
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "No content" : String(trimmed.prefix(140))
+    }
+
+    private func restore(_ entry: PromptHistory, for prompt: Prompt) {
+        let nextVersion = max(prompt.latestVersionNumber, 0) + 1
+        let restored = prompt.createHistory(prompt: entry.promptText, version: nextVersion)
+        restored.createdAt = Date()
+        restored.updatedAt = Date()
+        modelContext.insert(restored)
+
+        do {
+            try modelContext.save()
+            showToastMsg("Restored \(max(entry.version, 1)) to v\(nextVersion)", .complete(.green))
+        } catch {
+            modelContext.delete(restored)
+            showToastMsg("Failed to restore history: \(error.localizedDescription)", .error(.red))
+        }
+    }
+
+    private func saveEdits(for prompt: Prompt, title: String, summary: String?, content: String) {
+        prompt.name = title.isEmpty ? "Untitled Prompt" : title
+        prompt.desc = summary
+        prompt.latestHistoryEntry?.promptText = content
+        prompt.latestHistoryEntry?.updatedAt = Date()
+        try? modelContext.save()
+        PromptHubBridge.shared.exportPrompt(prompt)
+    }
+
+    private func deletePrompt(_ prompt: Prompt) {
+        modelContext.delete(prompt)
+        do {
+            try modelContext.save()
+            showToastMsg("Prompt deleted", .complete(.green))
+        } catch {
+            showToastMsg("Failed to delete prompt: \(error.localizedDescription)", .error(.red))
+        }
+    }
+
+    private func prioritizeDraftPrompts(in prompts: [Prompt]) -> [Prompt] {
+        prompts.sorted { lhs, rhs in
+            let lhsIsDraft = isEphemeralDraft(lhs)
+            let rhsIsDraft = isEphemeralDraft(rhs)
+
+            if lhsIsDraft != rhsIsDraft {
+                return lhsIsDraft
+            }
+
+            return (lhs.lastEditedAt ?? .distantPast) > (rhs.lastEditedAt ?? .distantPast)
+        }
+    }
+
+    private func isEphemeralDraft(_ prompt: Prompt) -> Bool {
+        let trimmedName = prompt.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDescription = (prompt.desc ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedContent = prompt.getLatestPromptContent().trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasExternalSources = !(prompt.externalSources?.isEmpty ?? true)
+
+        return !hasExternalSources
+            && prompt.link == nil
+            && (prompt.history?.count ?? 0) <= 1
+            && trimmedDescription.isEmpty
+            && trimmedContent.isEmpty
+            && (trimmedName.isEmpty || trimmedName == "Untitled Prompt")
+    }
 }
 
 #Preview {
@@ -237,9 +301,7 @@ struct MyPromptsView: View {
         searchText: "",
         showToastMsg: { _, _ in },
         copyPromptToClipboard: { _ in },
-        onSelectPrompt: { _ in },
-        onCreatePrompt: { },
-        onRenderPrompt: { }
+        onCreatePrompt: { }
     )
     .modelContainer(for: [Prompt.self, PromptHistory.self, SharedCreation.self])
 }

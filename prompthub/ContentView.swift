@@ -22,10 +22,8 @@ struct ContentView: View {
     @State private var skillsScopeFilter: SkillsSidebarScopeFilter = .allInstalled
     @State private var skillsSourceFilter: SkillsSidebarSourceFilter = .all
     @State private var skillsAgentFilter: AgentWorkflow?
-    @State private var showingPromptRender = false
     @State var whatsNew: WhatsNew? = nil
     @EnvironmentObject var appSettings: AppSettings
-
     var currentAppVersion: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown" }
 
     private var currentPrompt: Prompt? {
@@ -34,7 +32,7 @@ struct ContentView: View {
     }
 
     private var currentSkill: Skill? {
-        guard case .skill(let skillID) = navigationState.detailSelection else { return nil }
+        guard let skillID = navigationState.selectedSkillDraftID else { return nil }
         return skillDrafts.first(where: { $0.id == skillID })
     }
 
@@ -59,17 +57,27 @@ struct ContentView: View {
         }
     }
 
+    private var showsToolbarSearch: Bool {
+        switch navigationState.domain {
+        case .prompts:
+            return currentPrompt == nil
+        case .skills:
+            return true
+        case .agents, .special:
+            return false
+        }
+    }
+
     private var navigationTitle: String {
         switch navigationState.domain {
         case .special:
             switch navigationState.specialPage {
             case .settings:     return "Settings"
-            case .cliDashboard: return "CLI Integration"
             case .onboarding:   return "Get Started"
             case nil:           return ""
             }
         case .prompts:
-            if let currentPrompt { return currentPrompt.name }
+            if currentPrompt != nil { return "" }
             switch navigationState.promptLens {
             case .all:     return "All Prompts"
             case .mine:    return "My Prompts"
@@ -77,11 +85,10 @@ struct ContentView: View {
             case .explore: return "Explore Gallery"
             }
         case .skills:
-            if let currentSkill { return currentSkill.displayName }
             switch navigationState.skillLens {
-            case .installed: return "Installed Skills"
-            case .drafts:    return "My Skills"
-            case .store:     return "Skill Store"
+                case .installed: return "Installed Skills"
+                case .drafts:    return "My Skills"
+                case .store:     return "Skill Store"
             }
         case .agents:
             return "Workspaces"
@@ -90,13 +97,11 @@ struct ContentView: View {
 
     private var minimumMainWindowContentSize: CGSize {
         switch navigationState.domain {
-        case .special where navigationState.specialPage == .cliDashboard:
-            return CGSize(width: PH.Layout.mainWindowCLIMinWidth, height: 520)
         case .special where navigationState.specialPage == .onboarding:
             return CGSize(width: PH.Layout.mainWindowOnboardingMinWidth, height: 480)
         case .prompts where currentPrompt != nil:
             return CGSize(width: PH.Layout.mainWindowPromptDetailMinWidth, height: PH.Layout.mainWindowMinHeightCap)
-        case .skills where currentSkill != nil:
+        case .skills where navigationState.skillLens == .drafts:
             return CGSize(width: PH.Layout.mainWindowSkillDetailMinWidth, height: PH.Layout.mainWindowMinHeightCap)
         case .skills:
             return CGSize(width: PH.Layout.mainWindowSkillsMinWidth, height: PH.Layout.mainWindowMinHeightCap)
@@ -115,8 +120,6 @@ struct ContentView: View {
             switch navigationState.detailSelection {
             case .prompt:
                 return "promptDetail"
-            case .skill:
-                return "skillDetail"
             case nil:
                 switch navigationState.promptLens {
                 case .all:     return "allPrompts"
@@ -126,22 +129,21 @@ struct ContentView: View {
                 }
             }
         case .skills:
-            switch navigationState.detailSelection {
-            case .skill:
+            switch navigationState.skillLens {
+            case .drafts where currentSkill != nil:
                 return "skillDetail"
-            default:
-                switch navigationState.skillLens {
-                case .installed: return "installedSkills"
-                case .drafts:    return "mySkills"
-                case .store:     return "skillStore"
-                }
+            case .installed:
+                return "installedSkills"
+            case .drafts:
+                return "mySkills"
+            case .store:
+                return "skillStore"
             }
         case .agents:
             return "agents"
         case .special:
             switch navigationState.specialPage {
             case .settings:     return "settings"
-            case .cliDashboard: return "cliDashboard"
             case .onboarding:   return "onboarding"
             case nil:           return "special"
             }
@@ -170,9 +172,8 @@ struct ContentView: View {
             }
             .navigationTitle(navigationTitle)
             .toolbar { toolbarContent }
-            .searchable(text: $searchText, placement: .toolbar, prompt: searchPrompt)
             .onKeyPress(.escape) {
-                if navigationState.detailSelection != nil {
+                if currentPrompt != nil {
                     navigationState.returnFromDetail()
                     return .handled
                 }
@@ -202,7 +203,6 @@ struct ContentView: View {
                 handleSearchNavigation(target)
             }
             .sheet(whatsNew: self.$whatsNew, onDismiss: { appSettings.lastShownWhatsNewVersion = self.currentAppVersion })
-            .sheet(isPresented: $showingPromptRender) { PromptRenderSheet { showingPromptRender = false } }
         }
         .enforceWindowMinimumContentSize(minimumMainWindowContentSize, debugName: windowSizingDebugName)
     }
@@ -214,12 +214,10 @@ struct ContentView: View {
             switch navigationState.specialPage {
             case .settings:
                 SettingsView()
-            case .cliDashboard:
-                CLIDashboardView()
             case .onboarding:
                 OnboardingView(
                     onFinish: { navigationState.showPrompts(.all) },
-                    onCLI: { navigationState.showSpecial(.cliDashboard) },
+                    onCLI: { navigationState.showSpecial(.settings) },
                     onSettings: { navigationState.showSpecial(.settings) }
                 )
             case nil:
@@ -229,29 +227,23 @@ struct ContentView: View {
             if let currentPrompt {
                 PromptDetail(
                     prompt: currentPrompt,
-                    onPromoteToSkill: { skill in navigationState.selectSkillDetail(skill.id) },
+                    onPromoteToSkill: { skill in navigationState.showSkillDraftWorkspace(select: skill.id) },
                     onDeletePrompt: { prompt in deletePrompt(prompt) }
                 )
             } else {
                 promptsContent
             }
         case .skills:
-            if let currentSkill {
-                SkillDraftDetailView(skill: currentSkill)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .background(Color(NSColor.windowBackgroundColor))
-            } else {
-                SkillsRootView(
-                    installedWorkspaceStore: installedWorkspaceStore,
-                    navigationState: $navigationState,
-                    searchText: searchText,
-                    skillsScopeFilter: $skillsScopeFilter,
-                    skillsSourceFilter: $skillsSourceFilter,
-                    skillsAgentFilter: $skillsAgentFilter
-                )
-            }
+            SkillsRootView(
+                installedWorkspaceStore: installedWorkspaceStore,
+                navigationState: $navigationState,
+                searchText: $searchText,
+                skillsScopeFilter: $skillsScopeFilter,
+                skillsSourceFilter: $skillsSourceFilter,
+                skillsAgentFilter: $skillsAgentFilter
+            )
         case .agents:
-            CLIDashboardView()
+            SettingsView()
         }
     }
 
@@ -265,18 +257,14 @@ struct ContentView: View {
                 isLoading: isLoading,
                 showToastMsg: showToastMessage,
                 copyPromptToClipboard: copyToClipboard,
-                onSelectPrompt: { navigationState.selectPromptDetail($0.id) },
-                onCreatePrompt: createNewPrompt,
-                onRenderPrompt: { showingPromptRender = true }
+                onCreatePrompt: createNewPrompt
             )
         case .mine:
             MyPromptsView(
                 searchText: searchText,
                 showToastMsg: showToastMessage,
                 copyPromptToClipboard: copyToClipboard,
-                onSelectPrompt: { navigationState.selectPromptDetail($0.id) },
-                onCreatePrompt: createNewPrompt,
-                onRenderPrompt: { showingPromptRender = true }
+                onCreatePrompt: createNewPrompt
             )
         case .shared:
             SharedCreationsView(searchText: searchText, showToastMsg: showToastMessage, copyPromptToClipboard: copyToClipboard)
@@ -295,33 +283,26 @@ struct ContentView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            switch navigationState.domain {
-            case .prompts:
-                PromptsWorkspacePicker(navigationState: $navigationState)
-            case .skills:
-                SkillsWorkspacePicker(navigationState: $navigationState)
-            case .agents:
-                AgentsWorkspacePicker(navigationState: $navigationState)
-            case .special:
-                EmptyView()
-            }
+            // Tabs removed - navigation handled via sidebar
+            EmptyView()
         }
-        ToolbarItem(placement: .primaryAction) {
+        ToolbarItemGroup(placement: .primaryAction) {
+            if showsToolbarSearch {
+                InlineSearchField(text: $searchText, prompt: searchPrompt)
+                    .frame(width: 240)
+            }
+
             switch navigationState.domain {
             case .skills:
                 Button(action: createNewSkillDraft) { Label("New Skill Draft", systemImage: "plus") }
-                    .keyboardShortcut("n", modifiers: .command).help("Create a new skill draft (Cmd+N)")
+                    .keyboardShortcut("n", modifiers: .command)
+                    .help("Create a new skill draft (Cmd+N)")
             case .special:
                 EmptyView()
             default:
                 Button(action: createNewPrompt) { Label("New Prompt", systemImage: "plus") }
-                    .keyboardShortcut("n", modifiers: .command).help("Create a new prompt (Cmd+N)")
-            }
-        }
-        ToolbarItem(placement: .secondaryAction) {
-            if navigationState.domain == .prompts {
-                Button { showingPromptRender = true } label: { Label("Render Prompt…", systemImage: "play.rectangle") }
-                    .help("Render a prompt with variable substitution")
+                    .keyboardShortcut("n", modifiers: .command)
+                    .help("Create a new prompt (Cmd+N)")
             }
         }
     }

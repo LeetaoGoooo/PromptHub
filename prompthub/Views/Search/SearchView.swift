@@ -110,11 +110,11 @@ struct SearchView: View {
             ),
             SearchableShortcut(
                 id: "nav-cli",
-                name: "CLI Integration",
-                description: "Open agent and workspace integration",
-                content: "cli integration",
-                searchableContent: "cli integration agents workspaces",
-                navigationTarget: .selection(.special(.cliDashboard), query: nil)
+                name: "CLI & Agents",
+                description: "Open CLI access and project folder settings",
+                content: "cli agents settings",
+                searchableContent: "cli agents access project folder settings",
+                navigationTarget: .selection(.special(.settings), query: nil)
             ),
             SearchableShortcut(
                 id: "nav-settings",

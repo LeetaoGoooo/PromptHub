@@ -94,6 +94,14 @@ final class SkillWorkspaceService {
         )
     }
 
+    func loadInstalledMarkdown(for skill: InstalledSkillSnapshot) async throws -> String? {
+        try await cliService.loadInstalledMarkdown(
+            name: skill.package.rawValue,
+            isGlobal: skill.isGlobal,
+            projectRootURL: selectedProjectRootURL
+        )
+    }
+
     func listInstalledSkills(lens: InstalledSkillsLens = .activeProject) async throws -> [InstalledSkillSnapshot] {
         switch lens {
         case .activeProject:

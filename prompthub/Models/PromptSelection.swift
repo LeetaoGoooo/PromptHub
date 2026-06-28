@@ -26,13 +26,11 @@ enum AgentWorkspaceLens: Hashable {
 
 enum WorkspaceSpecialPage: Hashable {
     case settings
-    case cliDashboard
     case onboarding
 }
 
 enum WorkspaceDetailSelection: Hashable {
     case prompt(UUID)
-    case skill(UUID)
 }
 
 enum WorkspaceRoute: Hashable {
@@ -56,6 +54,7 @@ struct WorkspaceNavigationState: Hashable {
     var promptLens: PromptWorkspaceLens = .all
     var skillLens: SkillWorkspaceLens = .installed
     var agentLens: AgentWorkspaceLens = .workspaces
+    var selectedSkillDraftID: UUID? = nil
     var detailSelection: WorkspaceDetailSelection? = nil
     var specialPage: WorkspaceSpecialPage? = nil
     var lastWorkspaceDomain: WorkspaceDomain = .prompts
@@ -127,11 +126,30 @@ struct WorkspaceNavigationState: Hashable {
         detailSelection = .prompt(promptID)
     }
 
-    mutating func selectSkillDetail(_ skillID: UUID) {
+    mutating func showSkillDraftWorkspace(select skillID: UUID? = nil) {
         lastWorkspaceDomain = .skills
         domain = .skills
+        skillLens = .drafts
         specialPage = nil
-        detailSelection = .skill(skillID)
+        detailSelection = nil
+        if let skillID {
+            selectedSkillDraftID = skillID
+        }
+    }
+
+    mutating func selectSkillDraft(_ skillID: UUID) {
+        lastWorkspaceDomain = .skills
+        specialPage = nil
+        detailSelection = nil
+        selectedSkillDraftID = skillID
+    }
+
+    mutating func selectSkillDetail(_ skillID: UUID) {
+        showSkillDraftWorkspace(select: skillID)
+    }
+
+    mutating func clearSkillDraftSelection() {
+        selectedSkillDraftID = nil
     }
 
     mutating func returnFromDetail() {

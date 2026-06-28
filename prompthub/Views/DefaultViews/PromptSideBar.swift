@@ -14,7 +14,6 @@ struct PromptSideBar: View {
     @Query(sort: \Prompt.name) var prompts: [Prompt]
     @Query private var sharedCreations: [SharedCreation]
     @Query(sort: \Skill.updatedAt, order: .reverse) private var skillDrafts: [Skill]
-    @ObservedObject private var cliAccess = CLIDirectoryAccessManager.shared
     @ObservedObject var installedWorkspaceStore: InstalledSkillsWorkspaceStore
 
     @Binding var navigationState: WorkspaceNavigationState
@@ -22,7 +21,6 @@ struct PromptSideBar: View {
     let onCreateNewPrompt: () -> Void
     let onCreateNewSkill: () -> Void
 
-    private var grantedAgentCount: Int { cliAccess.grantedDirectories.count }
     private var galleryCount: Int { BuiltInAgents.agents.count }
     private var installedSkills: [InstalledSkillSnapshot] { installedWorkspaceStore.installedSkills }
 
@@ -50,8 +48,6 @@ struct PromptSideBar: View {
                         Divider().opacity(0.6).padding(.vertical, 10)
                         skillAgentsSection
                     }
-                    Divider().opacity(0.6).padding(.vertical, 10)
-                    agentsNavigationSection
                     Divider().opacity(0.6).padding(.vertical, 10)
                     specialNavigationSection
                 }
@@ -174,7 +170,7 @@ struct PromptSideBar: View {
                 ForEach(availableSkillAgents, id: \.rawValue) { agent in
                     sidebarSelectionButton(
                         title: agent.displayName,
-                        icon: "chevron.left.forwardslash.chevron.right",
+                        image: agent.iconImage,
                         meta: metaCount(installedSkills.filter { $0.agents.contains(agent) }.count),
                         isActive: skillsAgentFilter == agent
                     ) {
@@ -185,27 +181,9 @@ struct PromptSideBar: View {
         }
     }
 
-    private var agentsNavigationSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sidebarSectionHeader("Agents")
-
-            VStack(spacing: 4) {
-                sidebarSelectionButton(
-                    title: "Workspaces",
-                    icon: "terminal",
-                    meta: metaCount(grantedAgentCount),
-                    isActive: navigationState.domain == .agents
-                ) {
-                    navigationState.showAgents(.workspaces)
-                }
-                .keyboardShortcut("3", modifiers: .command)
-            }
-        }
-    }
-
     private var specialNavigationSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sidebarSectionHeader("Special")
+            sidebarSectionHeader("System")
 
             VStack(spacing: 4) {
                 sidebarSelectionButton(
@@ -215,15 +193,6 @@ struct PromptSideBar: View {
                     isActive: navigationState.domain == .special && navigationState.specialPage == .settings
                 ) {
                     navigationState.showSpecial(.settings)
-                }
-
-                sidebarSelectionButton(
-                    title: "CLI Dashboard",
-                    icon: "terminal",
-                    meta: nil,
-                    isActive: navigationState.domain == .special && navigationState.specialPage == .cliDashboard
-                ) {
-                    navigationState.showSpecial(.cliDashboard)
                 }
             }
         }
@@ -319,7 +288,11 @@ struct PromptSideBar: View {
 
     @ViewBuilder
     private func sidebarSelectionButton(title: String, icon: String, meta: String?, isActive: Bool, action: @escaping () -> Void) -> some View {
-        SidebarSelectionButton(title: title, icon: icon, meta: meta, isActive: isActive, action: action)
+        SidebarSelectionButton(title: title, icon: Image(systemName: icon), meta: meta, isActive: isActive, action: action)
+    }
+
+    private func sidebarSelectionButton(title: String, image: Image, meta: String?, isActive: Bool, action: @escaping () -> Void) -> some View {
+        SidebarSelectionButton(title: title, icon: image, meta: meta, isActive: isActive, action: action)
     }
 }
 
@@ -327,7 +300,7 @@ private struct SidebarSelectionButton: View {
     @Environment(\.controlActiveState) private var controlActiveState
 
     let title: String
-    let icon: String
+    let icon: Image
     let meta: String?
     let isActive: Bool
     let action: () -> Void
@@ -349,8 +322,10 @@ private struct SidebarSelectionButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: PH.Spacing.sbRowGap) {
-                Image(systemName: icon)
-                    .frame(width: 16)
+                icon
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
                     .foregroundStyle(isActive ? PH.Color.accent : PH.Color.secondary)
                 Text(title)
                     .font(PH.Font.rowName)

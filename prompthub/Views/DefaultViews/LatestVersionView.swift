@@ -6,6 +6,7 @@
 //
 
 import AlertToast
+import MarkdownUI
 import SwiftData
 import SwiftUI
 
@@ -13,10 +14,12 @@ struct LatestVersionView: View {
     let latestHistory: PromptHistory
     let prompt: Prompt
     @Binding var editablePrompt: String
+    @Binding var isEditing: Bool
     @Binding var isGenerating: Bool
     @Binding var isPreviewingOldVersion: Bool
     @Binding var isShowingDiff: Bool
     @Binding var isShowingSingleTestView: Bool
+    @Binding var optimizeRequestID: Int
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) var openURL
     @State private var showToast = false
@@ -34,8 +37,6 @@ struct LatestVersionView: View {
     let onShare: () async -> Void
     
     private let borderColor = Color(NSColor.separatorColor)
-
-    @State private var mainContentHeight: CGFloat?
 
     private var promptVariables: [String] {
         let pattern = #"\{\{[^{}]+\}\}"#
@@ -55,103 +56,92 @@ struct LatestVersionView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-                if isShowingDiff {
-                    AIOptimizeDiffPanel(
-                        diffResults: diffResults,
-                        originalText: originalText,
-                        modifiedText: modifiedText,
-                        onKeep: keepChanges,
-                        onDiscard: undoChanges
-                    )
-                    .padding(16)
-                } else {
-                    VStack(alignment: .leading, spacing: 14) {
-                        if !promptVariables.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Variables")
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.secondary)
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(promptVariables, id: \.self) { variable in
-                                            Text(variable)
-                                                .font(.system(.caption, design: .monospaced))
-                                                .foregroundStyle(.accent)
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(Color.accentColor.opacity(0.08))
-                                                .clipShape(Capsule())
-                                        }
+            if isShowingDiff {
+                AIOptimizeDiffPanel(
+                    diffResults: diffResults,
+                    originalText: originalText,
+                    modifiedText: modifiedText,
+                    onKeep: keepChanges,
+                    onDiscard: undoChanges
+                )
+                .padding(16)
+            } else {
+                VStack(alignment: .leading, spacing: 14) {
+                    if !promptVariables.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Variables")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(promptVariables, id: \.self) { variable in
+                                        Text(variable)
+                                            .font(.system(.caption, design: .monospaced))
+                                            .foregroundStyle(.accent)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(Color.accentColor.opacity(0.08))
+                                            .clipShape(Capsule())
                                     }
                                 }
                             }
-                        }
-
-                        ZStack(alignment: .bottomTrailing) {
-                            NoScrollBarTextEditor(text: $editablePrompt, font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular), autoScroll: isGenerating)
-                                .frame(minHeight: 300)
-                                .padding(10)
-                                .background(Color(NSColor.textBackgroundColor))
-                                .cornerRadius(8)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(borderColor, lineWidth: 1)
-                                        .opacity(0.1)
-                                )
-                                .onChange(of: editablePrompt) { _, newValue in
-                                    if !isPreviewingOldVersion && !isShowingDiff {
-                                        latestHistory.promptText = newValue
-                                        latestHistory.updatedAt = Date()
-                                        try? modelContext.save()
-                                        PromptHubBridge.shared.exportPrompt(prompt)
-                                    }
-                                }
-
-                            if isGenerating {
-                                ProgressView()
-                                    .scaleEffect(0.7)
-                                    .padding(8)
-                                    .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
-                                    .cornerRadius(8)
-                                    .padding([.bottom, .trailing], 40)
-                            }
-
-                            Button {
-                                Task { await modifyPromptWithOpenAIStreamAndShowDiff() }
-                            } label: {
-                                HStack(spacing: 5) {
-                                    Image(systemName: isGenerating ? "ellipsis" : "wand.and.stars")
-                                        .symbolEffect(.pulse, isActive: isGenerating)
-                                        .font(.system(size: 12, weight: .semibold))
-                                    Text(isGenerating ? "Optimizing…" : "Optimize with AI")
-                                        .font(.system(size: 12, weight: .semibold))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.purple, Color.accentColor],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .clipShape(Capsule())
-                                .shadow(color: Color.purple.opacity(0.35), radius: 6, x: 0, y: 3)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(isGenerating)
-                            .padding([.bottom, .trailing], 14)
                         }
                     }
-                    .background(Color(NSColor.textBackgroundColor))
-                    .cornerRadius(12)
-                    .padding(16)
-                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+
+                    ZStack(alignment: .bottomTrailing) {
+                        Group {
+                            if isEditing {
+                                NoScrollBarTextEditor(text: $editablePrompt, font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular), autoScroll: isGenerating)
+                                    .onChange(of: editablePrompt) { _, newValue in
+                                        if !isPreviewingOldVersion && !isShowingDiff {
+                                            latestHistory.promptText = newValue
+                                            latestHistory.updatedAt = Date()
+                                            try? modelContext.save()
+                                            PromptHubBridge.shared.exportPrompt(prompt)
+                                        }
+                                    }
+                            } else {
+                                ScrollView {
+                                    if editablePrompt.isEmpty {
+                                        Text("No prompt content.")
+                                            .font(.body)
+                                            .foregroundStyle(.primary)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    } else {
+                                        Markdown(editablePrompt)
+                                            .markdownSoftBreakMode(.lineBreak)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .textSelection(.enabled)
+                                    }
+                                }
+                            }
+                        }
+                        .frame(minHeight: 300, maxHeight: .infinity, alignment: .topLeading)
+                        .padding(10)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(borderColor, lineWidth: 1)
+                                .opacity(0.1)
+                        )
+
+                        if isGenerating {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .padding(8)
+                                .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
+                                .cornerRadius(8)
+                                .padding(12)
+                        }
+                    }
                 }
-
-
+                .background(Color(NSColor.textBackgroundColor))
+                .cornerRadius(12)
+                .padding(16)
+                .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .toast(isPresenting: $showToast) {
@@ -159,6 +149,9 @@ struct LatestVersionView: View {
         }
         .sheet(isPresented: $isShowingSingleTestView) {
             SinglePromptTestView(prompt: editablePrompt)
+        }
+        .onChange(of: optimizeRequestID) {
+            Task { await modifyPromptWithOpenAIStreamAndShowDiff() }
         }
     }
 
@@ -232,19 +225,23 @@ struct LatestVersionView: View {
 
 #Preview {
     @Previewable @State var editablePrompt = "Sample editable prompt content"
+    @Previewable @State var isEditing = false
     @Previewable @State var isGenerating = false
     @Previewable @State var isPreviewingOldVersion = false
     @Previewable @State var isShowingDiff = false
     @Previewable @State var isShowingSingleTestView = false
+    @Previewable @State var optimizeRequestID = 0
 
     LatestVersionView(
         latestHistory: PreviewData.samplePromptHistory.first!,
         prompt: PreviewData.samplePrompt,
         editablePrompt: $editablePrompt,
+        isEditing: $isEditing,
         isGenerating: $isGenerating,
         isPreviewingOldVersion: $isPreviewingOldVersion,
         isShowingDiff: $isShowingDiff,
         isShowingSingleTestView: $isShowingSingleTestView,
+        optimizeRequestID: $optimizeRequestID,
         copyPromptToClipboard: { prompt in
             print("Copied: \(prompt)")
             return true
