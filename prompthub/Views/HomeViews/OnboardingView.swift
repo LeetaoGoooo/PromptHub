@@ -62,7 +62,7 @@ struct OnboardingView: View {
                         OnboardingStepTile(
                             number: 3,
                             title: "Set Up Skill Access",
-                            description: "Grant access to your agent folders and choose a project folder when you need project-scoped installs. You can also install the `ph` CLI with `brew install dosomeforfun/prompthub/ph` to script prompt exports and skill installs from your terminal or CI.",
+                            description: "Grant access to your agent folders and choose a project folder when you need project-scoped installs. You can also install the `ph` CLI with `brew install leetaogoooo/prompthub/ph` to script prompt exports and skill installs from your terminal or CI.",
                             isDone: cliConnected,
                             ctaText: cliConnected ? "Access configured" : "Open settings",
                             isHighlighted: true,

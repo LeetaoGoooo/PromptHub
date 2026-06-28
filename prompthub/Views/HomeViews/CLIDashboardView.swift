@@ -469,7 +469,7 @@ private struct CLIDashboardInspector: View {
     }
 
     private var cliInstallHint: String {
-        cliExecutablePath ?? "Install: brew install dosomeforfun/prompthub/ph (or --HEAD on Intel)"
+        cliExecutablePath ?? "Install: brew install leetaogoooo/prompthub/ph (or --HEAD on Intel)"
     }
 
     var body: some View {
@@ -658,7 +658,7 @@ struct CLIHowItWorksCard: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            Text("Install `ph` via Homebrew: `brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git && brew install dosomeforfun/prompthub/ph` (Apple Silicon). Intel users can run `brew install --HEAD dosomeforfun/prompthub/ph` to build from source. The `ph` binary reads the same `~/.prompthub/` exports this dashboard writes, so prompt and skill state stays in sync. Use the app to author and edit; use `ph` to script, automate, and install agent skills from CI. Run `ph doctor` if anything looks wrong on the CLI side.")
+            Text("Install `ph` via Homebrew: `brew tap leetaogoooo/prompthub https://github.com/LeetaoGoooo/PromptHub.git && brew install leetaogoooo/prompthub/ph` (Apple Silicon). Intel users can run `brew install --HEAD leetaogoooo/prompthub/ph` to build from source. The `ph` binary reads the same `~/.prompthub/` exports this dashboard writes, so prompt and skill state stays in sync. Use the app to author and edit; use `ph` to script, automate, and install agent skills from CI. Run `ph doctor` if anything looks wrong on the CLI side.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

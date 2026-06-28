@@ -46,8 +46,8 @@ and platform-support story lives in [docs/cli-release.md](../docs/cli-release.md
 Once a `ph-vX.Y.Z` release has been published and `Formula/ph.rb` bumped:
 
 ```bash
-brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git
-brew install dosomeforfun/prompthub/ph
+brew tap leetaogoooo/prompthub https://github.com/LeetaoGoooo/PromptHub.git
+brew install leetaogoooo/prompthub/ph
 ph --help
 ```
 
@@ -56,8 +56,8 @@ ph --help
 Always available, including on Intel macOS:
 
 ```bash
-brew tap dosomeforfun/prompthub https://github.com/DoSomeForFun/PromptHub.git
-brew install --HEAD dosomeforfun/prompthub/ph
+brew tap leetaogoooo/prompthub https://github.com/LeetaoGoooo/PromptHub.git
+brew install --HEAD leetaogoooo/prompthub/ph
 ph --help
 ```
 
@@ -66,7 +66,7 @@ ph --help
 ```bash
 VERSION=0.1.0
 curl -L -o ph.tar.gz \
-  "https://github.com/DoSomeForFun/PromptHub/releases/download/ph-v$VERSION/ph-macos-arm64.tar.gz"
+  "https://github.com/LeetaoGoooo/PromptHub/releases/download/ph-v$VERSION/ph-macos-arm64.tar.gz"
 tar -xzf ph.tar.gz
 install -m 755 ph ~/.local/bin/ph
 ```
@@ -74,7 +74,7 @@ install -m 755 ph ~/.local/bin/ph
 ### Build from source (clone)
 
 ```bash
-git clone https://github.com/DoSomeForFun/PromptHub.git
+git clone https://github.com/LeetaoGoooo/PromptHub.git
 cd PromptHub
 swift build --package-path PromptHubCLI -c release --product ph
 install -m 755 "$(swift build --package-path PromptHubCLI -c release --product ph --show-bin-path)/ph" ~/.local/bin/ph

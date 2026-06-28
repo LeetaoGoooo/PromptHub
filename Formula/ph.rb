@@ -1,6 +1,6 @@
 class Ph < Formula
   desc "PromptHub CLI for exported prompts and agent skills"
-  homepage "https://github.com/DoSomeForFun/PromptHub"
+  homepage "https://github.com/LeetaoGoooo/PromptHub"
   license "MIT"
 
   # ----------------------------------------------------------------------
@@ -16,8 +16,8 @@ class Ph < Formula
   # ----------------------------------------------------------------------
   STABLE_VERSION = "0.1.0".freeze
   STABLE_ARM64_URL =
-    "https://github.com/DoSomeForFun/PromptHub/releases/download/ph-v#{STABLE_VERSION}/ph-macos-arm64.tar.gz".freeze
-  STABLE_ARM64_SHA = "3cbe4473e8c62667798429e52bf0e84aabf3c8e5838a3f5c52bb29feb56675e3".freeze
+    "https://github.com/LeetaoGoooo/PromptHub/releases/download/ph-v#{STABLE_VERSION}/ph-macos-arm64.tar.gz".freeze
+  STABLE_ARM64_SHA = "869f532bc181646c3c0e70d6954c2c9ab7b0f62d73145d066d5f012740c71aca".freeze
 
   # ----------------------------------------------------------------------
   # CI / local smoke override.
@@ -42,7 +42,7 @@ class Ph < Formula
     version STABLE_VERSION
   end
 
-  head "https://github.com/DoSomeForFun/PromptHub.git", branch: "main"
+  head "https://github.com/LeetaoGoooo/PromptHub.git", branch: "main"
 
   depends_on :macos
   depends_on arch: :arm64
