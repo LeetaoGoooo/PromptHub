@@ -125,42 +125,30 @@ PromptHub now includes powerful prompt testing capabilities that allow you to:
 - **Error Handling**: Clear error messages and status indicators
 - **Copy to Clipboard**: Quick copying of results for further use
 
-## 📸 Screenshots
+## Screenshots
 
 <div align="center">
   <table>
     <tr>
       <td align="center">
-        <img src="./screens/home_page.png" width="280" alt="Home Page"/>
-        <br/>
-        <sub><b>Home Page</b></sub>
+        <img src="./screens/001.png" width="280" alt="001"/>
       </td>
       <td align="center">
-        <img src="./screens/add_prompt_dialog.png" width="280" alt="Add Prompt Dialog"/>
-        <br/>
-        <sub><b>Add Prompt Dialog</b></sub>
+        <img src="./screens/002.png" width="280" alt="002"/>
       </td>
       <td align="center">
-        <img src="./screens/prompt_preview.png" width="280" alt="Prompt Preview"/>
-        <br/>
-        <sub><b>Prompt Preview</b></sub>
+        <img src="./screens/003.png" width="280" alt="003"/>
       </td>
     </tr>
     <tr>
       <td align="center">
-        <img src="./screens/multiple_mode_test.png" width="280" alt="Multi-Model Testing"/>
-        <br/>
-        <sub><b>Multi-Model Testing</b></sub>
+        <img src="./screens/004.png" width="280" alt="004"/>
       </td>
       <td align="center">
-        <img src="./screens/multiple_mode_test-2.png" width="280" alt="Global Comparison View"/>
-        <br/>
-        <sub><b>Global Comparison View</b></sub>
+        <img src="./screens/005.png" width="280" alt="005"/>
       </td>
       <td align="center">
-        <img src="./screens/diff.jpg" width="280" alt="Prompt Diff"/>
-        <br/>
-        <sub><b>Prompt Diff</b></sub>
+        <img src="./screens/006.png" width="280" alt="006"/>
       </td>
     </tr>
   </table>
